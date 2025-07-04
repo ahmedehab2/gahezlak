@@ -21,6 +21,7 @@ export interface IOrder {
     _id: ObjectId;
     shopId: ObjectId;
     userId: ObjectId;
+    tableNumber?: number;  // Optional field for dine-in orders
     orderStatus: OrderStatus;
     totalAmount: number;
     orderItems: IOrderItem[];
@@ -35,6 +36,7 @@ export interface IOrder {
 const OrderSchema = new Schema<IOrder>({
     shopId: { type: Schema.Types.ObjectId, ref: collectionsName.SHOPS, required: true },
     userId: { type: Schema.Types.ObjectId, ref: collectionsName.USERS, required: true },
+    tableNumber: { type: Number },
     orderStatus: { type: String, required: true },
     totalAmount: { type: Number, required: true },
     orderItems: [{
