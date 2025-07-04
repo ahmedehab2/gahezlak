@@ -15,9 +15,11 @@ export interface IUser {
         expireAt: Date | null;
         reason: string | null;
     };
+    isVerified: boolean;
+    newEmail?: string | null;
+    role: mongoose.Types.ObjectId;
+    refreshTokens?: string[];
 }
-
-
 
 const UserSchema = new Schema<IUser>({
     name: { type: String, required: true },
@@ -29,6 +31,10 @@ const UserSchema = new Schema<IUser>({
         expireAt: { type: Date, default: null },
         reason: { type: String, default: null }
     },
+    isVerified: { type: Boolean, default: false },
+    newEmail: { type: String, default: null },
+    role: { type: mongoose.Schema.Types.ObjectId, ref: collectionsName.ROLES, required: true },
+    refreshTokens: { type: [String], default: [] },
 }
     , {
         timestamps: true,
