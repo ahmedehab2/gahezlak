@@ -7,7 +7,7 @@ export interface IPlan extends Document {
   itemLimit: number;
   categoryLimit: number;
   features: string[];
-  isActive: boolean;
+  isActive: boolean; // 
 }
 
 const PlanSchema = new Schema<IPlan>({
