@@ -5,9 +5,15 @@ import { collectionsName } from '../common/collections-name';
 export type PaymentMethod =
     | 'CreditCard'
     | 'DebitCard'
-    | 'Cash'
-    | 'DigitalWallet'
-    | 'BankTransfer';
+    | 'VodafoneCash'
+    | 'OrangeMoney'
+    | 'EtisalatWallet'
+    | 'Fawry'
+    | 'BankTransfer'
+    | 'CashOnDelivery'
+    | 'PaymobWallet'
+    | 'Meza'
+    | 'Unknown';
 
 export type PaymentStatus =
     | 'Pending'
@@ -18,26 +24,31 @@ export type PaymentStatus =
 
 export interface IPayment {
     _id: ObjectId;
-    shopId: ObjectId;
-    orderId: ObjectId;
+    userId?: ObjectId;
+    planId?: ObjectId;
+    shopId?: ObjectId;
+    orderId?: ObjectId;
+    paymobOrderId?: string;
+    paymobPaymentKey?: string;
     paymentMethod: PaymentMethod;
     paymentStatus: PaymentStatus;
     amount: number;
-    transactionId: string;
+    transactionId?: string;
     createdAt: Date;
     updatedAt: Date;
 }
 
-
-
 const PaymentSchema = new Schema<IPayment>({
-    shopId: { type: Schema.Types.ObjectId, ref: collectionsName.SHOPS, required: true },
-    orderId: { type: Schema.Types.ObjectId, ref: collectionsName.ORDERS, required: true },
+    userId: { type: Schema.Types.ObjectId, ref: collectionsName.USERS },
+    planId: { type: Schema.Types.ObjectId, ref: 'plans' },
+    shopId: { type: Schema.Types.ObjectId, ref: collectionsName.SHOPS },
+    orderId: { type: Schema.Types.ObjectId, ref: collectionsName.ORDERS },
+    paymobOrderId: { type: String },
+    paymobPaymentKey: { type: String },
     paymentMethod: { type: String, required: true },
     paymentStatus: { type: String, required: true },
     amount: { type: Number, required: true },
-    transactionId: { type: String, required: true, unique: true },
-
+    transactionId: { type: String, unique: true, sparse: true },
 },
     {
         timestamps: true,

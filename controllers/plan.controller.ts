@@ -1,8 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import { Plans } from '../models/Plan';
-import { asyncHandler } from '../utils/asyncHandler';
+import { PlanService } from '../services/plan.service';
 
-export const getPlans = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  const plans = await Plans.find({ isActive: true }).sort({ price: 1 });
-  res.status(200).json(plans);
-}); 
+export const getPlans = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await PlanService.getPlans();
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}; 
