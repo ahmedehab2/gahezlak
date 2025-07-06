@@ -3,7 +3,9 @@ import { Subscriptions } from '../models/Subscription';
 import { Plans } from '../models/Plan';
 import { Users } from '../models/User';
 import { sendEmail } from '../utils/sendEmail';
-import { AppError } from '../utils/classError';
+import { Errors } from '../errors';
+import { errMsg } from '../common/err-messages';
+
 
 export class PaymentService {
   static async processPaymentSuccess(paymentData: {
@@ -18,7 +20,7 @@ export class PaymentService {
     // Find the payment record
     const payment = await Payments.findOne({ paymobOrderId });
     if (!payment) {
-      throw new AppError('Payment record not found', 404);
+      throw new Errors.NotFoundError(errMsg.PAYMENT_NOT_FOUND)
     }
 
     // Update payment status
@@ -54,7 +56,7 @@ export class PaymentService {
     // Find the payment record
     const payment = await Payments.findOne({ paymobOrderId });
     if (!payment) {
-      throw new AppError('Payment record not found', 404);
+      throw new Errors.NotFoundError(errMsg.PAYMENT_NOT_FOUND)
     }
 
     // Update payment status
@@ -77,7 +79,8 @@ export class PaymentService {
     // Find the payment record
     const payment = await Payments.findOne({ paymobOrderId });
     if (!payment) {
-      throw new AppError('Payment record not found', 404);
+      throw new Errors.NotFoundError(errMsg.PAYMENT_NOT_FOUND)
+
     }
 
     // Update payment status
@@ -123,9 +126,9 @@ export class PaymentService {
   private static async sendPaymentConfirmationEmail(payment: any) {
     const user = await Users.findById(payment.userId);
     const plan = await Plans.findById(payment.planId);
-    
+
     if (user && plan) {
-      await sendEmail(
+      sendEmail(
         user.email,
         'Payment Successful - Subscription Activated',
         `
@@ -142,9 +145,9 @@ export class PaymentService {
 
   private static async sendPaymentFailureEmail(payment: any, errorMessage?: string) {
     const user = await Users.findById(payment.userId);
-    
+
     if (user) {
-      await sendEmail(
+      sendEmail(
         user.email,
         'Payment Failed',
         `
@@ -162,9 +165,9 @@ export class PaymentService {
   private static async sendRefundNotificationEmail(payment: any) {
     const user = await Users.findById(payment.userId);
     const plan = await Plans.findById(payment.planId);
-    
+
     if (user && plan) {
-      await sendEmail(
+      sendEmail(
         user.email,
         'Payment Refunded',
         `
@@ -183,7 +186,7 @@ export class PaymentService {
     const payments = await Payments.find({ userId })
       .populate('planId', 'name price currency')
       .sort({ createdAt: -1 });
-    
+
     return payments;
   }
 
@@ -191,11 +194,11 @@ export class PaymentService {
     const payment = await Payments.findById(paymentId)
       .populate('planId', 'name price currency')
       .populate('userId', 'name email');
-    
+
     if (!payment) {
-      throw new AppError('Payment not found', 404);
+      throw new Errors.NotFoundError(errMsg.PAYMENT_NOT_FOUND)
     }
-    
+
     return payment;
   }
 } 

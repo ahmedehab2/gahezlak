@@ -1,12 +1,14 @@
 import bcryptjs from 'bcryptjs';
 import { Users } from '../models/User';
 import { sendEmail } from '../utils/sendEmail';
-import { AppError } from '../utils/classError';
+
 import otpGenerator from 'otp-generator';
 import jwt from 'jsonwebtoken';
 import { Roles } from '../models/Role';
 import { Subscriptions } from '../models/Subscription';
 import { Plans } from '../models/Plan';
+import { Errors } from '../errors'
+import { errMsg } from '../common/err-messages';
 
 const { hash } = bcryptjs;
 
@@ -20,10 +22,7 @@ export class UserService {
   }) {
     const { name, email, password, phoneNumber, role } = userData;
 
-    const userExist = await Users.findOne({ email: email.toLowerCase() });
-    if (userExist) {
-      throw new AppError("This email is already registered!, please use another email!", 409);
-    }
+
 
     // Generate verification code
     const code = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
@@ -31,14 +30,11 @@ export class UserService {
     const reason = 'account_verification';
 
     // Send code via email (or SMS)
-    const checkEmail = await sendEmail(
+    sendEmail(
       email,
       "Your Verification Code",
       `Your verification code is: <b>${code}</b>. It will expire in 10 minutes.`
     );
-    if (!checkEmail) {
-      throw new AppError("Failed to send email", 409);
-    }
 
     const hashedPassword = await hash(password, parseInt(process.env.saltRounds || '7'));
 
@@ -47,14 +43,14 @@ export class UserService {
       // If role is provided, find its ObjectId
       const foundRole = await Roles.findOne({ role: role });
       if (!foundRole) {
-        throw new AppError('Invalid role provided', 400);
+        throw new Errors.NotFoundError(errMsg.ROLE_NOT_FOUND)
       }
       roleId = foundRole._id;
     } else {
       // Default to 'customer' role
       const customerRole = await Roles.findOne({ role: 'customer' });
       if (!customerRole) {
-        throw new AppError('Default customer role not found in database', 500);
+        throw new Errors.NotFoundError(errMsg.ROLE_NOT_FOUND)
       }
       roleId = customerRole._id;
     }
@@ -70,7 +66,7 @@ export class UserService {
       isVerified: false,
       role: roleId
     };
-    
+
     const createdUser = await Users.create(newUser);
     return { message: "Congrats! You're registered. Please check your email for the verification code.", user: createdUser };
   }
@@ -79,23 +75,23 @@ export class UserService {
     const { email, code, reason } = verificationData;
     const user = await Users.findOne({ email: email.toLowerCase() });
     if (!user) {
-      throw new AppError('User not found', 404);
+      throw new Errors.NotFoundError(errMsg.USER_NOT_FOUND)
     }
-    
+
     const vCode = user.verificationCode;
     if (!vCode.code || !vCode.expireAt || !vCode.reason) {
-      throw new AppError('No verification code found. Please request a new code.', 400);
+      throw new Errors.BadRequestError(errMsg.NO_VERIFICATION_CODE_FOUND)
     }
     if (vCode.code !== code) {
-      throw new AppError('Invalid verification code.', 400);
+      throw new Errors.BadRequestError(errMsg.INVALID_VERIFICATION_CODE);
     }
     if (vCode.reason !== reason) {
-      throw new AppError('Invalid verification reason.', 400);
+      throw new Errors.BadRequestError(errMsg.INVALID_VERIFICATION_REASON);
     }
     if (new Date() > new Date(vCode.expireAt)) {
-      throw new AppError('Verification code has expired.', 400);
+      throw new Errors.BadRequestError(errMsg.VERIFICATION_CODE_EXPIRED);
     }
-    
+
     user.isVerified = true;
     user.verificationCode = { code: null, expireAt: null, reason: null };
     await user.save();
@@ -123,7 +119,7 @@ export class UserService {
       // Find the Starter plan
       const starterPlan = await Plans.findOne({ name: 'Starter', isActive: true });
       if (!starterPlan) {
-        throw new AppError('Starter plan not found', 500);
+        throw new Errors.NotFoundError(errMsg.STARTER_PLAN_NOT_FOUND);
       }
       const trialEndsAt = new Date(Date.now() + starterPlan.duration * 24 * 60 * 60 * 1000);
       await Subscriptions.create({
@@ -141,18 +137,18 @@ export class UserService {
     const { email, reason } = resendData;
     const user = await Users.findOne({ email: email.toLowerCase() });
     if (!user) {
-      throw new AppError('User not found', 404);
+      throw new Errors.NotFoundError(errMsg.USER_NOT_FOUND)
     }
     if (user.isVerified) {
-      throw new AppError('User is already verified.', 400);
+      throw new Errors.BadRequestError(errMsg.USER_ALREADY_VERIFIED);
     }
-    
+
     // Generate new verification code
     const code = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
     const expireAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
     user.verificationCode = { code, expireAt, reason };
     await user.save();
-    
+
     // Send code via email (or SMS)
     const checkEmail = await sendEmail(
       email,
@@ -160,9 +156,9 @@ export class UserService {
       `Your new verification code is: <b>${code}</b>. It will expire in 10 minutes.`
     );
     if (!checkEmail) {
-      throw new AppError("Failed to send email", 409);
+      throw new Errors.BadRequestError(errMsg.FAILED_TO_SEND_EMAIL);
     }
-    
+
     return { message: 'A new verification code has been sent to your email.' };
   }
 
@@ -170,30 +166,28 @@ export class UserService {
     const { email, password } = loginData;
     const user = await Users.findOne({ email: email.toLowerCase() });
     if (!user) {
-      throw new AppError('Invalid email or password', 401);
+      throw new Errors.UnauthorizedError(errMsg.INVALID_EMAIL_OR_PASSWORD);
     }
     if (!user.isVerified) {
-      throw new AppError('Account is not verified. Please verify your account first.', 403);
+      throw new Errors.UnauthenticatedError(errMsg.ACCOUNT_NOT_VERIFIED);
     }
-    
+
     const isMatch = await bcryptjs.compare(password, user.password);
     if (!isMatch) {
-      throw new AppError('Invalid email or password', 401);
+      throw new Errors.UnauthorizedError(errMsg.INVALID_EMAIL_OR_PASSWORD);
     }
-    
-    if (!process.env.JWT_SECRET) {
-      throw new AppError('JWT_SECRET is not defined in environment variables', 500);
-    }
-    
+
+
+
     // Generate access token (short-lived)
-    const accessToken = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '15m' });
+    const accessToken = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET!, { expiresIn: '15m' });
     // Generate refresh token (long-lived)
-    const refreshToken = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const refreshToken = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET!, { expiresIn: '7d' });
     // Store refresh token in user document
     user.refreshTokens = user.refreshTokens || [];
     user.refreshTokens.push(refreshToken);
     await user.save();
-    
+
     return { message: 'Login successful', accessToken, refreshToken };
   }
 
@@ -201,25 +195,23 @@ export class UserService {
     const { email } = emailData;
     const user = await Users.findOne({ email: email.toLowerCase() });
     if (!user) {
-      throw new AppError('User not found', 404);
+      throw new Errors.NotFoundError(errMsg.USER_NOT_FOUND)
     }
-    
+
     // Generate new verification code for password reset
     const code = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
     const expireAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
     user.verificationCode = { code, expireAt, reason: 'password_reset' };
     await user.save();
-    
+
     // Send code via email
-    const checkEmail = await sendEmail(
+    sendEmail(
       email,
       "Password Reset Code",
       `Your password reset code is: <b>${code}</b>. It will expire in 10 minutes.`
     );
-    if (!checkEmail) {
-      throw new AppError("Failed to send email", 409);
-    }
-    
+
+
     return { message: 'A password reset code has been sent to your email.' };
   }
 
@@ -227,49 +219,49 @@ export class UserService {
     const { email, code, newPassword } = resetData;
     const user = await Users.findOne({ email: email.toLowerCase() });
     if (!user) {
-      throw new AppError('User not found', 404);
+      throw new Errors.NotFoundError(errMsg.USER_NOT_FOUND)
     }
-    
+
     const vCode = user.verificationCode;
     if (!vCode.code || !vCode.expireAt || !vCode.reason) {
-      throw new AppError('No verification code found. Please request a new code.', 400);
+      throw new Errors.BadRequestError(errMsg.NO_VERIFICATION_CODE_FOUND);
     }
     if (vCode.code !== code) {
-      throw new AppError('Invalid verification code.', 400);
+      throw new Errors.BadRequestError(errMsg.INVALID_VERIFICATION_CODE);
     }
     if (vCode.reason !== 'password_reset') {
-      throw new AppError('Invalid verification reason.', 400);
+      throw new Errors.BadRequestError(errMsg.INVALID_VERIFICATION_REASON);
     }
     if (new Date() > new Date(vCode.expireAt)) {
-      throw new AppError('Verification code has expired.', 400);
+      throw new Errors.BadRequestError(errMsg.VERIFICATION_CODE_EXPIRED);
     }
-    
+
     const hashedPassword = await bcryptjs.hash(newPassword, parseInt(process.env.saltRounds || '7'));
     user.password = hashedPassword;
     user.verificationCode = { code: null, expireAt: null, reason: null };
     await user.save();
-    
+
     return { message: 'Password has been reset successfully.' };
   }
 
   static async requestEmailChange(userId: string, newEmail: string) {
     const user = await Users.findById(userId);
     if (!user) {
-      throw new AppError('User not found', 404);
+      throw new Errors.NotFoundError(errMsg.USER_NOT_FOUND)
     }
-    
+
     const emailExists = await Users.findOne({ email: newEmail.toLowerCase() });
     if (emailExists) {
-      throw new AppError('This email is already in use.', 409);
+      throw new Errors.BadRequestError(errMsg.EMAIL_ALREADY_IN_USE);
     }
-    
+
     // Generate code for email change
     const code = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
     const expireAt = new Date(Date.now() + 10 * 60 * 1000);
     user.verificationCode = { code, expireAt, reason: 'email_change' };
     (user as any).newEmail = newEmail.toLowerCase();
     await user.save();
-    
+
     // Send code to new email
     const checkEmail = await sendEmail(
       newEmail,
@@ -277,63 +269,63 @@ export class UserService {
       `Your email change confirmation code is: <b>${code}</b>. It will expire in 10 minutes.`
     );
     if (!checkEmail) {
-      throw new AppError('Failed to send email', 409);
+      throw new Errors.BadRequestError(errMsg.FAILED_TO_SEND_EMAIL);
     }
-    
+
     return { message: 'A confirmation code has been sent to your new email.' };
   }
 
   static async confirmEmailChange(userId: string, code: string) {
     const user = await Users.findById(userId);
     if (!user) {
-      throw new AppError('User not found', 404);
+      throw new Errors.NotFoundError(errMsg.USER_NOT_FOUND)
     }
-    
+
     const vCode = user.verificationCode;
     const newEmail = (user as any).newEmail;
     if (!vCode.code || !vCode.expireAt || !vCode.reason || !newEmail) {
-      throw new AppError('No email change request found.', 400);
+      throw new Errors.BadRequestError(errMsg.NO_EMAIL_CHANGE_REQUEST_FOUND);
     }
     if (vCode.code !== code) {
-      throw new AppError('Invalid confirmation code.', 400);
+      throw new Errors.BadRequestError(errMsg.INVALID_CONFIRMATION_CODE);
     }
     if (vCode.reason !== 'email_change') {
-      throw new AppError('Invalid confirmation reason.', 400);
+      throw new Errors.BadRequestError(errMsg.INVALID_CONFIRMATION_REASON);
     }
     if (new Date() > new Date(vCode.expireAt)) {
-      throw new AppError('Confirmation code has expired.', 400);
+      throw new Errors.BadRequestError(errMsg.CONFIRMATION_CODE_EXPIRED);
     }
-    
+
     user.email = newEmail;
     (user as any).newEmail = undefined;
     user.verificationCode = { code: null, expireAt: null, reason: null };
     await user.save();
-    
+
     return { message: 'Email has been updated successfully.' };
   }
 
   static async refreshToken(refreshToken: string) {
     if (!refreshToken) {
-      throw new AppError('Refresh token is required', 400);
+      throw new Errors.BadRequestError(errMsg.REFRESH_TOKEN_REQUIRED);
     }
     if (!process.env.JWT_SECRET) {
-      throw new AppError('JWT_SECRET is not defined in environment variables', 500);
+      throw new Errors.DatabaseConnectionError(errMsg.JWT_SECRET_NOT_DEFINED);
     }
-    
+
     let payload: any;
     try {
       payload = jwt.verify(refreshToken, process.env.JWT_SECRET);
     } catch (err) {
-      throw new AppError('Invalid or expired refresh token', 401);
+      throw new Errors.UnauthorizedError(errMsg.INVALID_OR_EXPIRED_REFRESH_TOKEN);
     }
-    
+
     const user = await Users.findById(payload.userId);
     if (!user || !user.refreshTokens || !user.refreshTokens.includes(refreshToken)) {
-      throw new AppError('Refresh token not recognized', 401);
+      throw new Errors.UnauthorizedError(errMsg.REFRESH_TOKEN_NOT_RECOGNIZED);
     }
-    
+
     // Issue new access token
     const newAccessToken = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '15m' });
     return { accessToken: newAccessToken };
   }
-} 
+}
