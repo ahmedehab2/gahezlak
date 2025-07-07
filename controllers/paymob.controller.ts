@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { getPaymobToken, createPaymobOrder, getPaymobPaymentKey, getPaymobIframeUrl } from '../utils/paymob';
-import { Plans } from '../models/Plan';
 import { Users } from '../models/User';
 import { Payments } from '../models/Payment';
 import { Errors } from '../errors';
@@ -11,15 +10,10 @@ export const initiatePaymobOrder = async (req: Request, res: Response, next: Nex
     console.log('=== PAYMOB ORDER ENDPOINT REACHED ===');
     console.log('Starting Paymob order initiation...');
 
-    const { planId } = req.body;
+    // No planId needed for single plan system
     const userId = (req as any).user?.userId;
 
-    console.log('Request data:', { planId, userId });
-
-    if (!planId) {
-      console.log('Missing planId');
-      return next(new Errors.BadRequestError(errMsg.PLAN_ID_REQUIRED));
-    }
+    console.log('Request data:', { userId });
 
     if (!userId) {
       console.log('Missing userId');
@@ -33,12 +27,10 @@ export const initiatePaymobOrder = async (req: Request, res: Response, next: Nex
       console.error('PAYMOB_API_KEY is not set');
       return next(new Errors.BadRequestError(errMsg.PAYMOB_CONFIG_ERROR));
     }
-
     if (!process.env.PAYMOB_IFRAME_ID) {
       console.error('PAYMOB_IFRAME_ID is not set');
       return next(new Errors.BadRequestError(errMsg.PAYMOB_CONFIG_ERROR));
     }
-
     if (!process.env.PAYMOB_INTEGRATION_ID) {
       console.error('PAYMOB_INTEGRATION_ID is not set');
       return next(new Errors.BadRequestError(errMsg.PAYMOB_CONFIG_ERROR));
@@ -46,14 +38,12 @@ export const initiatePaymobOrder = async (req: Request, res: Response, next: Nex
 
     console.log('Environment variables check passed');
 
-    // Find the plan
-    const plan = await Plans.findById(planId);
-    if (!plan) {
-      console.log('Plan not found for ID:', planId);
-      return next(new Errors.NotFoundError(errMsg.PLAN_NOT_FOUND));
-    }
-
-    console.log('Plan found:', plan.name, plan.price);
+    // Hardcoded single plan details
+    const plan = {
+      name: 'Standard',
+      price: 499, // EGP, or your actual price
+      currency: 'EGP'
+    };
 
     // Find the user to get billing data
     const user = await Users.findById(userId).select('name email phoneNumber');
@@ -111,7 +101,6 @@ export const initiatePaymobOrder = async (req: Request, res: Response, next: Nex
     console.log('Saving payment record...');
     await Payments.create({
       userId,
-      planId: plan._id,
       paymobOrderId: order.id,
       paymobPaymentKey: paymentKey,
       amount: plan.price,

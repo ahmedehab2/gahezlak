@@ -1,5 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { PaymentService } from '../services/payment.service';
+import {
+  processPaymentSuccess,
+  processPaymentFailure,
+  processPaymentRefund
+} from '../services/payment.service';
 import { Payments } from '../models/Payment';
 
 export const handlePaymobWebhook = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -52,7 +56,7 @@ export const handlePaymobWebhook = async (req: Request, res: Response, next: Nex
       if (success && is_amount_paid && !is_refunded && !is_canceled) {
         // Payment successful
         console.log('Processing successful payment...');
-        await PaymentService.processPaymentSuccess({
+        await processPaymentSuccess({
           paymobOrderId: paymobOrderId.toString(),
           transactionId: transaction_id,
           paymentMethod: 'Unknown',
@@ -64,7 +68,7 @@ export const handlePaymobWebhook = async (req: Request, res: Response, next: Nex
       } else if (error_occured || is_canceled) {
         // Payment failed
         console.log('Processing failed payment...');
-        await PaymentService.processPaymentFailure({
+        await processPaymentFailure({
           paymobOrderId: paymobOrderId.toString(),
           transactionId: transaction_id,
           errorMessage: 'Payment was cancelled or failed'
@@ -74,7 +78,7 @@ export const handlePaymobWebhook = async (req: Request, res: Response, next: Nex
       } else if (is_refunded) {
         // Payment refunded
         console.log('Processing refund...');
-        await PaymentService.processPaymentRefund({
+        await processPaymentRefund({
           paymobOrderId: paymobOrderId.toString(),
           transactionId: transaction_id
         });

@@ -30,6 +30,7 @@ enum errorMessage {
     USER_NOT_AUTHENTICATED = "USER_NOT_AUTHENTICATED",
     PAYMOB_CONFIG_ERROR = "PAYMOB_CONFIG_ERROR",
     PLAN_NOT_FOUND = "PLAN_NOT_FOUND",
+    SHOP_NOT_FOUND = "SHOP_NOT_FOUND",
 
 }
 
@@ -66,5 +67,6 @@ export const errMsg: {
     USER_NOT_AUTHENTICATED: { en: 'User not authenticated.', ar: 'المستخدم غير مصادق عليه.' },
     PAYMOB_CONFIG_ERROR: { en: 'Paymob configuration error.', ar: 'خطأ في تهيئة Paymob.' },
     PLAN_NOT_FOUND: { en: 'Plan not found.', ar: 'الخطة غير موجودة.' },
+    SHOP_NOT_FOUND: { en: 'Shop not found', ar: 'المتجر غير موجود' },
 
 }
