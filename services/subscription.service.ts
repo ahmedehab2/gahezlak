@@ -1,73 +1,62 @@
 import { Subscriptions } from '../models/Subscription';
 import { Errors } from '../errors';
 import { errMsg } from '../common/err-messages';
-import { Plans } from '../models/Plan';
 import mongoose from 'mongoose';
 
-export class SubscriptionService {
-  static async subscribe(userId: string) {
-    const sub = await Subscriptions.findOne({ userId });
-    if (!sub) {
-      throw new Errors.NotFoundError(errMsg.NO_SUBSCRIPTION_FOUND);
-    }
+export async function subscribe(userId: string) {
+  const sub = await Subscriptions.findOne({ userId });
+  if (!sub) {
+    throw new Errors.NotFoundError(errMsg.NO_SUBSCRIPTION_FOUND);
+  }
+  // Payment processing and activation logic should go here
+  sub.status = 'active';
+  sub.paidStart = new Date();
+  sub.paidEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+  await sub.save();
+  return { message: 'Subscription activated.' };
+}
 
-    // For now, upgrade to 'Premium' plan by default
-    const premiumPlan = await Plans.findOne({ name: 'Premium', isActive: true });
-    if (!premiumPlan) {
-      throw new Errors.NotFoundError(errMsg.PREMIUM_PLAN_NOT_FOUND);
-    }
+export async function cancelSubscription(userId: string) {
+  const sub = await Subscriptions.findOne({ userId });
+  if (!sub) {
+    throw new Errors.NotFoundError(errMsg.NO_SUBSCRIPTION_FOUND);
+  }
+  sub.status = 'expired';
+  await sub.save();
+  return { message: 'Subscription expired.' };
+}
 
-    // Cast _id to mongoose.Types.ObjectId for comparison
-    const premiumPlanId = new mongoose.Types.ObjectId(String(premiumPlan._id));
-    if (sub.plan.equals(premiumPlanId) && sub.status === 'active') {
-      return { message: 'Already subscribed to premium plan.' };
-    }
-
-    // In the future, payment processing will go here
-    sub.plan = premiumPlanId;
-    sub.status = 'active';
-    sub.trialEndsAt = undefined;
+export async function getSubscriptionStatus(userId: string) {
+  const sub = await Subscriptions.findOne({ userId });
+  if (!sub) {
+    return { status: 'none', message: 'No subscription found.' };
+  }
+  const now = new Date();
+  // Auto-expire logic
+  if (sub.status === 'trial' && sub.trialEnd < now) {
+    sub.status = 'expired';
     await sub.save();
-
-    return { message: 'Subscription upgraded to premium plan.' };
-  }
-
-  static async cancelSubscription(userId: string) {
-    const sub = await Subscriptions.findOne({ userId });
-    if (!sub) {
-      throw new Errors.NotFoundError(errMsg.NO_SUBSCRIPTION_FOUND);
-    }
-
-    sub.status = 'cancelled';
+  } else if (sub.status === 'active' && sub.paidEnd && sub.paidEnd < now) {
+    sub.status = 'expired';
     await sub.save();
-
-    return { message: 'Subscription cancelled.' };
   }
+  return {
+    status: sub.status,
+    trialStart: sub.trialStart,
+    trialEnd: sub.trialEnd,
+    paidStart: sub.paidStart,
+    paidEnd: sub.paidEnd,
+  };
+}
 
-  static async getSubscriptionStatus(userId: string) {
-    const sub = await Subscriptions.findOne({ userId });
-    if (!sub) {
-      return { status: 'none', message: 'No subscription found.' };
-    }
-
-    return {
-      plan: sub.plan,
-      status: sub.status,
-      trialEndsAt: sub.trialEndsAt,
-    };
-  }
-
-  static async getAllSubscriptions(filters: { userId?: string; plan?: string; status?: string }) {
-    const { userId, plan, status } = filters;
-    const filter: any = {};
-    if (userId) filter.userId = userId;
-    if (plan) filter.plan = plan;
-    if (status) filter.status = status;
-
-    const subs = await Subscriptions.find(filter)
-      .populate('userId', 'name email')
-      .populate('shopId', 'name');
-
-    return subs;
-  }
+export async function getAllSubscriptions(filters: { userId?: string; plan?: string; status?: string }) {
+  const { userId, plan, status } = filters;
+  const filter: any = {};
+  if (userId) filter.userId = userId;
+  if (plan) filter.plan = plan;
+  if (status) filter.status = status;
+  const subs = await Subscriptions.find(filter)
+    .populate('userId', 'name email')
+    .populate('shopId', 'name');
+  return subs;
 }

@@ -1,21 +1,29 @@
 import { Request, Response, NextFunction } from 'express';
 import { Subscriptions } from '../models/Subscription';
+import { Errors } from '../errors';
+import { errMsg } from '../common/err-messages';
 
 export const requireActiveSubscription = async (req: Request, res: Response, next: NextFunction) => {
   const userId = (req as any).user?.userId;
   if (!userId) {
-    return res.status(401).json({ message: 'Unauthorized' });
+    return next(new Errors.UnauthenticatedError(errMsg.USER_NOT_AUTHENTICATED));
   }
   const sub = await Subscriptions.findOne({ userId });
   if (!sub) {
-    return res.status(403).json({ message: 'No subscription found. Please start a trial or subscribe.' });
+    return next(new Errors.NotAllowedError(errMsg.NO_SUBSCRIPTION_FOUND));
   }
-  if (sub.status === 'cancelled') {
-    return res.status(403).json({ message: 'Subscription cancelled. Please subscribe to continue.' });
+  const now = new Date();
+  // Auto-expire logic
+  if (sub.status === 'trial' && sub.trialEnd < now) {
+    sub.status = 'expired';
+    await sub.save();
+  } else if (sub.status === 'active' && sub.paidEnd && sub.paidEnd < now) {
+    sub.status = 'expired';
+    await sub.save();
   }
-  if (sub.plan === 'trial' && sub.trialEndsAt && new Date() > new Date(sub.trialEndsAt)) {
-    return res.status(403).json({ message: 'Trial expired. Please subscribe to continue.' });
+  if (sub.status === 'expired') {
+    return next(new Errors.NotAllowedError({ en: 'Your subscription has expired. Please subscribe to continue.', ar: 'انتهت صلاحية اشتراكك. يرجى الاشتراك للمتابعة.' }));
   }
-  // If pro or trial is active and not expired
+  // Allow if trial or active and not expired
   next();
 }; 

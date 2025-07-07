@@ -1,11 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
-import { SubscriptionService } from '../services/subscription.service';
+import {
+  subscribe,
+  cancelSubscription,
+  getSubscriptionStatus,
+  getAllSubscriptions
+} from '../services/subscription.service';
 
 // POST /subscriptions/subscribe
-export const subscribe = async (req: Request, res: Response, next: NextFunction) => {
+export const subscribeHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = (req as any).user?.userId;
-    const result = await SubscriptionService.subscribe(userId);
+    const result = await subscribe(userId);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -13,10 +18,10 @@ export const subscribe = async (req: Request, res: Response, next: NextFunction)
 };
 
 // POST /subscriptions/cancel
-export const cancelSubscription = async (req: Request, res: Response, next: NextFunction) => {
+export const cancelSubscriptionHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = (req as any).user?.userId;
-    const result = await SubscriptionService.cancelSubscription(userId);
+    const result = await cancelSubscription(userId);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -24,10 +29,10 @@ export const cancelSubscription = async (req: Request, res: Response, next: Next
 };
 
 // GET /subscriptions/status
-export const getSubscriptionStatus = async (req: Request, res: Response, next: NextFunction) => {
+export const getSubscriptionStatusHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = (req as any).user?.userId;
-    const result = await SubscriptionService.getSubscriptionStatus(userId);
+    const result = await getSubscriptionStatus(userId);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -35,11 +40,11 @@ export const getSubscriptionStatus = async (req: Request, res: Response, next: N
 };
 
 // GET /subscriptions (admin/dashboard)
-export const getAllSubscriptions = async (req: Request, res: Response, next: NextFunction) => {
+export const getAllSubscriptionsHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { userId, plan, status } = req.query;
     const filters = { userId: userId as string, plan: plan as string, status: status as string };
-    const result = await SubscriptionService.getAllSubscriptions(filters);
+    const result = await getAllSubscriptions(filters);
     res.status(200).json(result);
   } catch (error) {
     next(error);
