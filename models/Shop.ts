@@ -36,7 +36,7 @@ const ShopSchema = new Schema<IShop>({
     isPaymentDone: { type: Boolean, default: false },
     members: [{
         userId: { type: Schema.Types.ObjectId, ref: collectionsName.USERS, required: true },
-        roleId: { type: Schema.Types.ObjectId, ref: 'roles', required: true },
+        roleId: { type: Schema.Types.ObjectId, ref: collectionsName.ROLES, required: true },
     }],
 
 },
