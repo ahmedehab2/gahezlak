@@ -9,7 +9,7 @@ export interface IMenuItem {
     description: string;
     price: number;
     category: string;
-    isAvailable: boolean;
+    isAvailable: boolean;  
     createdAt: Date;
     updatedAt: Date;
 }

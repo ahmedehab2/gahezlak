@@ -1,15 +1,19 @@
 import express from "express";
 import { httpLogger, logger } from "./config/pino";
 import { connectDB } from "./config/db";
-
+import menuItemRoutes from "./common/routes/menu-item-routes";
 import { errorHandler } from "./middlewares/errorHandler";
 import http from "http"
 import { initSocket } from "./sockets/socketServer";
 import orderRoutes from "./common/routes/order.routes";
-
+import categoryRoutes from "./common/routes/category.routes";
+import cron from "node-cron";
+import { Request, Response, NextFunction } from "express";
 import userRoutes from './routes/user.routes';
 import subscriptionRoutes from './routes/subscription.routes';
-import planRoutes from './routes/plan.routes';
+import { Users } from "./models/User";
+import { requireActiveSubscription } from "./middlewares/subscription";
+import kitchenRoutes from "./common/routes/kitchen.routes";
 
 
 
@@ -24,7 +28,12 @@ app.use(httpLogger);
 
 app.use('/api/v1/auth/user', userRoutes);
 app.use('/api/v1/subscriptions', subscriptionRoutes);
-app.use('/api/v1/plans', planRoutes);
+app.use('/orders', orderRoutes);
+app.use("/",kitchenRoutes);
+app.use('/menu-items',requireActiveSubscription ,menuItemRoutes);
+app.use("/category",requireActiveSubscription,categoryRoutes)
+
+app.use(errorHandler);
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   logger.error(err);

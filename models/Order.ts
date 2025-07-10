@@ -9,22 +9,22 @@ export interface IOrderItem {
     price: number;
 }
 
-export type OrderStatus =
-    | 'Pending'
-    | 'Confirmed'
-    | 'Preparing'
-    | 'Ready'
-    | 'Delivered'
-    | 'Cancelled';
+export enum OrderStatus { 
+    Pending = 'Pending', 
+    Confirmed = 'Confirmed',
+     Preparing = 'Preparing',
+      Ready = 'Ready',
+       Delivered = 'Delivered', 
+       Cancelled = 'Cancelled' } 
 
 export interface IOrder {
     _id: ObjectId;
     shopId: ObjectId;
-    userId: ObjectId;
     tableNumber?: number;  // Optional field for dine-in orders
     orderStatus: OrderStatus;
     totalAmount: number;
     orderItems: IOrderItem[];
+    isSentToKitchen: boolean; // Indicates if the order has been sent to the kitchen
     createdAt: Date;
     updatedAt: Date;
 }
@@ -35,9 +35,13 @@ export interface IOrder {
 
 const OrderSchema = new Schema<IOrder>({
     shopId: { type: Schema.Types.ObjectId, ref: collectionsName.SHOPS, required: true },
-    userId: { type: Schema.Types.ObjectId, ref: collectionsName.USERS, required: true },
     tableNumber: { type: Number },
-    orderStatus: { type: String, required: true },
+    orderStatus: { 
+        type: String, 
+        enum: Object.values(OrderStatus), 
+        required: true,  
+        default: OrderStatus.Pending 
+    },
     totalAmount: { type: Number, required: true },
     orderItems: [{
         menuItemId: { type: Schema.Types.ObjectId, ref: collectionsName.MENU_ITEMS, required: true },
@@ -45,6 +49,7 @@ const OrderSchema = new Schema<IOrder>({
         customizationDetails: { type: String },
         price: { type: Number, required: true },
     }],
+    isSentToKitchen: { type: Boolean, default: false}
 
 }
     ,
