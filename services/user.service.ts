@@ -1,35 +1,25 @@
 import bcryptjs from "bcryptjs";
-import { IUser, Users } from "../models/User";
+import { Users } from "../models/User";
 import { sendEmail } from "../utils/sendEmail";
-
 import otpGenerator from "otp-generator";
 import jwt from "jsonwebtoken";
 import { Roles } from "../models/Role";
 import { Subscriptions } from "../models/Subscription";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
-import {
-  signUpHandler,
-  verifyCodeHandler,
-  resendVerificationCodeHandler,
-  loginHandler,
-  forgotPasswordHandler,
-  resetPasswordHandler,
-  requestEmailChangeHandler,
-  confirmEmailChangeHandler,
-  refreshTokenHandler,
-} from "../controllers/user.controller";
 import mongoose from "mongoose";
 
 const { hash } = bcryptjs;
 
-export async function signUp(
-  userData: Pick<
-    IUser,
-    "firstName" | "lastName" | "email" | "password" | "phoneNumber"
-  >
-) {
-  const { firstName, lastName, email, password, phoneNumber } = userData;
+export async function signUp(userData: {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  phoneNumber: string;
+  role?: string;
+}) {
+  const { firstName, lastName, email, password, phoneNumber, role } = userData;
 
   // Generate verification code
   const code = otpGenerator.generate(6, {
@@ -39,8 +29,8 @@ export async function signUp(
   const expireAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
   const reason = "account_verification";
 
-  // Send code via email (or SMS)
-  sendEmail(
+  // Send code via email
+  await sendEmail(
     email,
     "Your Verification Code",
     `Your verification code is: <b>${code}</b>. It will expire in 10 minutes.`
@@ -51,22 +41,20 @@ export async function signUp(
     parseInt(process.env.saltRounds || "7")
   );
 
-  // let roleId;
-  // if (role) {
-  //   // If role is provided, find its ObjectId
-  //   const foundRole = await Roles.findOne({ role: role });
-  //   if (!foundRole) {
-  //     throw new Errors.NotFoundError(errMsg.ROLE_NOT_FOUND);
-  //   }
-  //   roleId = foundRole._id;
-  // } else {
-  //   // Default to 'customer' role
-  //   const customerRole = await Roles.findOne({ role: "customer" });
-  //   if (!customerRole) {
-  //     throw new Errors.NotFoundError(errMsg.ROLE_NOT_FOUND);
-  //   }
-  //   roleId = customerRole._id;
-  // }
+  let roleId;
+  if (role) {
+    const foundRole = await Roles.findOne({ role: role });
+    if (!foundRole) {
+      throw new Errors.NotFoundError(errMsg.ROLE_NOT_FOUND);
+    }
+    roleId = foundRole._id;
+  } else {
+    const customerRole = await Roles.findOne({ role: "customer" });
+    if (!customerRole) {
+      throw new Errors.NotFoundError(errMsg.ROLE_NOT_FOUND);
+    }
+    roleId = customerRole._id;
+  }
 
   const newUser = {
     firstName,
@@ -78,16 +66,11 @@ export async function signUp(
     updatedAt: new Date(),
     verificationCode: { code, expireAt, reason },
     isVerified: false,
-    // role: roleId,
+    role: roleId,
   };
 
-  const createdUser = await Users.create(newUser);
-  // Send code via email (or SMS)
-  sendEmail(
-    email,
-    "Your Verification Code",
-    `Your verification code is: <b>${code}</b>. It will expire in 10 minutes.`
-  );
+  await Users.create(newUser);
+
   return {
     message:
       "Congrats! You're registered. Please check your email for the verification code.",
@@ -123,20 +106,45 @@ export async function verifyCode(verificationData: {
   user.verificationCode = { code: null, expireAt: null, reason: null };
   await user.save();
 
-  // Create trial subscription if not exists
-  // const existingSub = await Subscriptions.findOne({ userId: user._id });
-  // if (!existingSub) {
-  //   const now = new Date();
-  //   const trialEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
-  //   await Subscriptions.create({
-  //     userId: user._id,
-  //     status: 'trial',
-  //     trialStart: now,
-  //     trialEnd: trialEnd,
-  //   });
-  // }
+  // Clean up expired verification codes for all users
+  const now = new Date();
+  await Users.updateMany(
+    {
+      "verificationCode.expireAt": { $lt: now },
+      isVerified: false,
+      "verificationCode.code": { $ne: null },
+    },
+    {
+      $set: {
+        "verificationCode.code": null,
+        "verificationCode.expireAt": null,
+        "verificationCode.reason": null,
+      },
+    }
+  );
 
-  return { message: "Verification successful. Your account is now verified." };
+  const accessToken = jwt.sign(
+    { userId: user._id, email: user.email },
+    process.env.JWT_SECRET!,
+    { expiresIn: "15m" }
+  );
+  const refreshToken = jwt.sign(
+    { userId: user._id, email: user.email },
+    process.env.JWT_SECRET!,
+    { expiresIn: "7d" }
+  );
+  user.refreshTokens = [refreshToken];
+  await user.save();
+
+  return {
+    accessToken,
+    refreshToken,
+    user: {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    },
+  };
 }
 
 export async function resendVerificationCode(resendData: {
@@ -161,7 +169,6 @@ export async function resendVerificationCode(resendData: {
   user.verificationCode = { code, expireAt, reason };
   await user.save();
 
-  // Send code via email (or SMS)
   const checkEmail = await sendEmail(
     email,
     "Your New Verification Code",
@@ -189,24 +196,29 @@ export async function login(loginData: { email: string; password: string }) {
     throw new Errors.UnauthorizedError(errMsg.INVALID_EMAIL_OR_PASSWORD);
   }
 
-  // Generate access token (short-lived)
   const accessToken = jwt.sign(
     { userId: user._id, email: user.email },
     process.env.JWT_SECRET!,
     { expiresIn: "15m" }
   );
-  // Generate refresh token (long-lived)
   const refreshToken = jwt.sign(
     { userId: user._id, email: user.email },
     process.env.JWT_SECRET!,
     { expiresIn: "7d" }
   );
-  // Store refresh token in user document
-  user.refreshTokens = user.refreshTokens || [];
-  user.refreshTokens.push(refreshToken);
+
+  user.refreshTokens = [refreshToken];
   await user.save();
 
-  return { message: "Login successful", accessToken, refreshToken };
+  return {
+    accessToken,
+    refreshToken,
+    user: {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    },
+  };
 }
 
 export async function forgotPassword(emailData: { email: string }) {
@@ -225,8 +237,7 @@ export async function forgotPassword(emailData: { email: string }) {
   user.verificationCode = { code, expireAt, reason: "password_reset" };
   await user.save();
 
-  // Send code via email
-  sendEmail(
+  await sendEmail(
     email,
     "Password Reset Code",
     `Your password reset code is: <b>${code}</b>. It will expire in 10 minutes.`
@@ -292,7 +303,6 @@ export async function requestEmailChange(userId: string, newEmail: string) {
   (user as any).newEmail = newEmail.toLowerCase();
   await user.save();
 
-  // Send code to new email
   const checkEmail = await sendEmail(
     newEmail,
     "Email Change Confirmation",
@@ -331,7 +341,10 @@ export async function confirmEmailChange(userId: string, code: string) {
   user.verificationCode = { code: null, expireAt: null, reason: null };
   await user.save();
 
-  return { message: "Email has been updated successfully." };
+  return {
+    email: user.email,
+    message: "Email has been updated successfully.",
+  };
 }
 
 export async function refreshToken(refreshToken: string) {
@@ -358,13 +371,39 @@ export async function refreshToken(refreshToken: string) {
     throw new Errors.UnauthorizedError(errMsg.REFRESH_TOKEN_NOT_RECOGNIZED);
   }
 
-  // Issue new access token
+  // Generate new tokens
   const newAccessToken = jwt.sign(
     { userId: user._id, email: user.email },
     process.env.JWT_SECRET,
     { expiresIn: "15m" }
   );
-  return { accessToken: newAccessToken };
+  const newRefreshToken = jwt.sign(
+    { userId: user._id, email: user.email },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  // Token rotation: Replace old refresh token with new one
+  user.refreshTokens = [newRefreshToken];
+  await user.save();
+
+  return {
+    accessToken: newAccessToken,
+    refreshToken: newRefreshToken,
+  };
+}
+
+export async function signOut(userId: string) {
+  const user = await Users.findById(userId);
+  if (!user) {
+    throw new Errors.NotFoundError(errMsg.USER_NOT_FOUND);
+  }
+
+  // Clear all refresh tokens for this user (sign out from all devices)
+  user.refreshTokens = [];
+  await user.save();
+
+  return { message: "Signed out successfully." };
 }
 
 export async function getUserById(userId: string) {

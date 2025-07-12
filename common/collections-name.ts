@@ -14,7 +14,6 @@ export const collectionsName = {
 
 
     ORDERS: 'orders',
-    TABLE_RESERVATIONS: 'table_reservations',
     PAYMENTS: 'payments',
     SUBSCRIPTIONS: 'subscriptions',
 };
