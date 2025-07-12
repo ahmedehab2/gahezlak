@@ -3,6 +3,7 @@ import { httpLogger, logger } from "./config/pino";
 import { connectDB } from "./config/db";
 import userRoutes from './routes/user.routes';
 import subscriptionRoutes from './routes/subscription.routes';
+import shopRoutes from './routes/shop.routes';
 // import planRoutes from './routes/plan.routes';
 import paymobRoutes from './routes/paymob.routes';
 import paymentRoutes from './routes/payment.routes';
@@ -18,6 +19,7 @@ app.use(languageMiddleware)
 
 app.use('/api/v1/auth/user', userRoutes);
 app.use('/api/v1/subscriptions', subscriptionRoutes);
+app.use('/api/v1/shops', shopRoutes);
 app.use('/api/paymob', paymobRoutes);
 app.use('/api/payments', paymentRoutes);
 

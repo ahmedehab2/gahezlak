@@ -2,7 +2,8 @@ import { body, param } from 'express-validator';
 import { validate } from '../middlewares/validators';
 
 export const validateRegister = [
-  body('name').isString().notEmpty().withMessage('Name is required'),
+  body('firstName').isString().notEmpty().withMessage('First name is required'),
+  body('lastName').isString().notEmpty().withMessage('Last name is required'),
   body('email').isEmail().withMessage('Invalid email address'),
   body('password')
     .isString()
@@ -61,5 +62,10 @@ export const validateConfirmEmailChange = [
 
 export const validateRefreshToken = [
   body('refreshToken').isString().notEmpty().withMessage('Refresh token is required'),
+  validate,
+];
+
+export const validateSignOut = [
+  // No validation needed - only requires authentication via middleware
   validate,
 ];

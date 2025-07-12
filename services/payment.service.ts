@@ -104,7 +104,7 @@ async function sendPaymentConfirmationEmail(payment: any) {
       'Payment Successful - Subscription Activated',
       `
       <h2>Payment Successful!</h2>
-      <p>Dear ${user.name},</p>
+      <p>Dear ${user.firstName} ${user.lastName},</p>
       <p>Your payment has been processed successfully.</p>
       <p>Your subscription is now active and you have access to all features.</p>
       <p>Transaction ID: ${payment.transactionId}</p>
@@ -122,7 +122,7 @@ async function sendPaymentFailureEmail(payment: any, errorMessage?: string) {
       'Payment Failed',
       `
       <h2>Payment Failed</h2>
-      <p>Dear ${user.name},</p>
+      <p>Dear ${user.firstName} ${user.lastName},</p>
       <p>Unfortunately, your payment could not be processed. Please try again or contact support if the issue persists.</p>
       <p>Transaction ID: ${payment.transactionId}</p>
       ${errorMessage ? `<p>Error: ${errorMessage}</p>` : ''}
@@ -140,7 +140,7 @@ async function sendRefundNotificationEmail(payment: any) {
       'Payment Refunded',
       `
       <h2>Payment Refunded</h2>
-      <p>Dear ${user.name},</p>
+      <p>Dear ${user.firstName} ${user.lastName},</p>
       <p>Your payment has been refunded.</p>
       <p>Your subscription has been expired. You can subscribe again anytime.</p>
       <p>Transaction ID: ${payment.transactionId}</p>

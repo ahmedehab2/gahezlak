@@ -4,6 +4,5 @@ export const collectionsName = {
     ROLES: 'roles',
     MENU_ITEMS: 'menu_items',
     ORDERS: 'orders',
-    TABLE_RESERVATIONS: 'table_reservations',
     PAYMENTS: 'payments',
 };

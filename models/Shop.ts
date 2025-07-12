@@ -2,8 +2,6 @@ import { ObjectId } from 'mongodb';
 import mongoose, { Schema, Document } from 'mongoose';
 import { collectionsName } from '../common/collections-name';
 
-
-
 export interface IShopMember {
     userId: ObjectId;
     roleId: ObjectId;
@@ -19,12 +17,10 @@ export interface IShop {
     ownerId: ObjectId;
     members: IShopMember[];
     isPaymentDone: boolean;
+    qrCodeImage?: string; // Base64 encoded QR code image
     createdAt: Date;
     updatedAt: Date;
 }
-
-
-
 
 const ShopSchema = new Schema<IShop>({
     name: { type: String, required: true },
@@ -34,16 +30,14 @@ const ShopSchema = new Schema<IShop>({
     email: { type: String, required: true },
     ownerId: { type: Schema.Types.ObjectId, ref: collectionsName.USERS, required: true },
     isPaymentDone: { type: Boolean, default: false },
+    qrCodeImage: { type: String }, // Base64 encoded QR code image
     members: [{
         userId: { type: Schema.Types.ObjectId, ref: collectionsName.USERS, required: true },
         roleId: { type: Schema.Types.ObjectId, ref: collectionsName.ROLES, required: true },
     }],
-
-},
-    {
-
-        timestamps: true,
-        collection: collectionsName.SHOPS
-    });
+}, {
+    timestamps: true,
+    collection: collectionsName.SHOPS
+});
 
 export const Shops = mongoose.model<IShop>(collectionsName.SHOPS, ShopSchema);

@@ -1,7 +1,6 @@
 import bcryptjs from 'bcryptjs';
 import { Users } from '../models/User';
 import { sendEmail } from '../utils/sendEmail';
-
 import otpGenerator from 'otp-generator';
 import jwt from 'jsonwebtoken';
 import { Roles } from '../models/Role';
@@ -22,21 +21,22 @@ import {
 
 const { hash } = bcryptjs;
 
+
+
+
+
 export async function signUp(userData: {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
   phoneNumber: string;
   role?: string;
 }) {
-  const { name, email, password, phoneNumber, role } = userData;
-
-  // Generate verification code
+  const { firstName, lastName, email, password, phoneNumber, role } = userData;
   const code = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
-  const expireAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+  const expireAt = new Date(Date.now() + 10 * 60 * 1000);
   const reason = 'account_verification';
-
-  // Send code via email (or SMS)
   sendEmail(
     email,
     "Your Verification Code",
@@ -47,14 +47,12 @@ export async function signUp(userData: {
 
   let roleId;
   if (role) {
-    // If role is provided, find its ObjectId
     const foundRole = await Roles.findOne({ role: role });
     if (!foundRole) {
       throw new Errors.NotFoundError(errMsg.ROLE_NOT_FOUND)
     }
     roleId = foundRole._id;
   } else {
-    // Default to 'customer' role
     const customerRole = await Roles.findOne({ role: 'customer' });
     if (!customerRole) {
       throw new Errors.NotFoundError(errMsg.ROLE_NOT_FOUND)
@@ -63,7 +61,8 @@ export async function signUp(userData: {
   }
 
   const newUser = {
-    name,
+    firstName,
+    lastName,
     email,
     password: hashedPassword,
     phoneNumber,
@@ -75,12 +74,20 @@ export async function signUp(userData: {
   };
 
   const createdUser = await Users.create(newUser);
-  return { message: "Congrats! You're registered. Please check your email for the verification code.", user: createdUser };
+  return;
 }
+
+
+
+
+
+
+
+
 
 export async function verifyCode(verificationData: { email: string; code: string; reason: string }) {
   const { email, code, reason } = verificationData;
-  const user = await Users.findOne({ email: email.toLowerCase() });
+  const user = await Users.findOne({ email: email.toLowerCase() }).populate('role', 'role');
   if (!user) {
     throw new Errors.NotFoundError(errMsg.USER_NOT_FOUND)
   }
@@ -120,21 +127,30 @@ export async function verifyCode(verificationData: { email: string; code: string
     }
   );
 
-  // Create trial subscription if not exists
-  const existingSub = await Subscriptions.findOne({ userId: user._id });
-  if (!existingSub) {
-    const now = new Date();
-    const trialEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
-    await Subscriptions.create({
-      userId: user._id,
-      status: 'trial',
-      trialStart: now,
-      trialEnd: trialEnd,
-    });
-  }
+  const accessToken = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET!, { expiresIn: '15m' });
+  const refreshToken = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET!, { expiresIn: '7d' });
+  // Store ONLY the new refresh token (invalidate all previous ones)
+  user.refreshTokens = [refreshToken];
+  await user.save();
 
-  return { message: 'Verification successful. Your account is now verified.' };
+  return {
+    accessToken,
+    refreshToken,
+    user: {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email
+    }
+  };
 }
+
+
+
+
+
+
+
+
 
 export async function resendVerificationCode(resendData: { email: string; reason: string }) {
   const { email, reason } = resendData;
@@ -162,12 +178,21 @@ export async function resendVerificationCode(resendData: { email: string; reason
     throw new Errors.BadRequestError(errMsg.FAILED_TO_SEND_EMAIL);
   }
 
-  return { message: 'A new verification code has been sent to your email.' };
+  return true;
 }
+
+
+
+
+
+
+
+
+
 
 export async function login(loginData: { email: string; password: string }) {
   const { email, password } = loginData;
-  const user = await Users.findOne({ email: email.toLowerCase() });
+  const user = await Users.findOne({ email: email.toLowerCase() }).populate('role', 'role');
   if (!user) {
     throw new Errors.UnauthorizedError(errMsg.INVALID_EMAIL_OR_PASSWORD);
   }
@@ -184,13 +209,28 @@ export async function login(loginData: { email: string; password: string }) {
   const accessToken = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET!, { expiresIn: '15m' });
   // Generate refresh token (long-lived)
   const refreshToken = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET!, { expiresIn: '7d' });
-  // Store refresh token in user document
-  user.refreshTokens = user.refreshTokens || [];
-  user.refreshTokens.push(refreshToken);
+  
+  // Store ONLY the new refresh token (invalidate all previous ones)
+  user.refreshTokens = [refreshToken];
   await user.save();
 
-  return { message: 'Login successful', accessToken, refreshToken };
+  return {
+    accessToken,
+    refreshToken,
+    user: {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email
+    }
+  };
 }
+
+
+
+
+
+
+
 
 export async function forgotPassword(emailData: { email: string }) {
   const { email } = emailData;
@@ -204,16 +244,19 @@ export async function forgotPassword(emailData: { email: string }) {
   const expireAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
   user.verificationCode = { code, expireAt, reason: 'password_reset' };
   await user.save();
-
-  // Send code via email
   sendEmail(
     email,
     "Password Reset Code",
     `Your password reset code is: <b>${code}</b>. It will expire in 10 minutes.`
   );
 
-  return { message: 'A password reset code has been sent to your email.' };
+  return true;
 }
+
+
+
+
+
 
 export async function resetPassword(resetData: { email: string; code: string; newPassword: string }) {
   const { email, code, newPassword } = resetData;
@@ -241,8 +284,14 @@ export async function resetPassword(resetData: { email: string; code: string; ne
   user.verificationCode = { code: null, expireAt: null, reason: null };
   await user.save();
 
-  return { message: 'Password has been reset successfully.' };
+  return true;
 }
+
+
+
+
+
+
 
 export async function requestEmailChange(userId: string, newEmail: string) {
   const user = await Users.findById(userId);
@@ -272,8 +321,14 @@ export async function requestEmailChange(userId: string, newEmail: string) {
     throw new Errors.BadRequestError(errMsg.FAILED_TO_SEND_EMAIL);
   }
 
-  return { message: 'A confirmation code has been sent to your new email.' };
+  return true;
 }
+
+
+
+
+
+
 
 export async function confirmEmailChange(userId: string, code: string) {
   const user = await Users.findById(userId);
@@ -301,8 +356,18 @@ export async function confirmEmailChange(userId: string, code: string) {
   user.verificationCode = { code: null, expireAt: null, reason: null };
   await user.save();
 
-  return { message: 'Email has been updated successfully.' };
+  return {
+    email: user.email
+  };
 }
+
+
+
+
+
+
+
+
 
 export async function refreshToken(refreshToken: string) {
   if (!refreshToken) {
@@ -324,7 +389,29 @@ export async function refreshToken(refreshToken: string) {
     throw new Errors.UnauthorizedError(errMsg.REFRESH_TOKEN_NOT_RECOGNIZED);
   }
 
-  // Issue new access token
+  // Generate new tokens
   const newAccessToken = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '15m' });
-  return { accessToken: newAccessToken };
+  const newRefreshToken = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  
+  // Token rotation: Replace old refresh token with new one
+  user.refreshTokens = [newRefreshToken];
+  await user.save();
+
+  return { 
+    accessToken: newAccessToken, 
+    refreshToken: newRefreshToken 
+  };
+}
+
+export async function signOut(userId: string) {
+  const user = await Users.findById(userId);
+  if (!user) {
+    throw new Errors.NotFoundError(errMsg.USER_NOT_FOUND);
+  }
+
+  // Clear all refresh tokens for this user (sign out from all devices)
+  user.refreshTokens = [];
+  await user.save();
+
+  return;
 }

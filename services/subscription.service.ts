@@ -8,7 +8,6 @@ export async function subscribe(userId: string) {
   if (!sub) {
     throw new Errors.NotFoundError(errMsg.NO_SUBSCRIPTION_FOUND);
   }
-  // Payment processing and activation logic should go here
   sub.status = 'active';
   sub.paidStart = new Date();
   sub.paidEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now

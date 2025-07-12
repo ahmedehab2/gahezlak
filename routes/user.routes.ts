@@ -8,7 +8,8 @@ import {
   resetPasswordHandler,
   requestEmailChangeHandler,
   confirmEmailChangeHandler,
-  refreshTokenHandler
+  refreshTokenHandler,
+  signOutHandler
 } from '../controllers/user.controller';
 import {
   validateRegister,
@@ -19,37 +20,21 @@ import {
   validateResetPassword,
   validateRequestEmailChange,
   validateConfirmEmailChange,
-  validateRefreshToken
+  validateRefreshToken,
+  validateSignOut
 } from '../validators/user.validator';
 import { protect } from '../middlewares/auth';
 
 const router = Router();
-
-// Registration route
 router.post('/register', validateRegister, signUpHandler);
-
-// Login route
 router.post('/login', validateLogin, loginHandler);
-
-// Verification code route
 router.post('/verify-code', validateVerifyCode, verifyCodeHandler);
-
-// Resend verification code route
 router.post('/resend-verification-code', validateResendVerificationCode, resendVerificationCodeHandler);
-
-// Forgot password route
 router.post('/forgot-password', validateForgotPassword, forgotPasswordHandler);
-
-// Reset password route
 router.post('/reset-password', validateResetPassword, resetPasswordHandler);
-
-// Request email change route
 router.post('/request-email-change', protect, validateRequestEmailChange, requestEmailChangeHandler);
-
-// Confirm email change route
 router.post('/confirm-email-change', protect, validateConfirmEmailChange, confirmEmailChangeHandler);
-
-// Refresh token route
 router.post('/refresh', validateRefreshToken, refreshTokenHandler);
+router.post('/signout', protect, validateSignOut, signOutHandler);
 
 export default router;

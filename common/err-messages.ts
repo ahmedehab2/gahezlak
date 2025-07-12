@@ -1,15 +1,12 @@
 import { MessageError } from "./types/general-types";
+
 enum errorMessage {
-    INVALID_PAYMENT_METHOD = 'INVALID_PAYMENT_METHOD',
-    INVALID_PAYMENT_AMOUNT = 'INVALID_PAYMENT_AMOUNT',
-    INVALID_PAYMENT_CURRENCY = 'INVALID_PAYMENT_CURRENCY',
-    PAYMENT_NOT_FOUND = 'PAYMENT_NOT_FOUND',
+    // User authentication errors
     ROLE_NOT_FOUND = "ROLE_NOT_FOUND",
     USER_NOT_FOUND = "USER_NOT_FOUND",
     INVALID_VERIFICATION_CODE = "INVALID_VERIFICATION_CODE",
     INVALID_VERIFICATION_REASON = "INVALID_VERIFICATION_REASON",
     VERIFICATION_CODE_EXPIRED = "VERIFICATION_CODE_EXPIRED",
-    STARTER_PLAN_NOT_FOUND = "STARTER_PLAN_NOT_FOUND",
     USER_ALREADY_VERIFIED = "USER_ALREADY_VERIFIED",
     FAILED_TO_SEND_EMAIL = "FAILED_TO_SEND_EMAIL",
     INVALID_EMAIL_OR_PASSWORD = "INVALID_EMAIL_OR_PASSWORD",
@@ -24,28 +21,22 @@ enum errorMessage {
     REFRESH_TOKEN_REQUIRED = "REFRESH_TOKEN_REQUIRED",
     INVALID_OR_EXPIRED_REFRESH_TOKEN = "INVALID_OR_EXPIRED_REFRESH_TOKEN",
     REFRESH_TOKEN_NOT_RECOGNIZED = "REFRESH_TOKEN_NOT_RECOGNIZED",
-    NO_SUBSCRIPTION_FOUND = "NO_SUBSCRIPTION_FOUND",
-    PREMIUM_PLAN_NOT_FOUND = "PREMIUM_PLAN_NOT_FOUND",
-    PLAN_ID_REQUIRED = "PLAN_ID_REQUIRED",
     USER_NOT_AUTHENTICATED = "USER_NOT_AUTHENTICATED",
-    PAYMOB_CONFIG_ERROR = "PAYMOB_CONFIG_ERROR",
-    PLAN_NOT_FOUND = "PLAN_NOT_FOUND",
-
+    
+    // Shop related errors
+    SHOP_NOT_FOUND = "SHOP_NOT_FOUND",
+    FAILED_TO_CREATE_SHOP = "FAILED_TO_CREATE_SHOP",
 }
 
 export const errMsg: {
     [key in errorMessage]: MessageError
 } = {
-    INVALID_PAYMENT_METHOD: { en: 'Invalid payment method', ar: 'طريقة الدفع غير صحيحة' },
-    INVALID_PAYMENT_AMOUNT: { en: 'Invalid payment amount', ar: 'مبلغ الدفع غير صحيح' },
-    INVALID_PAYMENT_CURRENCY: { en: 'Invalid payment currency', ar: 'عملة الدفع غير صحيحة' },
-    PAYMENT_NOT_FOUND: { en: 'Payment not found', ar: 'لا يوجد معاملة بهذا الرقم' },
+    // User authentication errors
     ROLE_NOT_FOUND: { en: 'Role not found', ar: 'لا يوجد دور بهذا الرقم' },
     USER_NOT_FOUND: { en: 'User not found', ar: 'لا يوجد مستخدم بهذا الرقم' },
     INVALID_VERIFICATION_CODE: { en: 'Invalid verification code.', ar: 'رمز التحقق غير صالح.' },
     INVALID_VERIFICATION_REASON: { en: 'Invalid verification reason.', ar: 'سبب التحقق غير صالح.' },
     VERIFICATION_CODE_EXPIRED: { en: 'Verification code has expired.', ar: 'انتهت صلاحية رمز التحقق.' },
-    STARTER_PLAN_NOT_FOUND: { en: 'Starter plan not found', ar: 'الخطة الأولية غير موجودة' },
     USER_ALREADY_VERIFIED: { en: 'User is already verified.', ar: 'المستخدم تم التحقق منه بالفعل.' },
     FAILED_TO_SEND_EMAIL: { en: 'Failed to send email', ar: 'فشل في إرسال البريد الإلكتروني.' },
     INVALID_EMAIL_OR_PASSWORD: { en: 'Invalid email or password', ar: 'بريد إلكتروني أو كلمة مرور غير صالحة.' },
@@ -60,11 +51,9 @@ export const errMsg: {
     REFRESH_TOKEN_REQUIRED: { en: 'Refresh token is required', ar: 'رمز التحديث مطلوب.' },
     INVALID_OR_EXPIRED_REFRESH_TOKEN: { en: 'Invalid or expired refresh token', ar: 'رمز التحديث غير صالح أو منتهي الصلاحية.' },
     REFRESH_TOKEN_NOT_RECOGNIZED: { en: 'Refresh token not recognized', ar: 'رمز التحديث غير معروف.' },
-    NO_SUBSCRIPTION_FOUND: { en: 'No subscription found for user', ar: 'لم يتم العثور على اشتراك للمستخدم.' },
-    PREMIUM_PLAN_NOT_FOUND: { en: 'Premium plan not found', ar: 'الخطة المميزة غير موجودة.' },
-    PLAN_ID_REQUIRED: { en: 'Plan ID is required.', ar: 'معرف الخطة مطلوب.' },
     USER_NOT_AUTHENTICATED: { en: 'User not authenticated.', ar: 'المستخدم غير مصادق عليه.' },
-    PAYMOB_CONFIG_ERROR: { en: 'Paymob configuration error.', ar: 'خطأ في تهيئة Paymob.' },
-    PLAN_NOT_FOUND: { en: 'Plan not found.', ar: 'الخطة غير موجودة.' },
-
-}
+    
+    // Shop related errors
+    SHOP_NOT_FOUND: { en: 'Shop not found', ar: 'المتجر غير موجود' },
+    FAILED_TO_CREATE_SHOP: { en: 'Failed to create shop', ar: 'فشل في إنشاء المتجر' },
+};

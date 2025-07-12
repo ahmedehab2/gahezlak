@@ -5,13 +5,14 @@ import {
   getSubscriptionStatus,
   getAllSubscriptions
 } from '../services/subscription.service';
+import { sendSuccess } from '../utils/responseHelper';
 
 // POST /subscriptions/subscribe
 export const subscribeHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = (req as any).user?.userId;
     const result = await subscribe(userId);
-    res.status(200).json(result);
+    sendSuccess(res, result, 'Subscription successful.');
   } catch (error) {
     next(error);
   }
@@ -22,7 +23,7 @@ export const cancelSubscriptionHandler = async (req: Request, res: Response, nex
   try {
     const userId = (req as any).user?.userId;
     const result = await cancelSubscription(userId);
-    res.status(200).json(result);
+    sendSuccess(res, result, 'Subscription cancelled.');
   } catch (error) {
     next(error);
   }
@@ -33,7 +34,7 @@ export const getSubscriptionStatusHandler = async (req: Request, res: Response, 
   try {
     const userId = (req as any).user?.userId;
     const result = await getSubscriptionStatus(userId);
-    res.status(200).json(result);
+    sendSuccess(res, result, 'Subscription status retrieved.');
   } catch (error) {
     next(error);
   }
@@ -45,7 +46,7 @@ export const getAllSubscriptionsHandler = async (req: Request, res: Response, ne
     const { userId, plan, status } = req.query;
     const filters = { userId: userId as string, plan: plan as string, status: status as string };
     const result = await getAllSubscriptions(filters);
-    res.status(200).json(result);
+    sendSuccess(res, result, 'All subscriptions retrieved.');
   } catch (error) {
     next(error);
   }

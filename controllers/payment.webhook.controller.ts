@@ -5,6 +5,7 @@ import {
   processPaymentRefund
 } from '../services/payment.service';
 import { Payments } from '../models/Payment';
+import { sendSuccess, sendError } from '../utils/responseHelper';
 
 export const handlePaymobWebhook = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -40,13 +41,8 @@ export const handlePaymobWebhook = async (req: Request, res: Response, next: Nex
       console.log('Available payments in database:');
       const allPayments = await Payments.find({}).select('paymobOrderId paymentStatus amount');
       console.log(allPayments);
-      
       // Still respond 200 to Paymob to avoid retries
-      res.status(200).json({ 
-        message: 'Webhook received but processing failed',
-        error: 'Payment record not found',
-        paymobOrderId: paymobOrderId
-      });
+      sendError(res, 200, 'Webhook received but processing failed', { error: 'Payment record not found', paymobOrderId });
       return;
     }
 
@@ -64,7 +60,6 @@ export const handlePaymobWebhook = async (req: Request, res: Response, next: Nex
           sourceDataSubType: source_data_sub_type
         });
         console.log('Payment processed successfully');
-
       } else if (error_occured || is_canceled) {
         // Payment failed
         console.log('Processing failed payment...');
@@ -74,7 +69,6 @@ export const handlePaymobWebhook = async (req: Request, res: Response, next: Nex
           errorMessage: 'Payment was cancelled or failed'
         });
         console.log('Payment failure processed');
-
       } else if (is_refunded) {
         // Payment refunded
         console.log('Processing refund...');
@@ -84,19 +78,13 @@ export const handlePaymobWebhook = async (req: Request, res: Response, next: Nex
         });
         console.log('Payment refund processed');
       }
-
       // Respond to Paymob
-      res.status(200).json({ message: 'Webhook processed successfully' });
-
+      sendSuccess(res, null, 'Webhook processed successfully');
     } catch (error) {
       console.error('Error processing payment:', error);
       // Still respond 200 to Paymob to avoid retries
-      res.status(200).json({ 
-        message: 'Webhook received but processing failed',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
+      sendError(res, 200, 'Webhook received but processing failed', { error: error instanceof Error ? error.message : 'Unknown error' });
     }
-
   } catch (error) {
     console.error('Error processing webhook:', error);
     next(error);
@@ -109,7 +97,7 @@ export const verifyWebhook = async (req: Request, res: Response, next: NextFunct
     // In a real implementation, you would verify the webhook signature
     // For now, we'll just log the verification request
     console.log('Webhook verification request received');
-    res.status(200).json({ message: 'Webhook verified' });
+    sendSuccess(res, null, 'Webhook verified');
   } catch (error) {
     next(error);
   }

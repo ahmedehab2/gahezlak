@@ -4,13 +4,13 @@ import { Users } from '../models/User';
 import { Payments } from '../models/Payment';
 import { Errors } from '../errors';
 import { errMsg } from '../common/err-messages';
+import { sendSuccess } from '../utils/responseHelper';
 
 export const initiatePaymobOrder = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     console.log('=== PAYMOB ORDER ENDPOINT REACHED ===');
     console.log('Starting Paymob order initiation...');
 
-    // No planId needed for single plan system
     const userId = (req as any).user?.userId;
 
     console.log('Request data:', { userId });
@@ -46,23 +46,18 @@ export const initiatePaymobOrder = async (req: Request, res: Response, next: Nex
     };
 
     // Find the user to get billing data
-    const user = await Users.findById(userId).select('name email phoneNumber');
+    const user = await Users.findById(userId).select('firstName lastName email phoneNumber');
     if (!user) {
       console.log('User not found for ID:', userId);
       return next(new Errors.NotFoundError(errMsg.USER_NOT_FOUND));
     }
 
-    console.log('User found:', user.name, user.email);
-
-    // Split name into first and last name (assuming name is "FirstName LastName")
-    const nameParts = user.name.split(' ');
-    const firstName = nameParts[0] || '';
-    const lastName = nameParts.slice(1).join(' ') || firstName || 'User';
+    console.log('User found:', user.firstName, user.lastName, user.email);
 
     // Construct billing data
     const billingData = {
-      first_name: firstName,
-      last_name: lastName,
+      first_name: user.firstName,
+      last_name: user.lastName,
       email: user.email,
       phone_number: user.phoneNumber,
       apartment: 'N/A',
@@ -104,12 +99,12 @@ export const initiatePaymobOrder = async (req: Request, res: Response, next: Nex
       paymobOrderId: order.id,
       paymobPaymentKey: paymentKey,
       amount: plan.price,
-      paymentMethod: 'Unknown',
+     paymentMethod: 'Unknown',  
       paymentStatus: 'Pending',
     });
     console.log('Payment record saved');
 
-    res.status(200).json({ iframeUrl });
+    sendSuccess(res, { iframeUrl }, 'Paymob iframe URL generated.');
   } catch (error) {
     console.error('Error in Paymob integration:', error);
     next(error);

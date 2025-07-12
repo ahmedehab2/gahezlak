@@ -4,7 +4,8 @@ import { collectionsName } from '../common/collections-name';
 
 export interface IUser {
     _id: ObjectId;
-    name: string;
+    firstName: string;
+    lastName: string;
     email: string;
     password: string;
     phoneNumber: string;
@@ -18,11 +19,12 @@ export interface IUser {
     isVerified: boolean;
     newEmail?: string | null;
     role: mongoose.Types.ObjectId;
-    refreshTokens?: string[];
+    refreshTokens?: string[]; // Array to support token rotation (only one valid at a time)
 }
 
 const UserSchema = new Schema<IUser>({
-    name: { type: String, required: true },
+    firstName: { type: String, required: true },
+    lastName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     phoneNumber: { type: String, required: true },
@@ -34,11 +36,10 @@ const UserSchema = new Schema<IUser>({
     isVerified: { type: Boolean, default: false },
     newEmail: { type: String, default: null },
     role: { type: mongoose.Schema.Types.ObjectId, ref: collectionsName.ROLES, required: true },
-    refreshTokens: { type: [String], default: [] },
-}
-    , {
-        timestamps: true,
-        collection: collectionsName.USERS
-    });
+    refreshTokens: { type: [String], default: [] }, // Only one valid token at a time
+}, {
+    timestamps: true,
+    collection: collectionsName.USERS
+});
 
 export const Users = model<IUser>(collectionsName.USERS, UserSchema);
