@@ -21,7 +21,6 @@ import {
   validateRequestEmailChange,
   validateConfirmEmailChange,
   validateRefreshToken,
-  validateSignOut,
 } from "../validators/user.validator";
 import { protect } from "../middlewares/auth";
 
@@ -49,6 +48,6 @@ router.post(
   confirmEmailChangeHandler
 );
 router.post("/refresh", validateRefreshToken, refreshTokenHandler);
-router.post("/signout", protect, validateSignOut, signOutHandler);
+router.post("/signout", protect, signOutHandler);
 
 export default router;
