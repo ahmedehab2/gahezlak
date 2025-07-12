@@ -1,117 +1,91 @@
-import { Request, Response, NextFunction } from 'express';
-import { getPaymobToken, createPaymobOrder, getPaymobPaymentKey, getPaymobIframeUrl } from '../utils/paymob';
-import { Users } from '../models/User';
-import { Payments } from '../models/Payment';
-import { Errors } from '../errors';
-import { errMsg } from '../common/err-messages';
+// import { Request, Response, NextFunction } from "express";
+// import { Errors } from "../errors";
+// import { errMsg } from "../common/err-messages";
+// import { initiateSubscriptionPayment } from "../services/payment.service";
+// import { Plans } from "../models/plan";
+// import { Shops } from "../models/Shop";
+// import { Subscriptions, status } from "../models/Subscription";
 
-export const initiatePaymobOrder = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    console.log('=== PAYMOB ORDER ENDPOINT REACHED ===');
-    console.log('Starting Paymob order initiation...');
+// // Initiate a Paymob order for subscription
+// export async function initiatePaymobOrder(
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ) {
+//   try {
+//     const { planId, shopId, billingData } = req.body;
+//     const userId = req.user?._id;
 
-    // No planId needed for single plan system
-    const userId = (req as any).user?.userId;
+//     // Validate required fields
+//     if (!planId || !shopId || !billingData) {
+//       throw new Errors.BadRequestError({
+//         en: "Missing required fields: planId, shopId, or billing data",
+//         ar: "حقول مطلوبة مفقودة: معرف الخطة، معرف المتجر، أو بيانات الفواتير",
+//       });
+//     }
 
-    console.log('Request data:', { userId });
+//     // Check if plan exists
+//     const plan = await Plans.findById(planId);
+//     if (!plan) {
+//       throw new Errors.NotFoundError({
+//         en: "Subscription plan not found",
+//         ar: "خطة الاشتراك غير موجودة",
+//       });
+//     }
 
-    if (!userId) {
-      console.log('Missing userId');
-      return next(new Errors.UnauthenticatedError(errMsg.USER_NOT_AUTHENTICATED));
-    }
+//     // Check if shop exists and belongs to user
+//     const shop = await Shops.findOne({ _id: shopId, userId });
+//     if (!shop) {
+//       throw new Errors.NotFoundError({
+//         en: "Shop not found or does not belong to user",
+//         ar: "المتجر غير موجود أو لا ينتمي للمستخدم",
+//       });
+//     }
 
-    console.log('Basic validation passed');
+//     // Check if subscription exists
+//     const subscription = await Subscriptions.findOne({ shop: shopId, userId });
+//     if (!subscription) {
+//       throw new Errors.NotFoundError({
+//         en: "Subscription not found for this shop",
+//         ar: "الاشتراك غير موجود لهذا المتجر",
+//       });
+//     }
 
-    // Check environment variables
-    if (!process.env.PAYMOB_API_KEY) {
-      console.error('PAYMOB_API_KEY is not set');
-      return next(new Errors.BadRequestError(errMsg.PAYMOB_CONFIG_ERROR));
-    }
-    if (!process.env.PAYMOB_IFRAME_ID) {
-      console.error('PAYMOB_IFRAME_ID is not set');
-      return next(new Errors.BadRequestError(errMsg.PAYMOB_CONFIG_ERROR));
-    }
-    if (!process.env.PAYMOB_INTEGRATION_ID) {
-      console.error('PAYMOB_INTEGRATION_ID is not set');
-      return next(new Errors.BadRequestError(errMsg.PAYMOB_CONFIG_ERROR));
-    }
+//     // Get price based on user's country (default to first price if not found)
+//     const userCountry = billingData.country || "EG"; // Default to Egypt if not provided
+//     const priceInfo =
+//       plan.prices.find((p) => p.country === userCountry) || plan.prices[0];
 
-    console.log('Environment variables check passed');
+//     if (!priceInfo) {
+//       throw new Errors.BadRequestError({
+//         en: "No pricing available for this plan",
+//         ar: "لا يوجد تسعير متاح لهذه الخطة",
+//       });
+//     }
 
-    // Hardcoded single plan details
-    const plan = {
-      name: 'Standard',
-      price: 499, // EGP, or your actual price
-      currency: 'EGP'
-    };
+//     // Use monthly price by default
+//     const amount = priceInfo.monthlyPrice;
 
-    // Find the user to get billing data
-    const user = await Users.findById(userId).select('name email phoneNumber');
-    if (!user) {
-      console.log('User not found for ID:', userId);
-      return next(new Errors.NotFoundError(errMsg.USER_NOT_FOUND));
-    }
+//     // Initiate payment
+//     const paymentData = await initiateSubscriptionPayment(
+//       userId.toString(),
+//       planId,
+//       shopId,
+//       amount,
+//       billingData
+//     );
 
-    console.log('User found:', user.name, user.email);
+//     res.status(200).json({
+//       success: true,
+//       data: {
+//         paymentId: paymentData.payment._id,
+//         iframeUrl: paymentData.iframeUrl,
+//         amount,
+//       },
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// }
 
-    // Split name into first and last name (assuming name is "FirstName LastName")
-    const nameParts = user.name.split(' ');
-    const firstName = nameParts[0] || '';
-    const lastName = nameParts.slice(1).join(' ') || firstName || 'User';
-
-    // Construct billing data
-    const billingData = {
-      first_name: firstName,
-      last_name: lastName,
-      email: user.email,
-      phone_number: user.phoneNumber,
-      apartment: 'N/A',
-      floor: 'N/A',
-      street: 'N/A',
-      building: 'N/A',
-      city: 'N/A',
-      state: 'N/A',
-      country: 'EG',
-      postal_code: '00000',
-    };
-
-    console.log('Billing data constructed:', billingData);
-
-    // Step 1: Authenticate with Paymob
-    console.log('Getting Paymob token...');
-    const token = await getPaymobToken();
-    console.log('Paymob token received');
-
-    // Step 2: Create Paymob order (amount in cents)
-    const amountCents = plan.price * 100;
-    console.log('Creating Paymob order with amount:', amountCents, 'cents');
-    const order = await createPaymobOrder(token, amountCents);
-    console.log('Paymob order created:', order.id);
-
-    // Step 3: Get payment key
-    console.log('Getting payment key...');
-    const paymentKey = await getPaymobPaymentKey(token, order.id, amountCents, billingData);
-    console.log('Payment key received');
-
-    // Step 4: Build iframe URL
-    const iframeUrl = getPaymobIframeUrl(paymentKey);
-    console.log('Iframe URL built');
-
-    // Step 5: Save payment record
-    console.log('Saving payment record...');
-    await Payments.create({
-      userId,
-      paymobOrderId: order.id,
-      paymobPaymentKey: paymentKey,
-      amount: plan.price,
-      paymentMethod: 'Unknown',
-      paymentStatus: 'Pending',
-    });
-    console.log('Payment record saved');
-
-    res.status(200).json({ iframeUrl });
-  } catch (error) {
-    console.error('Error in Paymob integration:', error);
-    next(error);
-  }
-};
+//disabled paymob integration for now

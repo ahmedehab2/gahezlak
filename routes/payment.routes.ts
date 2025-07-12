@@ -1,13 +1,13 @@
-import { Router } from 'express';
-import {
-  getPaymentHistoryHandler,
-  getPaymentByIdHandler
-} from '../controllers/payment.controller';
-import { protect } from '../middlewares/auth';
+import { Router } from "express";
+import * as controllers from "../controllers/payment.controller";
+import { protect } from "../middlewares/auth";
 
-const router = Router();
+const paymentRoutes = Router();
 
-// Protected routes (require authentication)
-router.get('/history', protect, getPaymentHistoryHandler);
+// router.get('/history', protect, getPaymentHistoryHandler);
+// router.get('/:id', protect, getPaymentByIdHandler);
 
-export default router; 
+paymentRoutes.post("/subscribe", protect, controllers.payForPlanHandler);
+paymentRoutes.post("/order", controllers.payForOrderHandler);
+
+export default paymentRoutes;

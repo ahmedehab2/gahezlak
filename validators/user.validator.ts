@@ -1,65 +1,84 @@
-import { body, param } from 'express-validator';
-import { validate } from '../middlewares/validators';
+import { body, param } from "express-validator";
+import { validate } from "../middlewares/validators";
 
 export const validateRegister = [
-  body('name').isString().notEmpty().withMessage('Name is required'),
-  body('email').isEmail().withMessage('Invalid email address'),
-  body('password')
+  body("firstName").isString().notEmpty().withMessage("First name is required"),
+  body("lastName").isString().notEmpty().withMessage("Last name is required"),
+  body("email").isEmail().withMessage("Invalid email address"),
+  body("password")
     .isString()
     .isLength({ min: 8 })
-    .withMessage('Password must be at least 8 characters long'),
-  body('phoneNumber').isString().notEmpty().withMessage('Phone number is required'),
-  body('role').optional().isString().withMessage('Role must be a string'),
+    .withMessage("Password must be at least 8 characters long"),
+  body("phoneNumber")
+    .isString()
+    .notEmpty()
+    .withMessage("Phone number is required"),
+  body("role").optional().isString().withMessage("Role must be a string"),
   validate,
 ];
 
 export const validateConfirmEmail = [
-  param('token').isString().notEmpty().withMessage('Token is required'),
+  param("token").isString().notEmpty().withMessage("Token is required"),
   validate,
 ];
 
 export const validateVerifyCode = [
-  body('email').isEmail().withMessage('Invalid email address'),
-  body('code').isString().notEmpty().withMessage('Verification code is required'),
-  body('reason').isString().notEmpty().withMessage('Reason is required'),
+  body("email").isEmail().withMessage("Invalid email address"),
+  body("code")
+    .isString()
+    .notEmpty()
+    .withMessage("Verification code is required"),
+  body("reason").isString().notEmpty().withMessage("Reason is required"),
   validate,
 ];
 
 export const validateResendVerificationCode = [
-  body('email').isEmail().withMessage('Invalid email address'),
-  body('reason').isString().notEmpty().withMessage('Reason is required'),
+  body("email").isEmail().withMessage("Invalid email address"),
+  body("reason").isString().notEmpty().withMessage("Reason is required"),
   validate,
 ];
 
 export const validateLogin = [
-  body('email').isEmail().withMessage('Invalid email address'),
-  body('password').isString().notEmpty().withMessage('Password is required'),
+  body("email").isEmail().withMessage("Invalid email address"),
+  body("password").isString().notEmpty().withMessage("Password is required"),
   validate,
 ];
 
 export const validateForgotPassword = [
-  body('email').isEmail().withMessage('Invalid email address'),
+  body("email").isEmail().withMessage("Invalid email address"),
   validate,
 ];
 
 export const validateResetPassword = [
-  body('email').isEmail().withMessage('Invalid email address'),
-  body('code').isString().notEmpty().withMessage('Verification code is required'),
-  body('newPassword').isString().isLength({ min: 8 }).withMessage('New password must be at least 8 characters long'),
+  body("email").isEmail().withMessage("Invalid email address"),
+  body("code")
+    .isString()
+    .notEmpty()
+    .withMessage("Verification code is required"),
+  body("newPassword")
+    .isString()
+    .isLength({ min: 8 })
+    .withMessage("New password must be at least 8 characters long"),
   validate,
 ];
 
 export const validateRequestEmailChange = [
-  body('newEmail').isEmail().withMessage('Invalid new email address'),
+  body("newEmail").isEmail().withMessage("Invalid new email address"),
   validate,
 ];
 
 export const validateConfirmEmailChange = [
-  body('code').isString().notEmpty().withMessage('Confirmation code is required'),
+  body("code")
+    .isString()
+    .notEmpty()
+    .withMessage("Confirmation code is required"),
   validate,
 ];
 
 export const validateRefreshToken = [
-  body('refreshToken').isString().notEmpty().withMessage('Refresh token is required'),
+  body("refreshToken")
+    .isString()
+    .notEmpty()
+    .withMessage("Refresh token is required"),
   validate,
 ];

@@ -1,10 +1,12 @@
 import 'express';
 import { LangType } from '../../errors/abstract-error-class';
+import { IUser } from '../../models/User';
+import { CurrentUserPayload } from './general-types';
 
 declare global {
     namespace Express {
         interface Request {
-            user?: any; //Todo: Define a proper user type
+            user?: CurrentUserPayload
             lang: LangType;
         }
     }
