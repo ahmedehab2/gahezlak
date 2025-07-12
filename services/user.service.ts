@@ -4,10 +4,8 @@ import { sendEmail } from "../utils/sendEmail";
 import otpGenerator from "otp-generator";
 import jwt from "jsonwebtoken";
 import { Roles } from "../models/Role";
-import { Subscriptions } from "../models/Subscription";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
-import mongoose from "mongoose";
 
 const { hash } = bcryptjs;
 
@@ -133,7 +131,7 @@ export async function verifyCode(verificationData: {
     process.env.JWT_SECRET!,
     { expiresIn: "7d" }
   );
-  user.refreshTokens = [refreshToken];
+  user.refreshToken = refreshToken;
   await user.save();
 
   return {
@@ -207,7 +205,7 @@ export async function login(loginData: { email: string; password: string }) {
     { expiresIn: "7d" }
   );
 
-  user.refreshTokens = [refreshToken];
+  user.refreshToken = refreshToken;
   await user.save();
 
   return {
@@ -365,8 +363,8 @@ export async function refreshToken(refreshToken: string) {
   const user = await Users.findById(payload.userId);
   if (
     !user ||
-    !user.refreshTokens ||
-    !user.refreshTokens.includes(refreshToken)
+    !user.refreshToken ||
+    !user.refreshToken.includes(refreshToken)
   ) {
     throw new Errors.UnauthorizedError(errMsg.REFRESH_TOKEN_NOT_RECOGNIZED);
   }
@@ -384,7 +382,7 @@ export async function refreshToken(refreshToken: string) {
   );
 
   // Token rotation: Replace old refresh token with new one
-  user.refreshTokens = [newRefreshToken];
+  user.refreshToken = newRefreshToken;
   await user.save();
 
   return {
@@ -400,7 +398,7 @@ export async function signOut(userId: string) {
   }
 
   // Clear all refresh tokens for this user (sign out from all devices)
-  user.refreshTokens = [];
+  user.refreshToken = "";
   await user.save();
 
   return { message: "Signed out successfully." };

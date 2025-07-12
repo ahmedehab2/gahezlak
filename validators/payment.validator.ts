@@ -8,6 +8,7 @@ export const payForPlanValidator = [
     .isIn(Object.values(PaymentMethods))
     .withMessage("Invalid Payment Method"),
   body("paymentMethodDetails").isObject(),
+  validate,
 ];
 
 export const payForOrderValidator = [
@@ -16,4 +17,5 @@ export const payForOrderValidator = [
     .isIn(Object.values(PaymentMethods))
     .withMessage("Invalid Payment Method"),
   body("paymentMethodDetails").optional(),
+  validate,
 ];

@@ -2,10 +2,8 @@ import { IShop, Shops } from "../models/Shop";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
 import mongoose from "mongoose";
-// import { createSubscription } from "./subscription.service";
 
 async function createShop(shopData: Partial<IShop>, currentUserId: string) {
-  // Create a new shop
   const shop = await Shops.create({
     ...shopData,
     ownerId: new mongoose.Types.ObjectId(currentUserId),

@@ -4,6 +4,7 @@ import * as planService from "../services/plan.service";
 import { RequestHandler } from "express";
 // import { createSubscriptionPlan } from "../utils/paymob";
 import { Errors } from "../errors";
+import { errMsg } from "../common/err-messages";
 
 export const createPlanHandler: RequestHandler<
   unknown,
@@ -42,24 +43,15 @@ export const createPlanHandler: RequestHandler<
   );
 
   if (frequency === "monthly" && monthlyPlanExists) {
-    throw new Errors.BadRequestError({
-      en: "Monthly plan for this group already exists",
-      ar: "الخطة الشهرية لهذه المجموعة موجودة بالفعل",
-    });
+    throw new Errors.BadRequestError(errMsg.MONTHLY_PLAN_EXISTS);
   }
 
   if (frequency === "yearly" && yearlyPlanExists) {
-    throw new Errors.BadRequestError({
-      en: "Yearly plan for this group already exists",
-      ar: "الخطة السنوية لهذه المجموعة موجودة بالفعل",
-    });
+    throw new Errors.BadRequestError(errMsg.YEARLY_PLAN_EXISTS);
   }
 
   if (monthlyPlanExists && yearlyPlanExists) {
-    throw new Errors.BadRequestError({
-      en: "Both monthly and yearly plans for this group already exist",
-      ar: "توجد بالفعل خطط شهرية وسنوية لهذه المجموعة",
-    });
+    throw new Errors.BadRequestError(errMsg.BOTH_PLANS_EXIST);
   }
   // const paymobPlan = await createSubscriptionPlan({
   //   planName: planTitle,

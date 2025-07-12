@@ -44,10 +44,7 @@ export const payForPlanHandler: RequestHandler<
   const user = await userService.getUserById(userId.toString());
 
   if (!user.shopId) {
-    throw new Errors.BadRequestError({
-      en: "User does not have a shopId",
-      ar: "المستخدم ليس لديه معرف متجر",
-    });
+    throw new Errors.BadRequestError(errMsg.USER_HAS_NO_SHOP_ID);
   }
 
   const mockedPayment = await mockPay(paymentMethod);

@@ -33,6 +33,12 @@ enum errorMessage {
   PLAN_NOT_FOUND = "PLAN_NOT_FOUND",
   SHOP_NOT_FOUND = "SHOP_NOT_FOUND",
   USER_ALREADY_SUBSCRIBED = "USER_ALREADY_SUBSCRIBED",
+  PAYMENT_FAILED = "PAYMENT_FAILED",
+  USER_HAS_NO_SHOP_ID = "USER_HAS_NO_SHOP_ID",
+  MONTHLY_PLAN_EXISTS = "MONTHLY_PLAN_EXISTS",
+  YEARLY_PLAN_EXISTS = "YEARLY_PLAN_EXISTS",
+  BOTH_PLANS_EXIST = "BOTH_PLANS_EXIST",
+  NO_ACTIVE_SUBSCRIPTION = "NO_ACTIVE_SUBSCRIPTION",
 }
 
 export const errMsg: {
@@ -150,5 +156,30 @@ export const errMsg: {
   USER_ALREADY_SUBSCRIBED: {
     en: "User is already subscribed.",
     ar: "المستخدم مشترك بالفعل.",
+  },
+  PAYMENT_FAILED: {
+    en: "Payment failed",
+    ar: "فشل الدفع",
+  },
+  USER_HAS_NO_SHOP_ID: {
+    en: "User does not have a shopId",
+    ar: "المستخدم ليس لديه معرف متجر",
+  },
+  MONTHLY_PLAN_EXISTS: {
+    en: "Monthly plan for this group already exists",
+    ar: "الخطة الشهرية لهذه المجموعة موجودة بالفعل",
+  },
+  YEARLY_PLAN_EXISTS: {
+    en: "Yearly plan for this group already exists",
+    ar: "الخطة السنوية لهذه المجموعة موجودة بالفعل",
+  },
+  BOTH_PLANS_EXIST: {
+    en: "Both monthly and yearly plans for this group already exist",
+    ar: "توجد بالفعل خطط شهرية وسنوية لهذه المجموعة",
+  },
+
+  NO_ACTIVE_SUBSCRIPTION: {
+    en: "No active subscription found for user",
+    ar: "لا يوجد اشتراك نشط",
   },
 };

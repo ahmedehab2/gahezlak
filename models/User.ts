@@ -20,7 +20,7 @@ export interface IUser {
   isVerified: boolean;
   newEmail?: string | null;
   role: mongoose.Types.ObjectId;
-  refreshTokens?: string[];
+  refreshToken: string;
   shopId?: mongoose.Types.ObjectId | IShop;
 }
 
@@ -43,7 +43,7 @@ const UserSchema = new Schema<IUser>(
       ref: collectionsName.ROLES,
       //   required: true,
     },
-    refreshTokens: { type: [String], default: [] },
+    refreshToken: { type: String, default: "" },
     shopId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: collectionsName.SHOPS,
