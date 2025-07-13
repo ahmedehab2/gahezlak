@@ -4,21 +4,17 @@ import { errMsg } from "../common/err-messages";
 import mongoose from "mongoose";
 import { generateMenuQRCode, QRCodeOptions } from "../utils/qrCodeGenerator";
 
-async function createShop(shopData: Partial<IShop>, currentUserId: string) {
+async function createShop(
+  shopData: Pick<
+    IShop,
+    "name" | "type" | "address" | "phoneNumber" | "email" | "qrCodeImage"
+  >,
+  currentUserId: string
+) {
   const shop = await Shops.create({
     ...shopData,
     ownerId: new mongoose.Types.ObjectId(currentUserId),
   });
-
-  // Generate QR code for the new shop
-  try {
-    const qrCodeResult = await generateMenuQRCode(shop.name);
-    shop.qrCodeImage = qrCodeResult.qrCodeImage;
-    await shop.save();
-  } catch (error) {
-    console.error("Failed to generate QR code for new shop:", error);
-    // Don't fail shop creation if QR code generation fails
-  }
 
   return shop.toObject();
 }
