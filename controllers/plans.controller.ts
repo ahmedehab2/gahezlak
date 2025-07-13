@@ -78,19 +78,53 @@ export const createPlanHandler: RequestHandler<
   });
 };
 
-export const getPlanById: RequestHandler = async (req, res, next) => {
-  try {
-    const plan = await planService.getPlanById(req.params.id);
-    res.status(200).json(plan);
-  } catch (error) {
-    next(error);
-  }
+export const getPlanById: RequestHandler<
+  { id: string },
+  SuccessResponse<IPlan>,
+  unknown
+> = async (req, res, next) => {
+  const plan = await planService.getPlanById(req.params.id);
+  res.status(200).json({
+    message: "Plan fetched successfully",
+    data: plan,
+  });
 };
 
-export const getPlansHandler: RequestHandler = async (req, res, next) => {
+export const getPlansHandler: RequestHandler<
+  unknown,
+  SuccessResponse<IPlan[]>,
+  unknown
+> = async (req, res, next) => {
   const plans = await planService.getAllPlans();
   res.status(200).json({
     message: "Plans fetched successfully",
     data: plans,
+  });
+};
+
+export const updatePlanHandler: RequestHandler<
+  { id: string },
+  SuccessResponse<IPlan>,
+  Partial<Omit<IPlan, "_id" | "createdAt" | "updatedAt" | "isActive">>
+> = async (req, res, next) => {
+  const plan = await planService.updatePlan(req.params.id, req.body);
+  res.status(200).json({
+    message: "Plan updated successfully",
+    data: plan,
+  });
+};
+
+export const activateOrDeactivatePlanHandler: RequestHandler<
+  { id: string },
+  SuccessResponse<{}>,
+  { isActive: boolean }
+> = async (req, res, next) => {
+  const plan = await planService.activateOrDeactivatePlan(
+    req.params.id,
+    req.body.isActive
+  );
+  res.status(200).json({
+    message: `plan ${plan.isActive ? "activated" : "deactivated"} successfully`,
+    data: {},
   });
 };
