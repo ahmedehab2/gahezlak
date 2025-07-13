@@ -3,6 +3,7 @@ export const collectionsName = {
     SHOPS: 'shops',
     USERS: 'users',
     ROLES: 'roles',
+    CATEGORIES: 'categories',
     MENU_ITEMS: 'menu_items',
 
 
