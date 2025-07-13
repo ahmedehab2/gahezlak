@@ -1,5 +1,5 @@
-import { Orders, OrderStatus } from "../../models/Order";
-import { Errors } from "../../errors";
+import { Orders, OrderStatus } from "../models/Order";
+import { Errors } from "../errors";
 
 export const getKitchenOrders = async (shopId: string) => {
   try {

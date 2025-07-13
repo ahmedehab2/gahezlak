@@ -3,8 +3,8 @@ import {
   getKitchenOrders,
   updateKitchenOrderStatus
 } from "../services/kitchen.service";
-import { io } from "../../sockets/socketServer";
-import { SuccessResponse, PaginatedRespone } from '../types/contoller-response.types';
+import { io } from "../sockets/socketServer";
+import { SuccessResponse, PaginatedRespone } from '../common/types/contoller-response.types';
 
 export const GetKitchenOrdersController = async (req: Request, res: Response, next: NextFunction) => {
   try {

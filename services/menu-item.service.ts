@@ -1,8 +1,8 @@
-import { Shops } from '../../models/Shop';
-import { Errors } from '../../errors';
-import { CategoryModel } from '../../models/Category';
-import { MenuItemModel, IMenuItem } from '../../models/MenuItem';
-import { calculateFinalPrice, buildLocalizedMenuItem } from '../../utils/menu-item-utils';
+import { Shops } from '../models/Shop';
+import { Errors } from '../errors';
+import { CategoryModel } from '../models/Category';
+import { MenuItemModel, IMenuItem } from '../models/MenuItem';
+import { calculateFinalPrice, buildLocalizedMenuItem } from '../utils/menu-item-utils';
 
 export const createMenuItemAndAddToCategory = async (
   shopId: string,

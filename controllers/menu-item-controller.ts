@@ -5,8 +5,8 @@ import {
   toggleItemAvailability
 } from "../services/menu-item.service";
 import { Request, Response, NextFunction } from "express";
-import { SuccessResponse } from '../types/contoller-response.types';
-import { buildLocalizedMenuItem } from "../../utils/menu-item-utils";
+import { SuccessResponse } from '../common/types/contoller-response.types';
+import { buildLocalizedMenuItem } from "../utils/menu-item-utils";
 
 
 export const createMenuItemAndAddToCategoryController = async (req: Request, res: Response, next: NextFunction) => {
