@@ -74,7 +74,7 @@ async function getAllShops() {
 /**
  * Regenerate QR code for shop
  */
-export async function regenerateShopQRCode(
+async function regenerateShopQRCode(
   shopId: string,
   options: QRCodeOptions = {}
 ): Promise<{ qrCodeImage: string; menuUrl: string }> {
@@ -95,7 +95,7 @@ export async function regenerateShopQRCode(
 /**
  * Get shop menu URL
  */
-export async function getShopMenuUrl(shopName: string): Promise<string> {
+async function getShopMenuUrl(shopName: string): Promise<string> {
   const shop = await Shops.findOne({ name: shopName });
   if (!shop) {
     throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
@@ -110,7 +110,7 @@ export {
   updateShop,
   getAllShops,
   deleteShop,
-  getShop,
-  getShopByName,
+  getUserShop,
+  getShopMenuUrl,
+  regenerateShopQRCode,
 };
-export { createShop, updateShop, getAllShops, deleteShop, getUserShop };
