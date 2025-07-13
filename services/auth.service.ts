@@ -151,6 +151,7 @@ export async function verifyCode(verificationData: {
       email: user.email,
       phoneNumber: user.phoneNumber,
       isVerified: true,
+      shop: user.shop,
     },
   };
 }
