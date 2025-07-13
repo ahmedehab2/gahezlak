@@ -1,41 +1,45 @@
-import { IMenuItem } from '../../models/MenuItem';
 import { Shops } from '../../models/Shop';
 import { Errors } from '../../errors';
-import { MenuItemModel } from '../../models/MenuItem';
+import { CategoryModel } from '../../models/Category';
+import { MenuItemModel, IMenuItem } from '../../models/MenuItem';
+import { calculateFinalPrice, buildLocalizedMenuItem } from '../../utils/menu-item-utils';
 
-export const createMenuItem = async (shopId: string, menuItemData: IMenuItem) => {
+export const createMenuItemAndAddToCategory = async (
+  shopId: string,
+  menuItemData: IMenuItem,
+  categoryId: string
+) => {
   const shop = await Shops.findById(shopId);
   if (!shop) throw new Errors.NotFoundError({ en: 'Shop not found', ar: 'المتجر غير موجود' });
 
-  const item = new MenuItemModel({ ...menuItemData, shopId });
-  return await item.save();
+  const category = await CategoryModel.findOne({ _id: categoryId, shopId });
+  if (!category) throw new Errors.NotFoundError({ en: 'Category not found', ar: 'الفئة غير موجودة' });
+
+  const item = new MenuItemModel({
+    ...menuItemData,
+    shopId,
+    category: category.name,
+  });
+
+  const savedItem = await item.save();
+
+  const alreadyExists = category.menuItems?.some(id => id.toString() === savedItem._id.toString());
+  if (!alreadyExists) {
+    category.menuItems?.push(savedItem._id);
+    await category.save();
+  }
+
+  return savedItem;
 };
 
-export const getMenuItemById = async (shopId: string, itemId: string) => {
+export const getMenuItemById = async (shopId: string, itemId: string, lang: 'en' | 'ar') => {
   const shop = await Shops.findById(shopId);
   if (!shop) throw new Errors.NotFoundError({ en: 'Shop not found', ar: 'المتجر غير موجود' });
 
   const menuItem = await MenuItemModel.findOne({ _id: itemId, shopId });
   if (!menuItem) throw new Errors.NotFoundError({ en: 'Menu item not found', ar: 'العنصر غير موجود' });
 
-  return menuItem;
-};
-
-export const getItemsByShop = async (shopId: string) => {
-  const shop = await Shops.findById(shopId);
-  if (!shop) throw new Errors.NotFoundError({ en: 'Shop not found', ar: 'المتجر غير موجود' });
-
-  return await MenuItemModel.find({ shopId, isAvailable: true });
-};
-
-export const updateMenuItem = async (shopId: string, itemId: string, updateData: IMenuItem) => {
-  const shop = await Shops.findById(shopId);
-  if (!shop) throw new Errors.NotFoundError({ en: 'Shop not found', ar: 'المتجر غير موجود' });
-
-  const menuItem = await MenuItemModel.findOneAndUpdate({ _id: itemId, shopId }, updateData, { new: true });
-  if (!menuItem) throw new Errors.NotFoundError({ en: 'Menu item not found', ar: 'العنصر غير موجود' });
-
-  return menuItem;
+  return buildLocalizedMenuItem(menuItem, lang);
 };
 
 export const deleteMenuItem = async (shopId: string, itemId: string) => {
@@ -45,14 +49,12 @@ export const deleteMenuItem = async (shopId: string, itemId: string) => {
   const menuItem = await MenuItemModel.findOneAndDelete({ _id: itemId, shopId });
   if (!menuItem) throw new Errors.NotFoundError({ en: 'Menu item not found', ar: 'العنصر غير موجود' });
 
-  return { message: 'Menu item deleted successfully' };
-};
+  await CategoryModel.updateMany(
+    { shopId, menuItems: itemId },
+    { $pull: { menuItems: itemId } }
+  );
 
-export const getMenuItemsByCategory = async (shopId: string, category: string) => {
-  const shop = await Shops.findById(shopId);
-  if (!shop) throw new Errors.NotFoundError({ en: 'Shop not found', ar: 'المتجر غير موجود' });
-
-  return await MenuItemModel.find({ shopId, category, isAvailable: true });
+  return { message: 'Menu item deleted and removed from categories successfully' };
 };
 
 export const toggleItemAvailability = async (shopId: string, itemId: string, isAvailable: boolean) => {

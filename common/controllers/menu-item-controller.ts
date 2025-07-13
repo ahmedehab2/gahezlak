@@ -1,25 +1,27 @@
 import {
   deleteMenuItem,
-  getItemsByShop,
   getMenuItemById,
-  updateMenuItem,
-  createMenuItem,
-  getMenuItemsByCategory,
+  createMenuItemAndAddToCategory,
   toggleItemAvailability
 } from "../services/menu-item.service";
 import { Request, Response, NextFunction } from "express";
-import { SuccessResponse, PaginatedRespone } from '../types/contoller-response.types';
+import { SuccessResponse } from '../types/contoller-response.types';
+import { buildLocalizedMenuItem } from "../../utils/menu-item-utils";
 
-export const createMenuItemController = async (req: Request, res: Response, next: NextFunction) => {
+
+export const createMenuItemAndAddToCategoryController = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const shopId = req.params.shopId;
+    const categoryId = req.params.categoryId; 
     const menuItemData = req.body;
-    const newMenuItem = await createMenuItem(shopId, menuItemData);
 
-    const response: SuccessResponse<typeof newMenuItem> = {
-      message: "Menu item created successfully",
-      data: newMenuItem
+    const newMenuItem = await createMenuItemAndAddToCategory(shopId, menuItemData, categoryId);
+
+    const response: SuccessResponse<any> = {
+      message: req.lang === 'ar' ? 'تم إنشاء عنصر المينيو وإضافته إلى الفئة بنجاح' : "Menu item created and added to category successfully",
+      data: buildLocalizedMenuItem(newMenuItem, req.lang)
     };
+
     res.status(201).json(response);
   } catch (error) {
     next(error);
@@ -30,41 +32,14 @@ export const getMenuItemByIdController = async (req: Request, res: Response, nex
   try {
     const shopId = req.params.shopId;
     const itemId = req.params.itemId;
-    const menuItem = await getMenuItemById(shopId, itemId);
-    const response: SuccessResponse<typeof menuItem> = {
-      message: "Menu item retrieved successfully",
-      data: menuItem
-    };
-    res.status(200).json(response);
-  } catch (error) {
-    next(error);
-  }
-};
+    const lang = req.lang;
+    const menuItem = await getMenuItemById(shopId, itemId,lang);
 
-export const getItemsByShopController = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const shopId = req.params.shopId;
-    const items = await getItemsByShop(shopId);
-    const response: SuccessResponse<typeof items> = {
-      message: "Menu items retrieved successfully",
-      data: items
+    const response: SuccessResponse<any> = {
+      message: req.lang === 'ar' ? 'تم استرجاع العنصر بنجاح' : "Menu item retrieved successfully",
+      data: buildLocalizedMenuItem(menuItem, req.lang)
     };
-    res.status(200).json(response);
-  } catch (error) {
-    next(error);
-  }
-};
 
-export const updateMenuItemController = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const shopId = req.params.shopId;
-    const itemId = req.params.itemId;
-    const updateData = req.body;
-    const updatedMenuItem = await updateMenuItem(shopId, itemId, updateData);
-    const response: SuccessResponse<typeof updatedMenuItem> = {
-      message: "Menu item updated successfully",
-      data: updatedMenuItem
-    };
     res.status(200).json(response);
   } catch (error) {
     next(error);
@@ -76,25 +51,12 @@ export const deleteMenuItemController = async (req: Request, res: Response, next
     const shopId = req.params.shopId;
     const itemId = req.params.itemId;
     const deletedMenuItem = await deleteMenuItem(shopId, itemId);
-    const response: SuccessResponse<typeof deletedMenuItem> = {
-      message: "Menu item deleted successfully",
+
+    const response: SuccessResponse<any> = {
+      message: req.lang === 'ar' ? 'تم حذف العنصر بنجاح' : "Menu item deleted successfully",
       data: deletedMenuItem
     };
-    res.status(200).json(response);
-  } catch (error) {
-    next(error);
-  }
-};
 
-export const getMenuItemByCategoryController = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const shopId = req.params.shopId;
-    const category = req.params.category;
-    const menuItems = await getMenuItemsByCategory(shopId, category);
-    const response: SuccessResponse<typeof menuItems> = {
-      message: "Menu items by category retrieved successfully",
-      data: menuItems
-    };
     res.status(200).json(response);
   } catch (error) {
     next(error);
@@ -107,13 +69,14 @@ export const toggleItemAvailabilityController = async (req: Request, res: Respon
     const itemId = req.params.itemId;
     const isAvailable = req.body.isAvailable;
     const updatedMenuItem = await toggleItemAvailability(shopId, itemId, isAvailable);
-    const response: SuccessResponse<typeof updatedMenuItem> = {
-      message: "Menu item availability toggled successfully",
-      data: updatedMenuItem
+
+    const response: SuccessResponse<any> = {
+      message: req.lang === 'ar' ? 'تم تحديث حالة توفر العنصر بنجاح' : "Menu item availability toggled successfully",
+      data: buildLocalizedMenuItem(updatedMenuItem, req.lang)
     };
+
     res.status(200).json(response);
   } catch (error) {
     next(error);
   }
 };
-

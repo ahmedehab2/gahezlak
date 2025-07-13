@@ -15,6 +15,7 @@ import { Users } from "./models/User";
 import { requireActiveSubscription } from "./middlewares/subscription";
 import kitchenRoutes from "./common/routes/kitchen.routes";
 
+import { languageMiddleware } from './middlewares/language.middleware';
 
 
 const app = express();
@@ -25,6 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(httpLogger);
 
+app.use(languageMiddleware);
 
 app.use('/api/v1/auth/user', userRoutes);
 app.use('/api/v1/subscriptions', subscriptionRoutes);

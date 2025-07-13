@@ -4,8 +4,15 @@ import { collectionsName } from '../common/collections-name';
 export interface ICategory extends Document {
   _id: mongoose.Types.ObjectId;
   shopId: mongoose.Types.ObjectId;
-  name: string;
-  description?: string;
+  name: {
+    en: string;
+    ar: string;
+  };
+  description?: {
+    en?: string;
+    ar?: string;
+  };
+  menuItems?: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -13,8 +20,15 @@ export interface ICategory extends Document {
 const CategorySchema = new Schema<ICategory>({
   _id: { type: Schema.Types.ObjectId, auto: true },
   shopId: { type: Schema.Types.ObjectId, ref: collectionsName.SHOPS, required: true },
-  name: { type: String, required: true },
-  description: { type: String }
+  name: {
+    en: { type: String, required: true },
+    ar: { type: String, required: true }
+  },
+  description: {
+    en: { type: String },
+    ar: { type: String }
+  },
+  menuItems: [{ type: Schema.Types.ObjectId, ref: collectionsName.MENU_ITEMS }],
 }, {
   timestamps: true,
   collection: collectionsName.CATEGORIES
