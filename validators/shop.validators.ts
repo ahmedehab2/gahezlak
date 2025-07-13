@@ -66,3 +66,24 @@ export const updateShopValidator = [
     .withMessage("Shop email must be a string"),
   validate,
 ];
+
+
+
+export const validateRegenerateQRCode = [
+  param('shopId').isMongoId().withMessage('Invalid shop ID'),
+  body('width').optional().isInt({ min: 100, max: 1000 }).withMessage('Width must be between 100 and 1000'),
+  body('margin').optional().isInt({ min: 0, max: 10 }).withMessage('Margin must be between 0 and 10'),
+  body('errorCorrectionLevel').optional().isIn(['L', 'M', 'Q', 'H']).withMessage('Error correction level must be L, M, Q, or H'),
+  validate,
+];
+
+export const validateGetMenuUrl = [
+  param('shopName')
+    .isString()
+    .withMessage('Shop name must be a string')
+    .trim()
+    .isLength({ min: 3, max: 50 })
+    .withMessage('Shop name must be between 3 and 50 characters'),
+  validate,
+];
+

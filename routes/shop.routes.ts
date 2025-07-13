@@ -1,18 +1,23 @@
 import express from "express";
 import * as controllers from "../controllers/shop.controller";
 import { protect } from "../middlewares/auth";
-import { creatShopValidator } from "../validators/shop.validators";
+import { creatShopValidator,validateRegenerateQRCode, validateGetMenuUrl} from "../validators/shop.validators";
 
 const router = express.Router();
 
+// Shop management endpoints (authenticated)
 router.post("/", protect, creatShopValidator, controllers.createShop);
+router.put("/:id", protect, controllers.updateShop);
+router.delete("/:id", protect, controllers.deleteShop);
 // router.get('/:id', controllers.getShopById);
-router.put("/:id", controllers.updateShop);
+// QR code management (authenticated)
+router.post("/:shopId/qr-code", protect,validateRegenerateQRCode, controllers.regenerateQRCodeHandler);
 
-router.delete("/:id", controllers.deleteShop);
-router.get("/", controllers.getAllShops); //ADMIN ENDPONT FOR NOW
+// Menu URL (authenticated)
+router.get("/:shopName/menu-url", protect,validateGetMenuUrl, controllers.getMenuUrlHandler);
 
-// get shopid/menu   -- returns category and menuITEMS
-// router.get('/:id/menu', controllers.getShopMenu);
+
+// Admin endpoints
+router.get("/", protect, controllers.getAllShops); // ADMIN ENDPOINT FOR NOW
 
 export default router;
