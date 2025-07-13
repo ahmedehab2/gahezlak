@@ -23,7 +23,7 @@ app.use(languageMiddleware);
 app.use("/api/v1/plans", planRoutes);
 app.use("/api/v1/auth/user", userRoutes);
 app.use("/api/v1/subscriptions", subscriptionRoutes);
-app.use("/api/payments", paymentRoutes);
+app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/shops", shopRoutes);
 
 app.use(ErrorHandlerMiddleware);
