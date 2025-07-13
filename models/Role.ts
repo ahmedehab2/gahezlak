@@ -1,18 +1,24 @@
-import { ObjectId } from 'mongodb';
-import mongoose, { Schema, Document } from 'mongoose';
-import { collectionsName } from '../common/collections-name';
+import { ObjectId } from "mongodb";
+import mongoose, { Schema } from "mongoose";
+import { collectionsName } from "../common/collections-name";
 
-export interface IRole {
-    _id: ObjectId;
-    role: string;
-    permissions?: string[];
+export enum Role {
+  ADMIN = "admin",
+  USER = "user", // Will be used for any registered user
+  SHOP_OWNER = "shop_owner",
+  SHOP_MANAGER = "shop_manager",
+  SHOP_STAFF = "shop_staff",
 }
 
-
+export interface IRole {
+  _id: ObjectId;
+  name: Role;
+  permissions?: string[];
+}
 
 const RoleSchema = new Schema<IRole>({
-    role: { type: String, required: true },
-    permissions: { type: [String], default: [] },
+  name: { type: String, required: true, enum: Role },
+  permissions: { type: [String], default: [] },
 });
 
 export const Roles = mongoose.model<IRole>(collectionsName.ROLES, RoleSchema);
