@@ -1,17 +1,10 @@
-import mongoose from 'mongoose';
-import { Roles } from '../models/Role';
-import { connectDB } from '../config/db';
-
-const rolesToSeed = [
-  'customer',
-  'manager',
-  'staff',
-  'owner',
-];
+import mongoose from "mongoose";
+import { Roles, Role } from "../models/Role";
+import { connectDB } from "../config/db";
 
 async function seedRoles() {
   await connectDB();
-  for (const role of rolesToSeed) {
+  for (const role of Object.values(Role)) {
     const exists = await Roles.findOne({ role });
     if (!exists) {
       await Roles.create({ role });
@@ -24,6 +17,6 @@ async function seedRoles() {
 }
 
 seedRoles().catch((err) => {
-  console.error('Error seeding roles:', err);
+  console.error("Error seeding roles:", err);
   mongoose.connection.close();
-}); 
+});
