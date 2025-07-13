@@ -1,66 +1,5 @@
-import { body, param } from "express-validator";
+import { body, param, query } from "express-validator";
 import { validate } from "../middlewares/validators";
-
-export const validateRegister = [
-  body("firstName").isString().notEmpty().withMessage("First name is required"),
-  body("lastName").isString().notEmpty().withMessage("Last name is required"),
-  body("email").isEmail().withMessage("Invalid email address"),
-  body("password")
-    .isString()
-    .isLength({ min: 8 })
-    .withMessage("Password must be at least 8 characters long"),
-  body("phoneNumber")
-    .isString()
-    .notEmpty()
-    .withMessage("Phone number is required"),
-  body("role").optional().isString().withMessage("Role must be a string"),
-  validate,
-];
-
-export const validateConfirmEmail = [
-  param("token").isString().notEmpty().withMessage("Token is required"),
-  validate,
-];
-
-export const validateVerifyCode = [
-  body("email").isEmail().withMessage("Invalid email address"),
-  body("code")
-    .isString()
-    .notEmpty()
-    .withMessage("Verification code is required"),
-  body("reason").isString().notEmpty().withMessage("Reason is required"),
-  validate,
-];
-
-export const validateResendVerificationCode = [
-  body("email").isEmail().withMessage("Invalid email address"),
-  body("reason").isString().notEmpty().withMessage("Reason is required"),
-  validate,
-];
-
-export const validateLogin = [
-  body("email").isEmail().withMessage("Invalid email address"),
-  body("password").isString().notEmpty().withMessage("Password is required"),
-  validate,
-];
-
-export const validateForgotPassword = [
-  body("email").isEmail().withMessage("Invalid email address"),
-  validate,
-];
-
-export const validateResetPassword = [
-  body("email").isEmail().withMessage("Invalid email address"),
-  body("code")
-    .isString()
-    .notEmpty()
-    .withMessage("Verification code is required"),
-  body("newPassword")
-    .isString()
-    .isLength({ min: 8 })
-    .withMessage("New password must be at least 8 characters long"),
-  validate,
-];
 
 export const validateRequestEmailChange = [
   body("newEmail").isEmail().withMessage("Invalid new email address"),
@@ -75,10 +14,45 @@ export const validateConfirmEmailChange = [
   validate,
 ];
 
-export const validateRefreshToken = [
-  body("refreshToken")
+export const validateUpdateProfile = [
+  body("firstName")
+    .optional()
     .isString()
-    .notEmpty()
-    .withMessage("Refresh token is required"),
+    .isLength({ min: 2, max: 50 })
+    .withMessage("First name must be between 2 and 50 characters"),
+  body("lastName")
+    .optional()
+    .isString()
+    .isLength({ min: 2, max: 50 })
+    .withMessage("Last name must be between 2 and 50 characters"),
+  body("phoneNumber")
+    .optional()
+    .isString()
+    .isLength({ min: 10, max: 15 })
+    .withMessage("Phone number must be between 10 and 15 characters"),
+  validate,
+];
+
+export const validateGetAllUsers = [
+  query("page")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("Page must be a positive integer"),
+  query("limit")
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage("Limit must be between 1 and 100"),
+  query("search")
+    .optional()
+    .isString()
+    .isLength({ min: 1, max: 100 })
+    .withMessage("Search term must be between 1 and 100 characters"),
+  validate,
+];
+
+export const validateUserId = [
+  param("id")
+    .isMongoId()
+    .withMessage("Invalid user ID format"),
   validate,
 ];

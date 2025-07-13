@@ -5,15 +5,6 @@ export const collectionsName = {
     ROLES: 'roles',
     CATEGORIES: 'categories',
     MENU_ITEMS: 'menu_items',
-
-
-
-
-
-
-
-
-
     ORDERS: 'orders',
     PAYMENTS: 'payments',
     SUBSCRIPTIONS: 'subscriptions',

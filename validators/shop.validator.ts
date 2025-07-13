@@ -1,7 +1,12 @@
 import { body, param } from "express-validator";
 import { validate } from "../middlewares/validators";
 
-export const createShopValidator = [
+export const shopIdValidator = [
+  param("shopId").isInt().withMessage("Shop ID must be an integer"),
+  validate,
+];
+
+export const creatShopValidator = [
   body("name")
     .isString()
     .withMessage("Shop name must be a string")
@@ -22,7 +27,7 @@ export const createShopValidator = [
   body("phoneNumber")
     .isMobilePhone("ar-EG")
     .withMessage("Shop phone number must be a valid Egyptian mobile number"),
-  body("email").isEmail().withMessage("Valid email is required"),
+  body("email").isString().withMessage("Shop email must be a string"),
   validate,
 ];
 
@@ -55,38 +60,30 @@ export const updateShopValidator = [
     .optional()
     .isMobilePhone("ar-EG")
     .withMessage("Shop phone number must be a valid Egyptian mobile number"),
-  body("email").optional().isEmail().withMessage("Valid email is required"),
-  validate,
-];
-
-export const shopIdValidator = [
-  param("shopId").isMongoId().withMessage("Invalid shop ID"),
-  validate,
-];
-
-export const regenerateQRCodeValidator = [
-  param("shopId").isMongoId().withMessage("Invalid shop ID"),
-  body("width")
+  body("email")
     .optional()
-    .isInt({ min: 100, max: 1000 })
-    .withMessage("Width must be between 100 and 1000"),
-  body("margin")
-    .optional()
-    .isInt({ min: 0, max: 10 })
-    .withMessage("Margin must be between 0 and 10"),
-  body("errorCorrectionLevel")
-    .optional()
-    .isIn(["L", "M", "Q", "H"])
-    .withMessage("Error correction level must be L, M, Q, or H"),
+    .isString()
+    .withMessage("Shop email must be a string"),
   validate,
 ];
 
-export const getMenuUrlValidator = [
-  param("shopId").isMongoId().withMessage("Invalid shop ID"),
+
+
+export const validateRegenerateQRCode = [
+  param('shopId').isMongoId().withMessage('Invalid shop ID'),
+  body('width').optional().isInt({ min: 100, max: 1000 }).withMessage('Width must be between 100 and 1000'),
+  body('margin').optional().isInt({ min: 0, max: 10 }).withMessage('Margin must be between 0 and 10'),
+  body('errorCorrectionLevel').optional().isIn(['L', 'M', 'Q', 'H']).withMessage('Error correction level must be L, M, Q, or H'),
   validate,
 ];
 
-export const getShopMenuValidator = [
-  param("shopId").isMongoId().withMessage("Invalid shop ID"),
+export const validateGetMenuUrl = [
+  param('shopName')
+    .isString()
+    .withMessage('Shop name must be a string')
+    .trim()
+    .isLength({ min: 3, max: 50 })
+    .withMessage('Shop name must be between 3 and 50 characters'),
   validate,
 ];
+
