@@ -7,7 +7,7 @@ export interface IMenuItem {
   shopId: ObjectId;
   name: string;
   description?: string;
-  price: number;
+    price: number;
   categoryId: ObjectId;
   isAvailable: boolean;
   imgUrl?: string;
