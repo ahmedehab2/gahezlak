@@ -34,7 +34,7 @@ enum errorMessage {
   SHOP_NOT_FOUND = "SHOP_NOT_FOUND",
   USER_ALREADY_SUBSCRIBED = "USER_ALREADY_SUBSCRIBED",
   PAYMENT_FAILED = "PAYMENT_FAILED",
-  USER_HAS_NO_SHOP_ID = "USER_HAS_NO_SHOP_ID",
+  USER_HAS_NO_SHOP = "USER_HAS_NO_SHOP",
   MONTHLY_PLAN_EXISTS = "MONTHLY_PLAN_EXISTS",
   YEARLY_PLAN_EXISTS = "YEARLY_PLAN_EXISTS",
   BOTH_PLANS_EXIST = "BOTH_PLANS_EXIST",
@@ -161,9 +161,9 @@ export const errMsg: {
     en: "Payment failed",
     ar: "فشل الدفع",
   },
-  USER_HAS_NO_SHOP_ID: {
-    en: "User does not have a shopId",
-    ar: "المستخدم ليس لديه معرف متجر",
+  USER_HAS_NO_SHOP: {
+    en: "User does not have a shop",
+    ar: "المستخدم ليس لديه متجر",
   },
   MONTHLY_PLAN_EXISTS: {
     en: "Monthly plan for this group already exists",

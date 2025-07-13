@@ -24,7 +24,7 @@ export const createSubscriptionHandler: RequestHandler<
   if (!user) {
     throw new Errors.NotFoundError(errMsg.USER_NOT_FOUND);
   }
-  if (!user.shopId) {
+  if (!user.shop) {
     throw new Errors.BadRequestError({
       en: "User does not have a shop",
       ar: "المستخدم لا يملك متجر",
@@ -47,7 +47,7 @@ export const createSubscriptionHandler: RequestHandler<
 
   const subscription = await Subscriptions.create({
     userId: user._id,
-    shop: user.shopId,
+    shop: user.shop,
     plan: plan._id,
     status: SubscriptionStatus.PENDING,
     currentPeriodStart: new Date(),
@@ -57,7 +57,7 @@ export const createSubscriptionHandler: RequestHandler<
   });
 
   await Shops.updateOne(
-    { _id: user.shopId },
+    { _id: user.shop },
     {
       $set: {
         subscriptionId: subscription._id,
