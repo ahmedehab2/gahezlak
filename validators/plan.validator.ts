@@ -36,3 +36,48 @@ export const createPlanValidator = [
     .withMessage("trialPeriodDays must be integer"),
   validate,
 ];
+
+export const updatePlanValidator = [
+  body("planGroup")
+    .optional()
+    .isIn(["Pro", "Starter"])
+    .withMessage("planGroup must be Pro or Starter"),
+  body("description")
+    .optional()
+    .isString()
+    .withMessage("description must be string"),
+  body("frequency")
+    .optional()
+    .isIn(["monthly", "yearly"])
+    .withMessage("frequency must be monthly or yearly"),
+  body("currency")
+    .optional()
+    .isIn(["EGP", "USD"])
+    .withMessage("currency must be EGP or USD"),
+  body("price")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("price must be integer"),
+  body("features")
+    .optional()
+    .isArray({ min: 1 })
+    .withMessage("features must be array"),
+  body("features.*")
+    .optional()
+    .isString()
+    .withMessage("feature must be string"),
+  body("trialPeriodDays")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("trialPeriodDays must be integer"),
+  validate,
+];
+
+export const activateOrDeactivatePlanValidator = [
+  body("isActive")
+    .exists()
+    .withMessage("isActive is required")
+    .isBoolean()
+    .withMessage("isActive must be boolean"),
+  validate,
+];
