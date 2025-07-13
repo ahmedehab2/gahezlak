@@ -3,7 +3,6 @@ import { httpLogger, logger } from "./config/pino";
 import { connectDB } from "./config/db";
 
 import menuItemRoutes from "./common/routes/menu-item-routes";
-import { errorHandler } from "./middlewares/errorHandler";
 import http from "http"
 import { initSocket } from "./sockets/socketServer";
 import orderRoutes from "./common/routes/order.routes";
@@ -42,7 +41,7 @@ app.use("/",kitchenRoutes);
 app.use('/menu-items',checkActiveSubscrtion ,menuItemRoutes);
 app.use("/category",checkActiveSubscrtion,categoryRoutes)
 
-app.use(errorHandler);
+app.use(ErrorHandlerMiddleware);
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   logger.error(err);
