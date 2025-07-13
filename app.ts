@@ -30,12 +30,12 @@ app.use(languageMiddleware);
 
 app.use("/api/v1/auth/user", userRoutes);
 app.use("/api/v1/subscriptions", subscriptionRoutes);
-app.use("/orders", orderRoutes);
-app.use("/", kitchenRoutes);
-app.use("/menu-items", menuItemRoutes);
-app.use("/category", categoryRoutes);
+app.use("/api/v1/orders", orderRoutes);
+app.use("/api/v1/", kitchenRoutes);
+app.use("/api/v1/menu-items", menuItemRoutes);
+app.use("/api/v1/category", categoryRoutes);
 app.use("/api/v1/plans", planRoutes);
-app.use("/api/payments", paymentRoutes);
+app.use("api/v1/payments", paymentRoutes);
 app.use("/api/v1/shops", shopRoutes);
 
 app.use(ErrorHandlerMiddleware);
