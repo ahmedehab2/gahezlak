@@ -1,6 +1,5 @@
 import { validationResult } from 'express-validator';
 import { RequestHandler } from 'express';
-import { sendValidationErrors } from '../utils/responseHelper';
 
 export const validate: RequestHandler = (req, res, next) => {
   const errors = validationResult(req);
@@ -9,7 +8,7 @@ export const validate: RequestHandler = (req, res, next) => {
       message: err.msg,
       field: err.param !== undefined ? err.param : undefined,
     }));
-    sendValidationErrors(res, formattedErrors);
+    res.status(400).json(formattedErrors);
     return;
   }
   next();

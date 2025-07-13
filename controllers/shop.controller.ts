@@ -4,6 +4,8 @@ import { IShop } from "../models/Shop";
 import { SuccessResponse } from "../common/types/contoller-response.types";
 import { Users } from "../models/User";
 import { Types } from "mongoose";
+import { QRCodeOptions } from "../utils/qrCodeGenerator";
+import { MenuItemModel, IMenuItem } from "../models/MenuItem";
 
 export const createShop: RequestHandler<
   {},
@@ -63,3 +65,36 @@ export const getAllShops = async (
   const shops = await ShopService.getAllShops();
   res.status(200).json(shops);
 };
+
+
+
+/**
+ * Regenerate QR code for shop
+ */
+export const regenerateQRCodeHandler: RequestHandler<
+  { shopId: string },
+  SuccessResponse<{ qrCodeImage: string; menuUrl: string }>,
+  QRCodeOptions
+> = async (req, res) => {
+  const result = await ShopService.regenerateShopQRCode(req.params.shopId, req.body);
+  res.status(200).json({
+    message: 'QR code regenerated successfully',
+    data: result
+  });
+};
+
+/**
+ * Get shop menu URL
+ */
+export const getMenuUrlHandler: RequestHandler<
+  { shopName: string },
+  SuccessResponse<{ menuUrl: string }>,
+  any
+> = async (req, res) => {
+  const menuUrl = await ShopService.getShopMenuUrl(req.params.shopName);
+  res.status(200).json({
+    message: 'Menu URL retrieved successfully',
+    data: { menuUrl }
+  });
+};
+
