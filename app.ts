@@ -9,8 +9,8 @@ import categoryRoutes from "./routes/category.routes";
 import userRoutes from "./routes/user.routes";
 import subscriptionRoutes from "./routes/subscription.routes";
 import kitchenRoutes from "./routes/kitchen.routes";
-import http from "http";
-import { initSocket } from "./sockets/socketServer";
+// import http from "http";
+// import { initSocket } from "./sockets/socketServer";
 import { ErrorHandlerMiddleware } from "./middlewares/error-handling.middleware";
 import { languageMiddleware } from "./middlewares/language.middleware";
 import planRoutes from "./routes/plan.routes";
@@ -25,8 +25,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(httpLogger);
 app.use(languageMiddleware);
 
-const server = http.createServer(app);
-initSocket(server);
+// const server = http.createServer(app);
+// initSocket(server);
 
 app.use("/api/v1/auth/user", userRoutes);
 app.use("/api/v1/subscriptions", subscriptionRoutes);
