@@ -62,7 +62,7 @@ export async function signUp(userData: {
     parseInt(process.env.saltRounds || "7")
   );
 
-  const userRole = await Roles.findOne({ role: Role.USER });
+  const userRole = await Roles.findOne({ name: Role.USER });
   if (!userRole) {
     throw new Errors.NotFoundError(errMsg.ROLE_NOT_FOUND);
   }
