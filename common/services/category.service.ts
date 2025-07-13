@@ -1,7 +1,6 @@
 import { CategoryModel, ICategory } from '../../models/Category';
 import { Shops } from '../../models/Shop';
 import { Errors } from '../../errors';
-import { ObjectId } from 'mongodb';
 import { IMenuItem, MenuItemModel } from '../../models/MenuItem';
 import {  buildLocalizedMenuItem } from '../../utils/menu-item-utils';
 import { LangType } from '../types/general-types';
