@@ -1,63 +1,143 @@
-import axios from 'axios';
+// import axios from "axios";
+// import { UnprocessableError } from "../errors/unprocessable-error";
+// import { IPlan } from "../models/plan";
+// import { IUser } from "../models/User";
 
-const PAYMOB_API_KEY = process.env.PAYMOB_API_KEY;
-const PAYMOB_IFRAME_ID = process.env.PAYMOB_IFRAME_ID;
-const PAYMOB_INTEGRATION_ID = process.env.PAYMOB_INTEGRATION_ID;
+// const PAYMOB_API_KEY = process.env.PAYMOB_API_KEY;
+// const PAYMOB_IFRAME_ID = process.env.PAYMOB_IFRAME_ID;
+// const PAYMOB_INTEGRATION_ID = +process.env.PAYMOB_INTEGRATION_ID!;
+// const PAYMOB_HMAC_SECRET = process.env.PAYMOB_HMAC_SECRET;
+// const PAYMOB_SECRET_KEY = process.env.PAYMOB_SECRET_KEY;
+// const PAYMOB_PUBLIC_KEY = process.env.PAYMOB_PUBLIC_KEY;
+// const PAYMOB_MERCHANT_ID = process.env.PAYMOB_MERCHANT_ID;
+// const WEBHOOK_URL = process.env.WEBHOOK_URL;
 
-const BASE_URL = 'https://accept.paymob.com/api';
+// const PAYMOB_BASE_URL = "https://accept.paymob.com";
 
-export async function getPaymobToken() {
-  try {
-    console.log('Making Paymob auth request with API key:', PAYMOB_API_KEY ? 'SET' : 'NOT SET');
-    const { data } = await axios.post(`${BASE_URL}/auth/tokens`, {
-      api_key: PAYMOB_API_KEY,
-    });
-    console.log('Paymob auth response:', data);
-    return data.token;
-  } catch (error: any) {
-    console.error('Paymob auth error:', error.response?.data || error.message);
-    throw error;
-  }
-}
+// const frequencyMap = {
+//   weekly: 7,
+//   monthly: 30,
+//   yearly: 365,
+// };
 
-export async function createPaymobOrder(token: string, amountCents: number, items: any[] = []) {
-  try {
-    console.log('Creating Paymob order with token:', token, 'amount:', amountCents);
-    const { data } = await axios.post(`${BASE_URL}/ecommerce/orders`, {
-      auth_token: token,
-      delivery_needed: false,
-      amount_cents: amountCents,
-      currency: 'EGP',
-      items,
-    });
-    console.log('Paymob order response:', data);
-    return data;
-  } catch (error: any) {
-    console.error('Paymob order creation error:', error.response?.data || error.message);
-    throw error;
-  }
-}
+// interface ICreatePlan {
+//   planName: string;
+//   frequency: string;
+//   planType?: string;
+//   amountInCents: number;
+//   startWithTrial: boolean;
+//   isActive: boolean;
+// }
 
-export async function getPaymobPaymentKey(token: string, orderId: number, amountCents: number, billingData: any) {
-  try {
-    console.log('Getting payment key with orderId:', orderId, 'billingData:', billingData);
-    const { data } = await axios.post(`${BASE_URL}/acceptance/payment_keys`, {
-      auth_token: token,
-      amount_cents: amountCents,
-      expiration: 3600,
-      order_id: orderId,
-      billing_data: billingData,
-      currency: 'EGP',
-      integration_id: PAYMOB_INTEGRATION_ID,
-    });
-    console.log('Paymob payment key response:', data);
-    return data.token;
-  } catch (error: any) {
-    console.error('Paymob payment key error:', error.response?.data || error.message);
-    throw error;
-  }
-}
+// export async function paymobLogin() {
+//   try {
+//     const authRes = await axios.post(`${PAYMOB_BASE_URL}/api/auth/tokens`, {
+//       api_key: PAYMOB_API_KEY,
+//     });
+//     const token = authRes.data.token;
+//     return token;
+//   } catch (error) {
+//     throw new UnprocessableError({
+//       ar: "خطأ في تسجيل الدخول إلى paymob",
+//       en: "Error in login to paymob",
+//     });
+//   }
+// }
 
-export function getPaymobIframeUrl(paymentKey: string) {
-  return `https://accept.paymob.com/api/acceptance/iframes/${PAYMOB_IFRAME_ID}?payment_token=${paymentKey}`;
-} 
+// export async function createSubscriptionPlan({
+//   planName,
+//   frequency,
+//   planType = "rent",
+//   amountInCents,
+//   startWithTrial,
+//   isActive,
+// }: ICreatePlan) {
+//   try {
+//     const token = await paymobLogin();
+
+//     const plan = await axios.post(
+//       `${PAYMOB_BASE_URL}/api/acceptance/subscription-plans`,
+//       {
+//         name: planName,
+//         frequency: frequencyMap[frequency as keyof typeof frequencyMap],
+//         plan_type: planType,
+//         amount_cents: amountInCents,
+//         use_transaction_amount: !startWithTrial,
+//         is_active: isActive,
+//         integration: PAYMOB_INTEGRATION_ID,
+//         webhook_url: WEBHOOK_URL,
+//       },
+//       {
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//         },
+//       }
+//     );
+//     return plan.data;
+//   } catch (error) {
+//     throw new UnprocessableError({
+//       ar: "خطأ في إنشاء خطة اشتراك paymob",
+//       en: "Error in create subscription plan to paymob",
+//     });
+//   }
+// }
+
+// export async function createSubscriptionIntent({
+//   plan,
+//   user,
+//   trialDays,
+//   extras,
+// }: {
+//   plan: IPlan;
+//   user: IUser;
+//   trialDays: number;
+//   extras?: any;
+// }) {
+//   try {
+//     const startDate = new Date(Date.now() + trialDays * 86400000)
+//       .toISOString()
+//       .split("T")[0]; // format: YYYY-MM-DD
+//     const sub = await axios.post(
+//       `${PAYMOB_BASE_URL}/v1/intention/`,
+//       {
+//         currency: plan.currency,
+//         amount: plan.price * 100, //cents
+//         subscription_plan_id: plan.paymobPlanId,
+//         payment_methods: [PAYMOB_INTEGRATION_ID],
+//         items: [
+//           {
+//             name: plan.title,
+//             description: plan.description,
+//             amount: plan.price * 100, //cents
+//             quantity: 1,
+//           },
+//         ],
+//         billing_data: {
+//           email: user.email,
+//           phone_number: user.phoneNumber,
+//           first_name: user.firstName,
+//           last_name: user.lastName,
+//         },
+
+//         start_date: startDate,
+//         // special_reference: PAYMOB_MERCHANT_ID,
+//         extras,
+//       },
+//       {
+//         headers: {
+//           Authorization: `Bearer ${PAYMOB_SECRET_KEY}`,
+//         },
+//       }
+//     );
+//     const iframeUrl = ` https://accept.paymob.com/unifiedcheckout/?publicKey=${PAYMOB_PUBLIC_KEY}&clientSecret=${sub.data.client_secret}`;
+
+//     return iframeUrl;
+//   } catch (error) {
+//     throw new UnprocessableError({
+//       ar: "خطأ في إنشاء صفحة الاشتراك في paymob",
+//       en: "Error in creating subscription intent to paymob",
+//     });
+//   }
+// }
+
+//disabled paymob integration for now

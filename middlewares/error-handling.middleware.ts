@@ -1,18 +1,16 @@
-import { ErrorRequestHandler } from 'express';
-import { MulterError } from 'multer';
+import { ErrorRequestHandler } from "express";
+import { MulterError } from "multer";
 
-import { logger } from '../config/pino';
-import { ErrorResponse } from '../common/types/contoller-response.types';
-import { CustomError } from '../errors/abstract-error-class';
+import { logger } from "../config/pino";
+import { ErrorResponse } from "../common/types/contoller-response.types";
+import { CustomError } from "../errors/abstract-error-class";
 
-export const ErrorHandlerMiddleware: ErrorRequestHandler<unknown, ErrorResponse> = (
-  err,
-  req,
-  res,
-  next,
-): void => {
+export const ErrorHandlerMiddleware: ErrorRequestHandler<
+  unknown,
+  ErrorResponse
+> = (err, req, res, next): void => {
   logger.error(err);
-  if (process.env.NODE_ENV === 'development') console.log(err);
+  if (process.env.NODE_ENV === "development") console.log(err);
 
   // custom error
   if (err instanceof CustomError) {
@@ -21,13 +19,26 @@ export const ErrorHandlerMiddleware: ErrorRequestHandler<unknown, ErrorResponse>
   }
 
   // mongo duplicate error
-  if (err.name === 'MongoServerError' && err.code === 11000) {
+  if (err.name === "MongoServerError" && err.code === 11000) {
     res.status(400).json({
       code: 400,
       message:
-        req.lang === 'en'
+        req.lang === "en"
           ? `${Object.keys(err.keyPattern)} is already exists`
-          : `${Object.keys(err.keyPattern)} موحود بالفعل`.replace('email', 'الايميل'),
+          : `${Object.keys(err.keyPattern)} موحود بالفعل`.replace(
+              "email",
+              "الايميل"
+            ),
+      data: {},
+    });
+    return;
+  }
+
+  // mongoose validation error
+  if (err.name === "ValidationError") {
+    res.status(400).json({
+      code: 400,
+      message: err.message,
       data: {},
     });
     return;
@@ -44,20 +55,20 @@ export const ErrorHandlerMiddleware: ErrorRequestHandler<unknown, ErrorResponse>
   }
 
   // JWT invalid token
-  if (err.name === 'JsonWebTokenError') {
+  if (err.name === "JsonWebTokenError") {
     res.status(401).json({
       code: 401,
-      message: req.lang === 'en' ? 'invalid token' : 'التوكن غير صالح',
+      message: req.lang === "en" ? "invalid token" : "التوكن غير صالح",
       data: {},
     });
     return;
   }
 
   // JWT expired token
-  if (err.name === 'TokenExpiredError') {
+  if (err.name === "TokenExpiredError") {
     res.status(401).json({
       code: 401,
-      message: req.lang === 'en' ? 'expired token' : 'التوكن منتهي',
+      message: req.lang === "en" ? "expired token" : "التوكن منتهي",
       data: {},
     });
     return;
@@ -66,7 +77,7 @@ export const ErrorHandlerMiddleware: ErrorRequestHandler<unknown, ErrorResponse>
   // unhandled error
   res.status(500).json({
     code: 500,
-    message: req.lang === 'en' ? 'Internal server error' : 'خطأ بالسيرفر',
+    message: req.lang === "en" ? "Internal server error" : "خطأ بالسيرفر",
     data: {},
   });
 };

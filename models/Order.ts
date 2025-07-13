@@ -1,13 +1,14 @@
-import { ObjectId } from 'mongodb';
-import mongoose, { Schema, Document } from 'mongoose';
-import { collectionsName } from '../common/collections-name';
+import { ObjectId } from "mongodb";
+import mongoose, { Schema, Document } from "mongoose";
+import { collectionsName } from "../common/collections-name";
 
 export interface IOrderItem {
-    menuItemId: ObjectId;
-    quantity: number;
-    customizationDetails: string;
-    price: number;
+  menuItemId: ObjectId;
+  quantity: number;
+  customizationDetails: string;
+  price: number;
 }
+
 
 export enum OrderStatus { 
     Pending = 'Pending', 
@@ -42,12 +43,19 @@ const OrderSchema = new Schema<IOrder>({
         required: true,  
         default: OrderStatus.Pending 
     },
+
     totalAmount: { type: Number, required: true },
-    orderItems: [{
-        menuItemId: { type: Schema.Types.ObjectId, ref: collectionsName.MENU_ITEMS, required: true },
+    orderItems: [
+      {
+        menuItemId: {
+          type: Schema.Types.ObjectId,
+          ref: collectionsName.MENU_ITEMS,
+          required: true,
+        },
         quantity: { type: Number, required: true },
         customizationDetails: { type: String },
         price: { type: Number, required: true },
+
     }],
     isSentToKitchen: { type: Boolean, default: false}
 
@@ -58,4 +66,8 @@ const OrderSchema = new Schema<IOrder>({
         collection: collectionsName.ORDERS
     });
 
-export const Orders = mongoose.model<IOrder>(collectionsName.ORDERS, OrderSchema);
+
+export const Orders = mongoose.model<IOrder>(
+  collectionsName.ORDERS,
+  OrderSchema
+);

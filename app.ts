@@ -1,6 +1,7 @@
 import express from "express";
 import { httpLogger, logger } from "./config/pino";
 import { connectDB } from "./config/db";
+
 import menuItemRoutes from "./common/routes/menu-item-routes";
 import { errorHandler } from "./middlewares/errorHandler";
 import http from "http"
@@ -12,10 +13,15 @@ import { Request, Response, NextFunction } from "express";
 import userRoutes from './routes/user.routes';
 import subscriptionRoutes from './routes/subscription.routes';
 import { Users } from "./models/User";
-import { requireActiveSubscription } from "./middlewares/subscription";
+import { checkActiveSubscrtion } from "./middlewares/subscription-check.middleware";
 import kitchenRoutes from "./common/routes/kitchen.routes";
 
 import { languageMiddleware } from './middlewares/language.middleware';
+
+import paymentRoutes from "./routes/payment.routes";
+import shopRoutes from "./routes/shop.routes";
+import { ErrorHandlerMiddleware } from "./middlewares/error-handling.middleware";
+import planRoutes from "./routes/plan.routes";
 
 
 const app = express();
@@ -26,14 +32,15 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(httpLogger);
 
+
 app.use(languageMiddleware);
 
 app.use('/api/v1/auth/user', userRoutes);
 app.use('/api/v1/subscriptions', subscriptionRoutes);
 app.use('/orders', orderRoutes);
 app.use("/",kitchenRoutes);
-app.use('/menu-items',requireActiveSubscription ,menuItemRoutes);
-app.use("/category",requireActiveSubscription,categoryRoutes)
+app.use('/menu-items',checkActiveSubscrtion ,menuItemRoutes);
+app.use("/category",checkActiveSubscrtion,categoryRoutes)
 
 app.use(errorHandler);
 
@@ -46,7 +53,6 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 
 
 
-// Background job: Clean up expired verification codes every 10 minutes
 cron.schedule('*/10 * * * *', async () => {
   const now = new Date();
   await Users.updateMany(
@@ -68,10 +74,18 @@ cron.schedule('*/10 * * * *', async () => {
 
 
 
+
+app.use("/api/v1/plans", planRoutes);
+
+
+app.use("/api/payments", paymentRoutes);
+app.use("/api/v1/shops", shopRoutes);
+
+
+
 const PORT = process.env.PORT || 3000;
 connectDB().then(() => {
   app.listen(PORT, () => {
     logger.info(`Server is running on port ${PORT}`);
   });
-})
-
+});

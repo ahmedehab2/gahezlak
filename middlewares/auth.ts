@@ -1,30 +1,37 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
+import { CurrentUserPayload } from "../common/types/general-types";
 
 export const protect = (req: Request, res: Response, next: NextFunction) => {
   try {
     let token = req.headers.authorization?.split(" ")[1];
 
     if (!token) {
-       res.status(401).json({ message: "Not Authenticated" });
-       return
+
+      res.status(401).json({ message: "Not Authenticated" });
+      return
+
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "")
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "") as CurrentUserPayload
 
-    req.user = decoded;
+    req.user = decoded
     next();
   } catch (error) {
-     res.status(401).json({ message: "Not Authenticated" });
-     return
+
+    res.status(401).json({ message: "Not Authenticated" });
+    return;
+
   }
 };
 
 export const isAllowed = (roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!roles.includes(req.user.role)) {
-       res.status(403).json({ message: "Not allowed" });
-       return
+
+    if (!roles.includes(req.user?.role || '')) {
+      res.status(403).json({ message: "Not allowed" });
+      return
+
     }
     next();
   };

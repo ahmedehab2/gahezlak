@@ -1,116 +1,186 @@
-import { Request, Response, NextFunction } from 'express';
-import {
-  processPaymentSuccess,
-  processPaymentFailure,
-  processPaymentRefund
-} from '../services/payment.service';
-import { Payments } from '../models/Payment';
+// import { Request, Response, NextFunction, RequestHandler } from "express";
+// import crypto from "crypto";
+// import { Errors } from "../errors";
+// import { errMsg } from "../common/err-messages";
+// // import { processSuccessfulSubscriptionPayment } from "../services/payment.service";
+// import { logger } from "../config/pino";
+// import { Subscriptions, SubscriptionStatus } from "../models/Subscription";
 
-export const handlePaymobWebhook = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    console.log('=== PAYMOB WEBHOOK RECEIVED ===');
-    console.log('Webhook data:', JSON.stringify(req.body, null, 2));
+// const PAYMOB_HMAC_SECRET = process.env.PAYMOB_HMAC_SECRET!;
 
-    // Extract essential data from webhook
-    const {
-      type,
-      obj: {
-        id: paymobOrderId,
-        transaction_id,
-        success,
-        is_amount_paid,
-        is_refunded,
-        is_canceled,
-        error_occured,
-        source_data_type,
-        source_data_sub_type,
-        amount_cents,
-        currency
-      }
-    } = req.body;
+// function verifyPaymobSubscriptionHmac(payload: any): boolean {
+//   if (
+//     !payload.subscription_data?.id ||
+//     !payload.trigger_type ||
+//     !payload.hmac
+//   ) {
+//     return false;
+//   }
+//   const { id } = payload.subscription_data;
 
-    console.log('Processing webhook for order:', paymobOrderId);
-    console.log('Payment success:', success);
-    console.log('Transaction ID:', transaction_id);
+//   const concatenatedString = `${payload.trigger_type}for${id}`;
 
-    // Check if payment record exists
-    const existingPayment = await Payments.findOne({ paymobOrderId });
-    if (!existingPayment) {
-      console.error('Payment record not found for paymobOrderId:', paymobOrderId);
-      console.log('Available payments in database:');
-      const allPayments = await Payments.find({}).select('paymobOrderId paymentStatus amount');
-      console.log(allPayments);
-      
-      // Still respond 200 to Paymob to avoid retries
-      res.status(200).json({ 
-        message: 'Webhook received but processing failed',
-        error: 'Payment record not found',
-        paymobOrderId: paymobOrderId
-      });
-      return;
-    }
+//   const calculatedHmac = crypto
+//     .createHmac("sha512", PAYMOB_HMAC_SECRET!)
+//     .update(concatenatedString)
+//     .digest("hex");
 
-    console.log('Payment record found:', existingPayment._id);
+//   return crypto.timingSafeEqual(
+//     Buffer.from(calculatedHmac),
+//     Buffer.from(payload.hmac)
+//   );
+// }
 
-    try {
-      if (success && is_amount_paid && !is_refunded && !is_canceled) {
-        // Payment successful
-        console.log('Processing successful payment...');
-        await processPaymentSuccess({
-          paymobOrderId: paymobOrderId.toString(),
-          transactionId: transaction_id,
-          paymentMethod: 'Unknown',
-          sourceDataType: source_data_type,
-          sourceDataSubType: source_data_sub_type
-        });
-        console.log('Payment processed successfully');
+// export const handlePaymobSubscriptionWebhook: RequestHandler = async (
+//   req,
+//   res
+// ) => {
+//   try {
+//     const webhookData = req.body;
 
-      } else if (error_occured || is_canceled) {
-        // Payment failed
-        console.log('Processing failed payment...');
-        await processPaymentFailure({
-          paymobOrderId: paymobOrderId.toString(),
-          transactionId: transaction_id,
-          errorMessage: 'Payment was cancelled or failed'
-        });
-        console.log('Payment failure processed');
+//     if (!verifyPaymobSubscriptionHmac(webhookData)) {
+//       console.error("Invalid HMAC signature");
+//       res.status(401).json({ error: "Invalid signature" });
+//       return;
+//     }
 
-      } else if (is_refunded) {
-        // Payment refunded
-        console.log('Processing refund...');
-        await processPaymentRefund({
-          paymobOrderId: paymobOrderId.toString(),
-          transactionId: transaction_id
-        });
-        console.log('Payment refund processed');
-      }
+//     console.log("Webhook received:", webhookData.trigger_type);
 
-      // Respond to Paymob
-      res.status(200).json({ message: 'Webhook processed successfully' });
+//     switch (webhookData.trigger_type) {
+//       case "Subscription Created":
+//         await handleSubscriptionCreated(webhookData);
+//         break;
+//       case "Subscription Activated":
+//         await handleSubscriptionActivated(webhookData);
+//         break;
+//       case "Subscription Cancelled":
+//         await handleSubscriptionCancelled(webhookData);
+//         break;
+//       case "Subscription Expired":
+//         await handleSubscriptionExpired(webhookData);
+//         break;
+//       case "Subscription Renewed":
+//         await handleSubscriptionRenewed(webhookData);
+//         break;
+//       default:
+//         console.log("Unhandled webhook type:", webhookData.trigger_type);
+//     }
 
-    } catch (error) {
-      console.error('Error processing payment:', error);
-      // Still respond 200 to Paymob to avoid retries
-      res.status(200).json({ 
-        message: 'Webhook received but processing failed',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
+//     res.status(200).json({ received: true });
+//   } catch (error) {
+//     console.error("Webhook processing error:", error);
+//     res.status(500).json({ error: "Webhook processing failed" });
+//   }
+// };
 
-  } catch (error) {
-    console.error('Error processing webhook:', error);
-    next(error);
-  }
-};
+// async function handleSubscriptionCreated(data: any) {
+//   const { subscription_data } = data;
 
-// Webhook verification endpoint (optional but recommended)
-export const verifyWebhook = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    // In a real implementation, you would verify the webhook signature
-    // For now, we'll just log the verification request
-    console.log('Webhook verification request received');
-    res.status(200).json({ message: 'Webhook verified' });
-  } catch (error) {
-    next(error);
-  }
-}; 
+//   try {
+//     // Find subscription by user email or phone (since we don't have direct reference)
+//     // You might need to adjust this based on how you store the reference
+//     const subscription = await Subscriptions.findOne({
+//       _id: subscription_data.extras.subscriptionId,
+//     });
+//     console.log(
+//       "subscription_data.extras.subscriptionId",
+//       subscription_data.extras.subscriptionId
+//     );
+//     console.log("subscription", subscription);
+
+//     if (subscription) {
+//       await Subscriptions.findByIdAndUpdate(subscription._id, {
+//         paymobSubscriptionId: subscription_data.id.toString(),
+//         status:
+//           subscription_data.state === "active"
+//             ? SubscriptionStatus.ACTIVE
+//             : SubscriptionStatus.TRIALING,
+//         currentPeriodStart: new Date(subscription_data.starts_at),
+//         currentPeriodEnd: new Date(subscription_data.next_billing),
+//       });
+
+//       console.log(`Subscription created: ${subscription._id}`);
+//     } else {
+//       console.error("Could not find matching subscription for webhook");
+//     }
+//   } catch (error) {
+//     console.error("Error handling subscription created:", error);
+//   }
+// }
+
+// async function handleSubscriptionActivated(data: any) {
+//   const { subscription_data } = data;
+
+//   try {
+//     await Subscriptions.findOneAndUpdate(
+//       { paymobSubscriptionId: subscription_data.id.toString() },
+//       {
+//         status: SubscriptionStatus.ACTIVE,
+//         currentPeriodStart: new Date(subscription_data.starts_at),
+//         currentPeriodEnd: new Date(subscription_data.next_billing),
+//       }
+//     );
+
+//     console.log(`Subscription activated: ${subscription_data.id}`);
+//   } catch (error) {
+//     console.error("Error handling subscription activated:", error);
+//   }
+// }
+
+// async function handleSubscriptionCancelled(data: any) {
+//   const { subscription_data } = data;
+
+//   try {
+//     await Subscriptions.findOneAndUpdate(
+//       { paymobSubscriptionId: subscription_data.id.toString() },
+//       {
+//         status: SubscriptionStatus.CANCELLED,
+//         cancelledAt: new Date(),
+//         // Keep currentPeriodEnd as is - they can use service until period ends
+//       }
+//     );
+
+//     console.log(`Subscription cancelled: ${subscription_data.id}`);
+//   } catch (error) {
+//     console.error("Error handling subscription cancelled:", error);
+//   }
+// }
+
+// async function handleSubscriptionExpired(data: any) {
+//   const { subscription_data } = data;
+
+//   try {
+//     await Subscriptions.findOneAndUpdate(
+//       { paymobSubscriptionId: subscription_data.id.toString() },
+//       {
+//         status: SubscriptionStatus.EXPIRED,
+//         currentPeriodEnd: new Date(), // Set to now since it's expired
+//       }
+//     );
+
+//     console.log(`Subscription expired: ${subscription_data.id}`);
+//   } catch (error) {
+//     console.error("Error handling subscription expired:", error);
+//   }
+// }
+
+// async function handleSubscriptionRenewed(data: any) {
+//   const { subscription_data } = data;
+
+//   try {
+//     await Subscriptions.findOneAndUpdate(
+//       { paymobSubscriptionId: subscription_data.id.toString() },
+//       {
+//         status: SubscriptionStatus.ACTIVE,
+//         currentPeriodStart: new Date(),
+//         currentPeriodEnd: new Date(subscription_data.next_billing),
+//       }
+//     );
+
+//     console.log(`Subscription renewed: ${subscription_data.id}`);
+//   } catch (error) {
+//     console.error("Error handling subscription renewed:", error);
+//   }
+// }
+
+//disabled paymob integration for now
