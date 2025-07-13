@@ -2,6 +2,7 @@ import { body, param } from "express-validator";
 import { validate } from "../middlewares/validators";
 
 export const validateCreateMenuItem = [
+  param("shopId").isMongoId().withMessage("Invalid shopId"),
   body("name").isString().notEmpty().withMessage("Name is required"),
   body("description")
     .isString()
@@ -31,7 +32,6 @@ export const validateCreateMenuItem = [
   body("options.*.choices.*.price")
     .isFloat({ min: 0 })
     .withMessage("Choice price must be non-negative"),
-
   body("isAvailable")
     .optional()
     .isBoolean()
@@ -45,7 +45,7 @@ export const validateUpdateMenuItem = [
   body("name").optional().isString(),
   body("description").optional().isString(),
   body("price").optional().isFloat({ min: 0 }),
-  body("categoryId").isMongoId().withMessage("Invalid categoryId"),
+  body("categoryId").optional().isMongoId().withMessage("Invalid categoryId"),
   body("imgUrl").optional().isString(),
   body("discount")
     .optional()
@@ -68,4 +68,16 @@ export const validateUpdateMenuItem = [
     .withMessage("Choice price must be non-negative"),
   body("isAvailable").optional().isBoolean(),
   validate,
+];
+
+export const validateToggleAvailability = [
+  param("shopId").isMongoId().withMessage("Invalid shopId"),
+  param("itemId").isMongoId().withMessage("Invalid itemId"),
+  validate
+];
+
+export const validateGetOrDeleteItemById = [
+  param("shopId").isMongoId().withMessage("Invalid shopId"),
+  param("itemId").isMongoId().withMessage("Invalid itemId"),
+  validate
 ];

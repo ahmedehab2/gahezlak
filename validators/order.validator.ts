@@ -3,7 +3,7 @@ import { validate } from '../middlewares/validators';
 import { OrderStatus } from '../models/Order';
 
 export const validateCreateOrder = [
-  body('shopId').isMongoId().withMessage('Invalid shopId'),
+  param('shopId').isMongoId().withMessage('Invalid shopId'),
   body('tableNumber').optional().isInt({ min: 1 }).withMessage('tableNumber must be a positive integer'),
   body('totalAmount').isFloat({ min: 0 }).withMessage('Total amount must be a non-negative number'),
   body('orderItems').isArray({ min: 1 }).withMessage('Order items must be a non-empty array'),
@@ -21,3 +21,10 @@ export const validateUpdateOrderStatus = [
     .withMessage(`Status must be one of: ${Object.values(OrderStatus).join(', ')}`),
   validate,
 ];
+
+
+export const validateOrderId = [
+  param("id").isMongoId().withMessage("Invalid order ID"),
+  validate,
+];
+

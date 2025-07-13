@@ -39,6 +39,9 @@ enum errorMessage {
   YEARLY_PLAN_EXISTS = "YEARLY_PLAN_EXISTS",
   BOTH_PLANS_EXIST = "BOTH_PLANS_EXIST",
   NO_ACTIVE_SUBSCRIPTION = "NO_ACTIVE_SUBSCRIPTION",
+  CATEGORY_NOT_FOUND = "CATEGORY_NOT_FOUND",
+  MENU_ITEM_NOT_FOUND = "MENU_ITEM_NOT_FOUND",
+  ORDER_NOT_FOUND = "ORDER_NOT_FOUND",
 }
 
 export const errMsg: {
@@ -181,5 +184,19 @@ export const errMsg: {
   NO_ACTIVE_SUBSCRIPTION: {
     en: "No active subscription found for user",
     ar: "لا يوجد اشتراك نشط",
+  },
+
+  CATEGORY_NOT_FOUND:{
+    en:"Category not found",
+    ar:"الفئة غير موجودة"
+  },
+  MENU_ITEM_NOT_FOUND:{
+    en:"Menu item not found",
+    ar:"العنصر غير موجود"
+  },
+
+  ORDER_NOT_FOUND: {
+    en: "Order not found",
+    ar: "الطلب غير موجود",
   },
 };

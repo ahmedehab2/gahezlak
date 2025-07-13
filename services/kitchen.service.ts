@@ -1,55 +1,31 @@
-import { Orders, OrderStatus } from "../models/Order";
-import { Errors } from "../errors";
+import { Orders, OrderStatus } from '../models/Order';
+import { Errors } from '../errors';
+import { errMsg } from '../common/err-messages';
+import mongoose from 'mongoose';
 
-export const getKitchenOrders = async (shopId: string) => {
-  try {
-    const orders = await Orders.find({
-      shopId,
-      isSentToKitchen: true,
-      orderStatus: { $ne: OrderStatus.Delivered } //$ne exclude delivered orders to avoid cluttering kitchen view
-    }).sort({ createdAt: -1 });
+export async function getKitchenOrders(shopId: string) {
+  const orders = await Orders.find({
+    shopId: new mongoose.Types.ObjectId(shopId),
+    status: OrderStatus.InProgress,
+    sentToKitchen: true,
+  }).populate('orderItems.menuItemId');
 
-    return orders;
-  } catch (error) {
-    throw error;
-  }
-};
+  return orders.map((order) => order.toObject());
+}
 
+export async function updateKitchenOrderStatus(orderId: string, status: string) {
+  const order = await Orders.findOneAndUpdate(
+    {
+      _id: new mongoose.Types.ObjectId(orderId),
+      sentToKitchen: true,
+    },
+    { status },
+    { new: true }
+  );
 
-export const updateKitchenOrderStatus = async (
-  orderId: string,
-  status: OrderStatus
-) => {
-  const allowedStatuses: OrderStatus[] = [
-    OrderStatus.Preparing,
-    OrderStatus.Ready,
-    OrderStatus.Delivered,
-  ];
-
-  if (!allowedStatuses.includes(status)) {
-    throw new Errors.BadRequestError({
-      en: "Invalid kitchen status",
-      ar: "حالة غير صالحة من قبل المطبخ",
-    });
-  }
-
-  const order = await Orders.findById(orderId);
   if (!order) {
-    throw new Errors.NotFoundError({
-      en: "Order not found",
-      ar: "الطلب غير موجود",
-    });
+    throw new Errors.NotFoundError(errMsg.ORDER_NOT_FOUND);
   }
 
-  if (!order.isSentToKitchen) {
-    throw new Errors.BadRequestError({
-      en: "Order has not been sent to the kitchen",
-      ar: "الطلب لم يُرسل إلى المطبخ بعد",
-    });
-  }
-
-  order.orderStatus = status;
-  await order.save();
-
-  return order;
-};
+  return order.toObject();
+}

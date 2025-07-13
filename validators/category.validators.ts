@@ -1,0 +1,100 @@
+import { body, param } from 'express-validator';
+import { validate } from '../middlewares/validators';
+
+// Validate shopId param
+export const categoryParamValidators = [
+  param('shopId').isMongoId().withMessage('Invalid shopId'),
+  validate
+];
+
+// Validate categoryId param
+export const categoryIdValidator = [
+  param('categoryId').isMongoId().withMessage('Invalid categoryId'),
+  validate
+];
+
+// Create category validator
+export const createCategoryValidator = [
+  body('name')
+    .isString()
+    .notEmpty()
+    .withMessage('Category name is required'),
+
+  body('description')
+    .optional()
+    .isString()
+    .withMessage('Description must be a string'),
+
+  validate
+];
+
+// Update category validator
+export const updateCategoryValidator = [
+  body('name')
+    .optional()
+    .isString()
+    .withMessage('Category name must be a string'),
+
+  body('description')
+    .optional()
+    .isString()
+    .withMessage('Description must be a string'),
+
+  validate
+];
+
+// Validate updating a menu item inside category
+export const updateItemInCategoryValidator = [
+  param('itemId').isMongoId().withMessage('Invalid itemId'),
+
+  body('name').optional().isString().withMessage('Name must be a string'),
+  body('description')
+    .optional()
+    .isString()
+    .withMessage('Description must be a string'),
+  body('price')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('Price must be a non-negative number'),
+  body('imgUrl').optional().isString(),
+  body('discount')
+    .optional()
+    .isFloat({ min: 0, max: 100 })
+    .withMessage('Discount must be between 0 and 100'),
+
+  body('options')
+    .optional()
+    .isArray()
+    .withMessage('Options must be an array'),
+  body('options.*.group')
+    .optional()
+    .isString()
+    .withMessage('Option group is required'),
+  body('options.*.type')
+    .optional()
+    .isIn(['single', 'multiple'])
+    .withMessage('Invalid option type'),
+  body('options.*.required')
+    .optional()
+    .isBoolean()
+    .withMessage('Required must be a boolean'),
+  body('options.*.choices')
+    .optional()
+    .isArray()
+    .withMessage('Choices must be an array'),
+  body('options.*.choices.*.label')
+    .optional()
+    .isString()
+    .withMessage('Choice label is required'),
+  body('options.*.choices.*.price')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('Choice price must be non-negative'),
+
+  body('isAvailable')
+    .optional()
+    .isBoolean()
+    .withMessage('isAvailable must be boolean'),
+
+  validate
+];
