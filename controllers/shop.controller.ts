@@ -38,7 +38,7 @@ export const createShopHandler: RequestHandler<
       _id: new Types.ObjectId(req.user?.userId),
     },
     {
-      shopId: shop._id,
+      shop: shop._id,
       role: shopOwnerRole._id,
     }
   );
