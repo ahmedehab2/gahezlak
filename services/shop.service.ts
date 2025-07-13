@@ -12,8 +12,19 @@ async function createShop(shopData: Partial<IShop>, currentUserId: string) {
   return shop.toObject();
 }
 
-async function getShop(shopId: string, userId: string) {
-  const shop = await Shops.findOne({ _id: shopId, ownerId: userId });
+async function getUserShop(userId: string) {
+  const shop = await Shops.findOne({
+    $or: [
+      { ownerId: userId },
+      {
+        members: {
+          $elemMatch: {
+            userId: new mongoose.Types.ObjectId(userId),
+          },
+        },
+      },
+    ],
+  });
   if (!shop) {
     throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
   }
@@ -41,4 +52,4 @@ async function getAllShops() {
   return shops;
 }
 
-export { createShop, updateShop, getAllShops, deleteShop, getShop };
+export { createShop, updateShop, getAllShops, deleteShop, getUserShop };
