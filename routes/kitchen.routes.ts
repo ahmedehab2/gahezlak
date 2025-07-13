@@ -7,13 +7,9 @@ import { isAllowed } from "../middlewares/auth";
 
 const router = express.Router();
 
-router.get(
-  "/kitchen/orders",
-  isAllowed(["Kitchen"]),
-  GetKitchenOrdersController
-);
+router.get("/orders", isAllowed(["Kitchen"]), GetKitchenOrdersController);
 router.put(
-  "/kitchen/orders/:id/status",
+  "/orders/:id/status",
   isAllowed(["Kitchen"]),
   UpdateKitchenOrderStatusController
 );
