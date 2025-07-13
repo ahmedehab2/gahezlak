@@ -1,7 +1,7 @@
 import express from "express";
 import * as controllers from "../controllers/shop.controller";
 import { protect } from "../middlewares/auth";
-import { creatShopValidator,validateRegenerateQRCode, validateGetMenuUrl} from "../validators/shop.validators";
+import { creatShopValidator,validateRegenerateQRCode, validateGetMenuUrl} from "../validators/shop.validator";
 
 const router = express.Router();
 
