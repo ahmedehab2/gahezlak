@@ -7,28 +7,27 @@ import { Role } from "../models/Role";
 // menu items imports
 
 import {
-  createMenuItemAndAddToCategoryController,
-  getMenuItemByIdController,
-  deleteMenuItemController,
-  toggleItemAvailabilityController
-} from '../controllers/menu-item.controller';
+  createMenuItemAndAddToCategoryHandler,
+  getMenuItemByIdHandler,
+  deleteMenuItemHandler,
+  toggleItemAvailabilityHandler,
+} from "../controllers/menu-item.controller";
 
 import {
   validateCreateMenuItem,
   validateToggleAvailability,
-  validateGetOrDeleteItemById
-} from '../validators/menu-item.validator';
+  validateGetOrDeleteItemById,
+} from "../validators/menu-item.validator";
 
-// category imports 
+// category imports
 
 import {
-  createCategoryController,
-  getCategoriesWithItemsByShopController,
-  updateCategoryController,
-  deleteCategoryAndItemsController,
-  updateItemInCategoryController,
-  getItemsInCategoryController,
-  getCategoryByIdController,
+  createCategoryHandler,
+  getCategoriesWithItemsByShopHandler,
+  updateCategoryHandler,
+  deleteCategoryAndItemsHandler,
+  getItemsInCategoryHandler,
+  getCategoryByIdHandler,
 } from "../controllers/category.controller";
 
 import {
@@ -42,14 +41,13 @@ import {
 // Order imports
 
 import {
-  CreateOrderController,
-  CancelledOrderController,
-  UpdateOrderStatusController,
-  GetOrdersByShopController,
-  GetOrderByIdController,
-  SendOrderToKitchenController,
+  createOrderHandler,
+  cancelledOrderHandler,
+  updateOrderStatusHandler,
+  getOrdersByShopHandler,
+  getOrderByIdHandler,
+  sendOrderToKitchenHandler,
 } from "../controllers/order.controller";
-import {  isAllowed } from "../middlewares/auth";
 import {
   validateCreateOrder,
   validateUpdateOrderStatus,
@@ -58,8 +56,8 @@ import {
 // kitchen imports
 
 import {
-  GetKitchenOrdersController,
-  UpdateKitchenOrderStatusController,
+  getKitchenOrdersHandler,
+  updateKitchenOrderStatusHandler,
 } from "../controllers/kitchen.controller";
 
 import { validateOrderId } from "../validators/order.validator";
@@ -101,25 +99,64 @@ router.get(
 // Admin endpoints
 router.get("/", protect, isAllowed([Role.ADMIN]), controllers.getAllShops); // ADMIN ENDPOINT FOR NOW
 
+// menu item routes
 
+router.post(
+  "/:shopId/menu-items",
+  validateCreateMenuItem,
+  createMenuItemAndAddToCategoryHandler
+);
 
-// menu item routes 
+router.get(
+  "/:shopId/menu-items/:itemId",
+  validateGetOrDeleteItemById,
+  getMenuItemByIdHandler
+);
 
-router.post('/:shopId/menu-items', validateCreateMenuItem, createMenuItemAndAddToCategoryController);
+router.delete(
+  "/:shopId/menu-items/:itemId",
+  validateGetOrDeleteItemById,
+  deleteMenuItemHandler
+);
 
-router.get('/:shopId/menu-items/:itemId', validateGetOrDeleteItemById, getMenuItemByIdController);
-
-router.delete('/:shopId/menu-items/:itemId', validateGetOrDeleteItemById, deleteMenuItemController);
-
-router.put('/:shopId/menu-items/:itemId/toggle', validateToggleAvailability, toggleItemAvailabilityController);
+router.patch(
+  "/:shopId/menu-items/:itemId/toggle",
+  validateToggleAvailability,
+  toggleItemAvailabilityHandler
+);
 
 //category routes
 
-router.post("/:shopId/categories", categoryParamValidators, createCategoryValidator, createCategoryController);
-router.get("/:shopId/categories", categoryParamValidators, getCategoriesWithItemsByShopController);
-router.get("/:shopId/categories/:categoryId", categoryParamValidators, categoryIdValidator, getCategoryByIdController);
-router.put("/:shopId/categories/:categoryId", categoryParamValidators, categoryIdValidator, updateCategoryValidator, updateCategoryController);
-router.delete("/:shopId/categories/:categoryId", categoryParamValidators, categoryIdValidator, deleteCategoryAndItemsController);
+router.post(
+  "/:shopId/categories",
+  categoryParamValidators,
+  createCategoryValidator,
+  createCategoryHandler
+);
+router.get(
+  "/:shopId/categories",
+  categoryParamValidators,
+  getCategoriesWithItemsByShopHandler
+);
+router.get(
+  "/:shopId/categories/:categoryId",
+  categoryParamValidators,
+  categoryIdValidator,
+  getCategoryByIdHandler
+);
+router.put(
+  "/:shopId/categories/:categoryId",
+  categoryParamValidators,
+  categoryIdValidator,
+  updateCategoryValidator,
+  updateCategoryHandler
+);
+router.delete(
+  "/:shopId/categories/:categoryId",
+  categoryParamValidators,
+  categoryIdValidator,
+  deleteCategoryAndItemsHandler
+);
 
 router.put(
   "/:shopId/:categoryId/:itemId",
@@ -128,63 +165,67 @@ router.put(
   updateItemInCategoryValidator,
   updateItemInCategoryController
 );
-router.get("/:shopId/:categoryId", categoryParamValidators, categoryIdValidator, getItemsInCategoryController);
-
+router.get(
+  "/:shopId/:categoryId",
+  categoryParamValidators,
+  categoryIdValidator,
+  getItemsInCategoryHandler
+);
 
 // order routes
 
-router.post("/:shopId/orders", validateCreateOrder, CreateOrderController);
+router.post("/:shopId/orders", validateCreateOrder, createOrderHandler);
 
 router.put(
   "/:shopId/orders/:orderId/status",
   protect,
   isAllowed(["Cashier", "Admin"]),
   validateUpdateOrderStatus,
-  UpdateOrderStatusController
+  updateOrderStatusHandler
 );
+
 router.put(
   "/:shopId/orders/:orderId/cancel",
   protect,
   isAllowed(["Cashier", "Admin"]),
-  CancelledOrderController
+  cancelledOrderHandler
 );
+
 router.get(
   "/:shopId/orders",
   protect,
   isAllowed(["Cashier", "Admin"]),
-  GetOrdersByShopController
+  getOrdersByShopHandler
 );
+
 router.get(
   "/:shopId/orders/:orderId",
   protect,
   isAllowed(["Cashier", "Admin"]),
-  GetOrderByIdController
+  validateOrderId,
+  getOrderByIdHandler
 );
+
 router.put(
   "/:shopId/orders/:orderId/sendToKitchen",
   protect,
   isAllowed(["Cashier", "Admin"]),
-  SendOrderToKitchenController
+  sendOrderToKitchenHandler
 );
-
 
 // kitchen routes
 
 router.get(
   "/:shopId/orders/kitchen",
   isAllowed(["Kitchen"]),
-  GetKitchenOrdersController
+  getKitchenOrdersHandler
 );
+
 router.put(
   "/:shopId/orders/:orderId/kitchen/status",
   validateOrderId,
   isAllowed(["Kitchen"]),
-  UpdateKitchenOrderStatusController
+  updateKitchenOrderStatusHandler
 );
-
-
-
-
-
 
 export default router;

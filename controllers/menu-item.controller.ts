@@ -1,57 +1,62 @@
-import { RequestHandler } from 'express';
+import { RequestHandler } from "express";
 import {
   createMenuItemAndAddToCategory,
   deleteMenuItem,
   getMenuItemById,
-  toggleItemAvailability
-} from '../services/menu-item.service';
-import { SuccessResponse } from '../common/types/contoller-response.types';
+  toggleItemAvailability,
+} from "../services/menu-item.service";
+import { SuccessResponse } from "../common/types/contoller-response.types";
 
-export const createMenuItemAndAddToCategoryController: RequestHandler = async (req, res) => {
-  const {shopId,categoryId} = req.params;
+export const createMenuItemAndAddToCategoryHandler: RequestHandler = async (
+  req,
+  res
+) => {
+  const { shopId, categoryId } = req.params;
   const data = req.body;
-  const item = await createMenuItemAndAddToCategory(shopId, data,categoryId);
+  const item = await createMenuItemAndAddToCategory(shopId, data, categoryId);
 
   const response: SuccessResponse<typeof item> = {
-    message: 'Menu item created and added to category',
-    data: item
+    message: "Menu item created and added to category",
+    data: item,
   };
 
   res.status(201).json(response);
 };
 
-export const getMenuItemByIdController: RequestHandler = async (req, res) => {
+export const getMenuItemByIdHandler: RequestHandler = async (req, res) => {
   const { shopId, itemId } = req.params;
-  const item = await getMenuItemById(shopId, itemId, req.lang);
+  const item = await getMenuItemById(shopId, itemId);
 
   const response: SuccessResponse<typeof item> = {
-    message: 'Menu item retrieved successfully',
-    data: item
+    message: "Menu item retrieved",
+    data: item,
   };
 
   res.status(200).json(response);
 };
 
-export const deleteMenuItemController: RequestHandler = async (req, res) => {
+export const deleteMenuItemHandler: RequestHandler = async (req, res) => {
   const { shopId, itemId } = req.params;
-  const result = await deleteMenuItem(shopId, itemId);
+  const deleted = await deleteMenuItem(shopId, itemId);
 
-  const response: SuccessResponse<typeof result> = {
-    message: 'Menu item deleted successfully',
-    data: result
+  const response: SuccessResponse<typeof deleted> = {
+    message: "Menu item deleted",
+    data: deleted,
   };
 
   res.status(200).json(response);
 };
 
-export const toggleItemAvailabilityController: RequestHandler = async (req, res) => {
+export const toggleItemAvailabilityHandler: RequestHandler = async (
+  req,
+  res
+) => {
   const { shopId, itemId } = req.params;
-  const isAvailable = req.body.isAvailable;
-  const updatedItem = await toggleItemAvailability(shopId, itemId, isAvailable);
+  const item = await toggleItemAvailability(shopId, itemId);
 
-  const response: SuccessResponse<typeof updatedItem> = {
-    message: 'Item availability toggled successfully',
-    data: updatedItem
+  const response: SuccessResponse<typeof item> = {
+    message: "Item availability toggled",
+    data: item,
   };
 
   res.status(200).json(response);
