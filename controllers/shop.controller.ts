@@ -89,12 +89,12 @@ export const getAllShops: RequestHandler<
  * Regenerate QR code for shop
  */
 export const regenerateQRCodeHandler: RequestHandler<
-  { id: string },
+  unknown,
   SuccessResponse<{ qrCodeImage: string; menuUrl: string }>,
   QRCodeOptions
 > = async (req, res) => {
   const result = await ShopService.regenerateShopQRCode(
-    req.params.id,
+    req.user?.shopId!,
     req.body
   );
   res.status(200).json({

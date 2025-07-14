@@ -26,7 +26,7 @@ app.use(languageMiddleware);
 
 app.use("/api/v1/plans", planRoutes);
 app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/user", userRoutes);
+app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/subscriptions", subscriptionRoutes);
 app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/shops", shopRoutes);

@@ -1,39 +1,55 @@
 import { RequestHandler } from "express";
 import {
-  createMenuItemAndAddToCategory,
+  createMenuItem,
   deleteMenuItem,
   getMenuItemById,
   toggleItemAvailability,
 } from "../services/menu-item.service";
 import { SuccessResponse } from "../common/types/contoller-response.types";
+import { IMenuItem } from "../models/MenuItem";
+import { getUserShop } from "../services/shop.service";
 
-export const createMenuItemAndAddToCategoryHandler: RequestHandler = async (
-  req,
-  res
-) => {
-  const { shopId, categoryId } = req.params;
-  const data = req.body;
-  const item = await createMenuItemAndAddToCategory(shopId, data, categoryId);
+export const createMenuItemAndAddToCategoryHandler: RequestHandler<
+  unknown,
+  SuccessResponse<IMenuItem>,
+  Pick<
+    IMenuItem,
+    | "name"
+    | "description"
+    | "price"
+    | "categoryId"
+    | "imgUrl"
+    | "discount"
+    | "options"
+    | "isAvailable"
+  >
+> = async (req, res) => {
+  const shopId = req.user?.shopId!;
 
-  const response: SuccessResponse<typeof item> = {
-    message: "Menu item created and added to category",
+  await getUserShop(req.user?.userId!); // make sure the req.user is member of the shop
+
+  const item = await createMenuItem(shopId, req.body);
+
+  res.status(201).json({
+    message: "Menu item created successfully",
     data: item,
-  };
-
-  res.status(201).json(response);
+  });
 };
 
-export const getMenuItemByIdHandler: RequestHandler = async (req, res) => {
+export const getMenuItemByIdHandler: RequestHandler<
+  { shopId: string; itemId: string },
+  SuccessResponse<IMenuItem>,
+  unknown,
+  { lang: "en" | "ar" }
+> = async (req, res) => {
   const { shopId, itemId } = req.params;
-  const lang = req.lang as "en" | "ar";
+  const lang = req.lang;
   const item = await getMenuItemById(shopId, itemId, lang);
 
-  const response: SuccessResponse<typeof item> = {
+  res.status(200).json({
     message: "Menu item retrieved",
-    data: item,
-  };
-
-  res.status(200).json(response);
+    data: item as unknown as IMenuItem, // TODO: fix this
+  });
 };
 
 export const deleteMenuItemHandler: RequestHandler = async (req, res) => {

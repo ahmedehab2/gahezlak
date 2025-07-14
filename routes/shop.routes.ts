@@ -1,65 +1,29 @@
 import express from "express";
 import * as controllers from "../controllers/shop.controller";
 import { isAllowed, protect } from "../middlewares/auth";
-import * as validators from "../validators/shop.validator";
+import * as shopValidators from "../validators/shop.validator";
 import { Role } from "../models/Role";
 
 // menu items imports
 
-import {
-  createMenuItemAndAddToCategoryHandler,
-  getMenuItemByIdHandler,
-  deleteMenuItemHandler,
-  toggleItemAvailabilityHandler,
-} from "../controllers/menu-item.controller";
+import * as menuItemControllers from "../controllers/menu-item.controller";
 
-import {
-  validateCreateMenuItem,
-  validateToggleAvailability,
-  validateGetOrDeleteItemById,
-} from "../validators/menu-item.validator";
+import * as menuItemValidators from "../validators/menu-item.validator";
 
 // category imports
 
-import {
-  createCategoryHandler,
-  getCategoriesWithItemsByShopHandler,
-  updateCategoryHandler,
-  deleteCategoryAndItemsHandler,
-  getItemsInCategoryHandler,
-  getCategoryByIdHandler,
-  updateItemInCategoryHandler,
-} from "../controllers/category.controller";
+import * as categoryControllers from "../controllers/category.controller";
 
-import {
-  categoryParamValidators,
-  createCategoryValidator,
-  updateCategoryValidator,
-  categoryIdValidator,
-  updateItemInCategoryValidator,
-} from "../validators/category.validators";
+import * as categoryValidators from "../validators/category.validators";
 
 // Order imports
 
-import {
-  createOrderHandler,
-  cancelledOrderHandler,
-  updateOrderStatusHandler,
-  getOrdersByShopHandler,
-  getOrderByIdHandler,
-  sendOrderToKitchenHandler,
-} from "../controllers/order.controller";
-import {
-  validateCreateOrder,
-  validateUpdateOrderStatus,
-} from "../validators/order.validator";
+import * as orderControllers from "../controllers/order.controller";
+import * as orderValidators from "../validators/order.validator";
 
 // kitchen imports
 
-import {
-  getKitchenOrdersHandler,
-  updateKitchenOrderStatusHandler,
-} from "../controllers/kitchen.controller";
+import * as kitchenControllers from "../controllers/kitchen.controller";
 
 import { validateOrderId } from "../validators/order.validator";
 
@@ -68,24 +32,24 @@ const router = express.Router();
 router.post(
   "/",
   protect,
-  validators.creatShopValidator,
+  shopValidators.creatShopValidator,
   controllers.createShopHandler
 );
 router.put(
-  "/:id",
+  "/:shopId",
   protect,
   isAllowed([Role.ADMIN, Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-  validators.updateShopValidator,
+  shopValidators.updateShopValidator,
   controllers.updateShopHandler
 );
-// router.delete("/:id", protect, controllers.deleteShop);
+// router.delete("/:shopId", protect, controllers.deleteShop);
 
 // QR code management (authenticated)
 router.post(
-  "/:shopId/qr-code",
+  "/qr-code",
   protect,
   isAllowed([Role.ADMIN, Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-  validators.validateRegenerateQRCode,
+  shopValidators.validateRegenerateQRCode,
   controllers.regenerateQRCodeHandler
 );
 
@@ -93,7 +57,7 @@ router.post(
 router.get(
   "/:shopName/menu-url",
   protect,
-  validators.validateGetMenuUrl,
+  shopValidators.shopNameParamValidator,
   controllers.getMenuUrlHandler
 );
 
@@ -103,130 +67,153 @@ router.get("/", protect, isAllowed([Role.ADMIN]), controllers.getAllShops); // A
 // menu item routes
 
 router.post(
-  "/:shopId/menu-items",
-  validateCreateMenuItem,
-  createMenuItemAndAddToCategoryHandler
+  "/menu-items",
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  menuItemValidators.validateCreateMenuItem,
+  menuItemControllers.createMenuItemAndAddToCategoryHandler
 );
 
-router.get(
-  "/:shopId/menu-items/:itemId",
-  validateGetOrDeleteItemById,
-  getMenuItemByIdHandler
-);
-
-router.delete(
-  "/:shopId/menu-items/:itemId",
-  validateGetOrDeleteItemById,
-  deleteMenuItemHandler
-);
+router
+  .get(
+    "/:shopId/menu-items/:itemId",
+    menuItemValidators.validateGetOrDeleteItemById,
+    menuItemControllers.getMenuItemByIdHandler
+  )
+  .delete(
+    "/:shopId/menu-items/:itemId",
+    menuItemValidators.validateGetOrDeleteItemById,
+    menuItemControllers.deleteMenuItemHandler
+  );
 
 router.patch(
   "/:shopId/menu-items/:itemId/toggle",
-  validateToggleAvailability,
-  toggleItemAvailabilityHandler
+  menuItemValidators.validateToggleAvailability,
+  menuItemControllers.toggleItemAvailabilityHandler
 );
 
 //category routes
 
 router.post(
-  "/:shopId/categories",
-  categoryParamValidators,
-  createCategoryValidator,
-  createCategoryHandler
-);
-router.get(
-  "/:shopId/categories",
-  categoryParamValidators,
-  getCategoriesWithItemsByShopHandler
-);
-router.get(
-  "/:shopId/categories/:categoryId",
-  categoryParamValidators,
-  categoryIdValidator,
-  getCategoryByIdHandler
-);
-router.put(
-  "/:shopId/categories/:categoryId",
-  categoryParamValidators,
-  categoryIdValidator,
-  updateCategoryValidator,
-  updateCategoryHandler
-);
-router.delete(
-  "/:shopId/categories/:categoryId",
-  categoryParamValidators,
-  categoryIdValidator,
-  deleteCategoryAndItemsHandler
+  "/categories",
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  categoryValidators.createCategoryValidator,
+  categoryControllers.createCategoryHandler
 );
 
-router.put(
-  "/:shopId/:categoryId/:itemId",
-  categoryParamValidators,
-  categoryIdValidator,
-  updateItemInCategoryValidator,
-  updateItemInCategoryHandler
-);
+// for logged in shop workers
 router.get(
-  "/:shopId/:categoryId",
-  categoryParamValidators,
-  categoryIdValidator,
-  getItemsInCategoryHandler
+  "/categories",
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER, Role.SHOP_STAFF]),
+  categoryControllers.getCategoriesByShopHandler
 );
+
+//for public usage (customers)
+router.get(
+  ":shopName/categories",
+  shopValidators.shopNameParamValidator,
+  categoryControllers.getCategoriesByShopHandler
+);
+
+router
+  .get(
+    "/categories/:categoryId",
+    protect,
+    categoryValidators.categoryIdValidator,
+    categoryControllers.getCategoryByIdHandler
+  )
+  .put(
+    "/:shopId/categories/:categoryId",
+    protect,
+    isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+    categoryValidators.updateCategoryValidator,
+    categoryControllers.updateCategoryHandler
+  )
+  .delete(
+    "/:shopId/categories/:categoryId",
+    protect,
+    isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+    shopValidators.shopIdValidator,
+    categoryValidators.categoryIdValidator,
+    categoryControllers.deleteCategoryAndItemsHandler
+  );
+
+// router.put(
+//   "/:shopId/:categoryId/:itemId",
+//   categoryValidators.categoryParamValidators,
+//   categoryValidators.categoryIdValidator,
+//   categoryValidators.updateItemInCategoryValidator,
+//   categoryControllers.updateItemInCategoryHandler
+// );
+// router.get(
+//   "/:shopId/:categoryId",
+//   categoryValidators.categoryParamValidators,
+//   categoryValidators.categoryIdValidator,
+//   categoryControllers.getItemsInCategoryHandler
+// );
 
 // order routes
 
-router.post("/:shopId/orders", validateCreateOrder, createOrderHandler);
+router.post(
+  "/:shopId/orders",
+  orderValidators.validateCreateOrder,
+  orderControllers.createOrderHandler
+);
 
 router.put(
   "/:shopId/orders/:orderId/status",
   protect,
-  isAllowed(["Cashier", "Admin"]),
-  validateUpdateOrderStatus,
-  updateOrderStatusHandler
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  orderValidators.validateUpdateOrderStatus,
+  orderControllers.updateOrderStatusHandler
 );
 
 router.put(
   "/:shopId/orders/:orderId/cancel",
   protect,
-  isAllowed(["Cashier", "Admin"]),
-  cancelledOrderHandler
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER, Role.SHOP_STAFF]),
+  orderControllers.cancelledOrderHandler
 );
 
 router.get(
   "/:shopId/orders",
   protect,
-  isAllowed(["Cashier", "Admin"]),
-  getOrdersByShopHandler
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  orderControllers.getOrdersByShopHandler
 );
 
 router.get(
   "/:shopId/orders/:orderId",
   protect,
-  isAllowed(["Cashier", "Admin"]),
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
   validateOrderId,
-  getOrderByIdHandler
+  orderControllers.getOrderByIdHandler
 );
 
 router.put(
   "/:shopId/orders/:orderId/sendToKitchen",
   protect,
-  isAllowed(["Cashier", "Admin"]),
-  sendOrderToKitchenHandler
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  orderControllers.sendOrderToKitchenHandler
 );
 
 // kitchen routes
 
 router.get(
   "/:shopId/orders/kitchen",
-  isAllowed(["Kitchen"]),
-  getKitchenOrdersHandler
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER, Role.SHOP_STAFF]),
+  kitchenControllers.getKitchenOrdersHandler
 );
 
 router.put(
   "/:shopId/orders/:orderId/kitchen/status",
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER, Role.SHOP_STAFF]),
   validateOrderId,
-  isAllowed(["Kitchen"]),
-  updateKitchenOrderStatusHandler
+  kitchenControllers.updateKitchenOrderStatusHandler
 );
 
 export default router;

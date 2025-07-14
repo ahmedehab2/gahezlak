@@ -324,6 +324,7 @@ export async function generateTokens(user: IUser) {
       userId: user._id.toString(),
       email: user.email,
       role: (user.role as IRole)?.name,
+      shopId: user.shop?._id.toString(),
     },
     process.env.JWT_SECRET!,
     { expiresIn: "1h" }

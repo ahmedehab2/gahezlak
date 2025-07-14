@@ -88,19 +88,21 @@ export async function getUserById(userId: string) {
 export async function getUserProfile(userId: string) {
   const user = await Users.findById(userId)
     .populate({
-      path: 'shopId',
-      select: 'name description address phone email website logo images isActive subscriptionId createdAt updatedAt',
+      path: "shop",
+      select:
+        "name description address phone email website logo images isActive subscriptionId createdAt updatedAt",
       populate: {
-        path: 'subscriptionId',
-        select: 'status currentPeriodStart currentPeriodEnd plan',
+        path: "subscriptionId",
+        select: "status currentPeriodStart currentPeriodEnd plan",
         populate: {
-          path: 'plan',
-          select: 'planGroup title description price currency frequency features isActive'
-        }
-      }
+          path: "plan",
+          select:
+            "planGroup title description price currency frequency features isActive",
+        },
+      },
     })
-    .populate('role', 'role description')
-    .select('-password -refreshToken -verificationCode');
+    .populate("role", "name")
+    .select("-password -refreshToken -verificationCode -newEmail");
 
   if (!user) {
     throw new Errors.NotFoundError(errMsg.USER_NOT_FOUND);
@@ -110,11 +112,14 @@ export async function getUserProfile(userId: string) {
 }
 
 // Update user profile
-export async function updateUserProfile(userId: string, updateData: {
-  firstName?: string;
-  lastName?: string;
-  phoneNumber?: string;
-}) {
+export async function updateUserProfile(
+  userId: string,
+  updateData: {
+    firstName?: string;
+    lastName?: string;
+    phoneNumber?: string;
+  }
+) {
   const user = await Users.findById(userId);
   if (!user) {
     throw new Errors.NotFoundError(errMsg.USER_NOT_FOUND);
@@ -141,25 +146,32 @@ export async function updateUserProfile(userId: string, updateData: {
 }
 
 // Get all users (admin only)
-export async function getAllUsers(page: number = 1, limit: number = 10, search?: string) {
+export async function getAllUsers(
+  page: number = 1,
+  limit: number = 10,
+  search?: string
+) {
   const skip = (page - 1) * limit;
-  
+
   let query: any = {};
-  
+
   // Add search functionality
   if (search) {
     query.$or = [
-      { firstName: { $regex: search, $options: 'i' } },
-      { lastName: { $regex: search, $options: 'i' } },
-      { email: { $regex: search, $options: 'i' } },
-      { phoneNumber: { $regex: search, $options: 'i' } }
+      { firstName: { $regex: search, $options: "i" } },
+      { lastName: { $regex: search, $options: "i" } },
+      { email: { $regex: search, $options: "i" } },
+      { phoneNumber: { $regex: search, $options: "i" } },
     ];
   }
 
   const users = await Users.find(query)
-    .populate('role', 'role description')
-    .populate('shopId', 'name description address phone email')
-    .select('-password -refreshToken -verificationCode')
+    .populate("role", "name")
+    .populate(
+      "shop",
+      "name description address phoneNumber email ownerId subscriptionId"
+    )
+    .select("-password -refreshToken -verificationCode")
     .skip(skip)
     .limit(limit)
     .sort({ createdAt: -1 });
@@ -172,17 +184,20 @@ export async function getAllUsers(page: number = 1, limit: number = 10, search?:
       page,
       limit,
       total,
-      pages: Math.ceil(total / limit)
-    }
+      pages: Math.ceil(total / limit),
+    },
   };
 }
 
 // Get user by ID (admin only)
 export async function getUserByIdAdmin(userId: string) {
   const user = await Users.findById(userId)
-    .populate('role', 'role description')
-    .populate('shopId', 'name description address phone email website logo images isActive subscriptionId')
-    .select('-password -refreshToken -verificationCode');
+    .populate("role", "name")
+    .populate(
+      "shop",
+      "name description address phoneNumber email ownerId subscriptionId"
+    )
+    .select("-password -refreshToken -verificationCode");
 
   if (!user) {
     throw new Errors.NotFoundError(errMsg.USER_NOT_FOUND);
