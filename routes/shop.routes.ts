@@ -79,63 +79,63 @@ router.get("/", controllers.getAllShops); //ADMIN ENDPONT FOR NOW
 
 // menu item routes 
 
-router.post('/:id', validateCreateMenuItem, createMenuItemAndAddToCategoryController);
+router.post('/:shopId/menu-items', validateCreateMenuItem, createMenuItemAndAddToCategoryController);
 
-router.get('/:id/:itemId', validateGetOrDeleteItemById, getMenuItemByIdController);
+router.get('/:shopId/menu-itemss/:itemId', validateGetOrDeleteItemById, getMenuItemByIdController);
 
-router.delete('/:id/:itemId', validateGetOrDeleteItemById, deleteMenuItemController);
+router.delete('/:shopId/menu-items/:itemId', validateGetOrDeleteItemById, deleteMenuItemController);
 
-router.patch('/:id/:itemId/toggle', validateToggleAvailability, toggleItemAvailabilityController);
+router.put('/:shopId/menu-items/:itemId/toggle', validateToggleAvailability, toggleItemAvailabilityController);
 
 //category routes
 
-router.post("/:id", categoryParamValidators, createCategoryValidator, createCategoryController);
-router.get("/:id", categoryParamValidators, getCategoriesWithItemsByShopController);
-router.get("/:id/:categoryId", categoryParamValidators, categoryIdValidator, getCategoryByIdController);
-router.put("/:id/:categoryId", categoryParamValidators, categoryIdValidator, updateCategoryValidator, updateCategoryController);
-router.delete("/:id/:categoryId", categoryParamValidators, categoryIdValidator, deleteCategoryAndItemsController);
+router.post("/:shopId/categories", categoryParamValidators, createCategoryValidator, createCategoryController);
+router.get("/:shopId/categories", categoryParamValidators, getCategoriesWithItemsByShopController);
+router.get("/:shopId/categories/:categoryId", categoryParamValidators, categoryIdValidator, getCategoryByIdController);
+router.put("/:shopId/categories/:categoryId", categoryParamValidators, categoryIdValidator, updateCategoryValidator, updateCategoryController);
+router.delete("/:shopId/categories/:categoryId", categoryParamValidators, categoryIdValidator, deleteCategoryAndItemsController);
 
-// Category Items routes
 router.put(
-  "/:id/:categoryId/items/:itemId",
+  "/:shopId/:categoryId/:itemId",
   categoryParamValidators,
   categoryIdValidator,
   updateItemInCategoryValidator,
   updateItemInCategoryController
 );
-router.get("/:id/:categoryId/items", categoryParamValidators, categoryIdValidator, getItemsInCategoryController);
+router.get("/:shopId/:categoryId", categoryParamValidators, categoryIdValidator, getItemsInCategoryController);
 
 
 // order routes
 
-router.post("/", validateCreateOrder, CreateOrderController);
+router.post("/:shopId/orders", validateCreateOrder, CreateOrderController);
+
 router.put(
-  "/:id/status",
+  "/:shopId/orders/:orderId/status",
   protect,
   isAllowed(["Cashier", "Admin"]),
   validateUpdateOrderStatus,
   UpdateOrderStatusController
 );
 router.put(
-  "/:id/cancel",
+  "/:shopId/orders/:orderId/cancel",
   protect,
   isAllowed(["Cashier", "Admin"]),
   CancelledOrderController
 );
 router.get(
-  "/shop/:shopId",
+  "/:shopId/orders",
   protect,
   isAllowed(["Cashier", "Admin"]),
   GetOrdersByShopController
 );
 router.get(
-  "/:id",
+  "/:shopId/orders/:orderId",
   protect,
   isAllowed(["Cashier", "Admin"]),
   GetOrderByIdController
 );
 router.put(
-  "/:id/sendToKitchen",
+  "/:shopId/orders/:orderId/sendToKitchen",
   protect,
   isAllowed(["Cashier", "Admin"]),
   SendOrderToKitchenController
@@ -145,12 +145,12 @@ router.put(
 // kitchen routes
 
 router.get(
-  "/kitchen/orders",
+  "/:shopId/orders/kitchen",
   isAllowed(["Kitchen"]),
   GetKitchenOrdersController
 );
 router.put(
-  "/kitchen/orders/:id/status",
+  "/:shopId/orders/:orderId/kitchen/status",
   validateOrderId,
   isAllowed(["Kitchen"]),
   UpdateKitchenOrderStatusController
