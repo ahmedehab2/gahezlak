@@ -12,9 +12,11 @@ import { languageMiddleware } from "./middlewares/language.middleware";
 import planRoutes from "./routes/plan.routes";
 import paymentRoutes from "./routes/payment.routes";
 import shopRoutes from "./routes/shop.routes";
+import cors from "cors";
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
