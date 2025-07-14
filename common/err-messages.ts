@@ -39,6 +39,7 @@ enum errorMessage {
   YEARLY_PLAN_EXISTS = "YEARLY_PLAN_EXISTS",
   BOTH_PLANS_EXIST = "BOTH_PLANS_EXIST",
   NO_ACTIVE_SUBSCRIPTION = "NO_ACTIVE_SUBSCRIPTION",
+  SUBSCRIPTION_EXPIRED = "SUBSCRIPTION_EXPIRED",
 }
 
 export const errMsg: {
@@ -181,5 +182,9 @@ export const errMsg: {
   NO_ACTIVE_SUBSCRIPTION: {
     en: "No active subscription found for user",
     ar: "لا يوجد اشتراك نشط",
+  },
+  SUBSCRIPTION_EXPIRED: {
+    en: "Your subscription has expired. Please subscribe to continue.",
+    ar: "انتهت صلاحية اشتراكك. يرجى الاشتراك للمتابعة.",
   },
 };
