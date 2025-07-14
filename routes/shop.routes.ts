@@ -81,7 +81,7 @@ router.get("/", controllers.getAllShops); //ADMIN ENDPONT FOR NOW
 
 router.post('/:shopId/menu-items', validateCreateMenuItem, createMenuItemAndAddToCategoryController);
 
-router.get('/:shopId/menu-itemss/:itemId', validateGetOrDeleteItemById, getMenuItemByIdController);
+router.get('/:shopId/menu-items/:itemId', validateGetOrDeleteItemById, getMenuItemByIdController);
 
 router.delete('/:shopId/menu-items/:itemId', validateGetOrDeleteItemById, deleteMenuItemController);
 
