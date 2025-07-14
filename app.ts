@@ -16,8 +16,6 @@ import paymentRoutes from "./routes/payment.routes";
 import shopRoutes from "./routes/shop.routes";
 import menuItemRoutes from "./routes/menu-item.routes";
 
-
-
 const app = express();
 
 app.use(express.json());
@@ -33,7 +31,7 @@ app.use("/api/v1/plans", planRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/subscriptions", subscriptionRoutes);
-app.use("/orders", orderRoutes);
+app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/kitchen", kitchenRoutes);
 app.use("/api/v1/menu-items", menuItemRoutes);
 app.use("/api/v1/category", categoryRoutes);
