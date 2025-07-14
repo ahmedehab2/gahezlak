@@ -4,17 +4,14 @@ import { connectDB } from "./config/db";
 import authRoutes from "./routes/auth.routes";
 import userRoutes from "./routes/user.routes";
 import subscriptionRoutes from "./routes/subscription.routes";
-import kitchenRoutes from "./routes/kitchen.routes";
+// import kitchenRoutes from "./routes/shop.routes";
 // import http from "http";
 // import { initSocket } from "./sockets/socketServer";
 import { ErrorHandlerMiddleware } from "./middlewares/error-handling.middleware";
 import { languageMiddleware } from "./middlewares/language.middleware";
 import planRoutes from "./routes/plan.routes";
-import orderRoutes from "./routes/order.routes";
-import categoryRoutes from "./routes/category.routes";
 import paymentRoutes from "./routes/payment.routes";
 import shopRoutes from "./routes/shop.routes";
-import menuItemRoutes from "./routes/menu-item.routes";
 
 const app = express();
 
@@ -31,11 +28,6 @@ app.use("/api/v1/plans", planRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/subscriptions", subscriptionRoutes);
-app.use("/api/v1/orders", orderRoutes);
-app.use("/api/v1/kitchen", kitchenRoutes);
-app.use("/api/v1/menu-items", menuItemRoutes);
-app.use("/api/v1/category", categoryRoutes);
-app.use("/api/v1/plans", planRoutes);
 app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/shops", shopRoutes);
 

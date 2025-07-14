@@ -13,6 +13,7 @@ export interface IOrderItem {
 export enum OrderStatus { 
     Pending = 'Pending', 
     Confirmed = 'Confirmed',
+     InProgress = 'InProgress',
      Preparing = 'Preparing',
       Ready = 'Ready',
        Delivered = 'Delivered', 

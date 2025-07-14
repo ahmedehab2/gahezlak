@@ -1,164 +1,131 @@
-import { CategoryModel, ICategory } from "../models/Category";
-import { Shops } from "../models/Shop";
-import { Errors } from "../errors";
-import { IMenuItem, MenuItemModel } from "../models/MenuItem";
-import { buildLocalizedMenuItem } from "../utils/menu-item-utils";
-import { LangType } from "../common/types/general-types";
+import { ICategory, CategoryModel } from '../models/Category';
+import { IMenuItem, MenuItemModel } from '../models/MenuItem';
+import { Errors } from '../errors';
+import { errMsg } from '../common/err-messages';
+import mongoose from 'mongoose';
+import { calculateFinalPrice } from '../utils/menu-item-utils';
 
-export const createCategory = async (
-  shopId: string,
-  categoryData: ICategory
-) => {
-  const shop = await Shops.findById(shopId);
-  if (!shop)
-    throw new Errors.NotFoundError({
-      en: "Shop not found",
-      ar: "المتجر غير موجود",
-    });
-
-  const { menuItems, ...safeData } = categoryData; // Prevent menuItems injection
-  const category = new CategoryModel({ ...safeData, shopId });
-  return await category.save();
-};
-
-export const getCategoriesWithItemsByShop = async (
-  shopId: string,
-  lang: LangType
-) => {
-  const shop = await Shops.findById(shopId);
-  if (!shop)
-    throw new Errors.NotFoundError({
-      en: "Shop not found",
-      ar: "المتجر غير موجود",
-    });
-  const categories = await CategoryModel.find({ shopId }).populate({
-    path: "menuItems",
+export async function createCategory(shopId: string, categoryData: Partial<ICategory>) {
+  const category = await CategoryModel.create({
+    ...categoryData,
+    shopId: new mongoose.Types.ObjectId(shopId)
   });
+  return category.toObject();
+}
 
-  return categories.map((cat) => {
-    const localizedItems =
-      cat.menuItems?.map((item: any) => buildLocalizedMenuItem(item, lang)) ||
-      [];
-    return {
-      _id: cat._id,
-      shopId: cat.shopId,
-      name: cat.name,
-      description: cat.description,
-      menuItems: localizedItems,
-      createdAt: cat.createdAt,
-      updatedAt: cat.updatedAt,
-    };
-  });
-};
-
-export const updateCategory = async (
-  shopId: string,
-  categoryId: string,
-  updateData: ICategory
-) => {
-  const { menuItems, ...safeUpdate } = updateData; // Prevent menuItems overwrite
+export async function updateCategory(shopId: string, categoryId: string, updateData: Partial<ICategory>) {
   const category = await CategoryModel.findOneAndUpdate(
-    { _id: categoryId, shopId },
-    safeUpdate,
-    { new: true }
-  );
-  if (!category)
-    throw new Errors.NotFoundError({
-      en: "Category not found",
-      ar: "الفئة غير موجودة",
-    });
-  return category;
-};
-
-export const updateItemInCategory = async (
-  shopId: string,
-  categoryId: string,
-  itemId: string,
-  updateData: IMenuItem
-) => {
-  const category = await CategoryModel.findOne({ _id: categoryId, shopId });
-  if (!category)
-    throw new Errors.NotFoundError({
-      en: "Category not found",
-      ar: "الفئة غير موجودة",
-    });
-
-  const item = category.menuItems?.find((id) => id.toString() === itemId);
-  if (!item)
-    throw new Errors.NotFoundError({
-      en: "Item not found in category",
-      ar: "العنصر غير موجود في الفئة",
-    });
-
-  const updatedItem = await MenuItemModel.findByIdAndUpdate(
-    itemId,
+    {
+      _id: new mongoose.Types.ObjectId(categoryId),
+      shopId: new mongoose.Types.ObjectId(shopId)
+    },
     updateData,
     { new: true }
   );
-  if (!updatedItem)
-    throw new Errors.NotFoundError({
-      en: "Menu item not found",
-      ar: "العنصر غير موجود",
-    });
 
-  return updatedItem;
-};
-
-export const getItemsInCategory = async (
-  shopId: string,
-  categoryId: string,
-  lang: LangType
-) => {
-  const category = await CategoryModel.findOne({ _id: categoryId, shopId });
   if (!category) {
-    throw new Errors.NotFoundError({
-      en: "Category not found",
-      ar: "الفئة غير موجودة",
-    });
+    throw new Errors.NotFoundError(errMsg.CATEGORY_NOT_FOUND);
   }
 
-  const items = await MenuItemModel.find({
-    categoryId,
-    shopId,
-    isAvailable: true,
-  }).populate({
-    path: "categoryId",
-    select: "name",
+  return category.toObject();
+}
+
+export async function deleteCategoryAndItems(shopId: string, categoryId: string) {
+  const category = await CategoryModel.findOneAndDelete({
+    _id: new mongoose.Types.ObjectId(categoryId),
+    shopId: new mongoose.Types.ObjectId(shopId)
   });
 
-  if (!items.length) {
-    throw new Errors.NotFoundError({
-      en: "No items found in this category",
-      ar: "لا توجد عناصر في هذه الفئة",
-    });
+  if (!category) {
+    throw new Errors.NotFoundError(errMsg.CATEGORY_NOT_FOUND);
   }
 
-  return items.map((item) => buildLocalizedMenuItem(item, lang));
-};
+  await MenuItemModel.deleteMany({ category: categoryId, shopId });
 
-export const getCategoryById = async (shopId: string, categoryId: string) => {
-  const category = await CategoryModel.findOne({ _id: categoryId, shopId });
-  if (!category)
-    throw new Errors.NotFoundError({
-      en: "Category not found",
-      ar: "الفئة غير موجودة",
-    });
-  return category;
-};
+  return { deletedCategoryId: categoryId };
+}
 
-export const deleteCategoryAndItems = async (
-  shopId: string,
-  categoryId: string
-) => {
-  const category = await CategoryModel.findOne({ _id: categoryId, shopId });
-  if (!category)
-    throw new Errors.NotFoundError({
-      en: "Category not found",
-      ar: "الفئة غير موجودة",
-    });
+export async function updateItemInCategory(shopId: string, categoryId: string, itemId: string, updateData: Partial<IMenuItem>) {
+  const item = await MenuItemModel.findOneAndUpdate(
+    {
+      _id: new mongoose.Types.ObjectId(itemId),
+      category: new mongoose.Types.ObjectId(categoryId),
+      shopId: new mongoose.Types.ObjectId(shopId)
+    },
+    updateData,
+    { new: true }
+  );
 
-  await MenuItemModel.deleteMany({ _id: { $in: category.menuItems } });
-  await CategoryModel.findByIdAndDelete(categoryId);
+  if (!item) {
+    throw new Errors.NotFoundError(errMsg.MENU_ITEM_NOT_FOUND);
+  }
 
-  return { message: "Category and its items deleted successfully" };
-};
+  return item.toObject();
+}
+
+export async function getCategoriesWithItemsByShop(shopId: string, lang: 'en' | 'ar') {
+  const categories = await CategoryModel.find({ shopId });
+
+  const results = await Promise.all(
+    categories.map(async (category) => {
+      const items = await MenuItemModel.find({
+        category: category._id,
+        shopId,
+        isAvailable: true
+      });
+
+      return {
+        _id: category._id,
+        name: category.name, // one language only (no localization needed)
+        items: items.map((item) => ({
+          _id: item._id,
+          name: typeof item.name === 'object' ? item.name[lang] : item.name,
+          description: typeof item.description === 'object' ? item.description[lang] : item.description,
+          price: item.price,
+          discount: item.discount,
+          finalPrice: calculateFinalPrice(item.price, item.discount),
+          isAvailable: item.isAvailable,
+          categoryId: item.categoryId,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt
+        }))
+      };
+    })
+  );
+
+  return results;
+}
+
+export async function getItemsInCategory(shopId: string, categoryId: string, lang: 'en' | 'ar') {
+  const items = await MenuItemModel.find({
+    shopId,
+    category: categoryId,
+    isAvailable: true
+  });
+
+  return items.map((item) => ({
+    _id: item._id,
+    name: typeof item.name === 'object' ? item.name[lang] : item.name,
+    description: typeof item.description === 'object' ? item.description[lang] : item.description,
+    price: item.price,
+    discount: item.discount,
+    finalPrice: calculateFinalPrice(item.price, item.discount),
+    isAvailable: item.isAvailable,
+    categoryId: item.categoryId,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt
+  }));
+}
+
+export async function getCategoryById(shopId: string, categoryId: string) {
+  const category = await CategoryModel.findOne({
+    _id: new mongoose.Types.ObjectId(categoryId),
+    shopId: new mongoose.Types.ObjectId(shopId)
+  });
+
+  if (!category) {
+    throw new Errors.NotFoundError(errMsg.CATEGORY_NOT_FOUND);
+  }
+
+  return category.toObject();
+}

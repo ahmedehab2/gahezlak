@@ -40,6 +40,9 @@ enum errorMessage {
   BOTH_PLANS_EXIST = "BOTH_PLANS_EXIST",
   NO_ACTIVE_SUBSCRIPTION = "NO_ACTIVE_SUBSCRIPTION",
   SUBSCRIPTION_EXPIRED = "SUBSCRIPTION_EXPIRED",
+  CATEGORY_NOT_FOUND = "CATEGORY_NOT_FOUND",
+  MENU_ITEM_NOT_FOUND = "MENU_ITEM_NOT_FOUND",
+  ORDER_NOT_FOUND = "ORDER_NOT_FOUND",
 }
 
 export const errMsg: {
@@ -186,5 +189,19 @@ export const errMsg: {
   SUBSCRIPTION_EXPIRED: {
     en: "Your subscription has expired. Please subscribe to continue.",
     ar: "انتهت صلاحية اشتراكك. يرجى الاشتراك للمتابعة.",
+  },
+
+  CATEGORY_NOT_FOUND: {
+    en: "Category not found",
+    ar: "الفئة غير موجودة",
+  },
+  MENU_ITEM_NOT_FOUND: {
+    en: "Menu item not found",
+    ar: "العنصر غير موجود",
+  },
+
+  ORDER_NOT_FOUND: {
+    en: "Order not found",
+    ar: "الطلب غير موجود",
   },
 };
