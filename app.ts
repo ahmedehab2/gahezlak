@@ -24,6 +24,10 @@ app.use(languageMiddleware);
 // const server = http.createServer(app);
 // initSocket(server);
 
+app.get("/", (req, res) => {
+  res.send("API is running 🚀");
+});
+
 app.use("/api/v1/plans", planRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
