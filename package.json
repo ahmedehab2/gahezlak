@@ -10,7 +10,6 @@
     "start": "node --env-file=.env dist/app.js"
   },
   "dependencies": {
-    "@sinclair/typebox": "^0.34.37",
     "@types/qrcode": "^1.5.5",
     "axios": "^1.10.0",
     "bcryptjs": "^3.0.2",
