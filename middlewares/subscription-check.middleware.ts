@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { Subscriptions, SubscriptionStatus } from "../models/Subscription";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
+import { getUserShop } from "../services/shop.service";
 
 export const checkActiveSubscrtion = async (
   req: Request,
@@ -12,25 +13,24 @@ export const checkActiveSubscrtion = async (
   if (!userId) {
     return next(new Errors.UnauthenticatedError(errMsg.USER_NOT_AUTHENTICATED));
   }
-  const sub = await Subscriptions.findOne({ userId });
-  if (!sub) {
+
+  const shop = await getUserShop(userId);
+
+  const subscription = await Subscriptions.findOne({ shop: shop._id }).lean();
+  if (!subscription) {
     return next(new Errors.NotAllowedError(errMsg.NO_SUBSCRIPTION_FOUND));
   }
-  if (sub.status === SubscriptionStatus.EXPIRED) {
-    return next(
-      new Errors.NotAllowedError({
-        en: "Your subscription has expired. Please subscribe to continue.",
-        ar: "انتهت صلاحية اشتراكك. يرجى الاشتراك للمتابعة.",
-      })
-    );
+
+  if (subscription.status === SubscriptionStatus.EXPIRED) {
+    return next(new Errors.NotAllowedError(errMsg.SUBSCRIPTION_EXPIRED));
   }
 
   if (
-    !sub ||
-    (sub.status !== SubscriptionStatus.ACTIVE &&
-      sub.status !== SubscriptionStatus.TRIALING)
+    ![SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING].includes(
+      subscription.status
+    )
   ) {
-    throw new Errors.NotAllowedError(errMsg.NO_ACTIVE_SUBSCRIPTION);
+    return next(new Errors.NotAllowedError(errMsg.NO_ACTIVE_SUBSCRIPTION));
   }
 
   next();

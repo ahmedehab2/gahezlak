@@ -34,11 +34,12 @@ enum errorMessage {
   SHOP_NOT_FOUND = "SHOP_NOT_FOUND",
   USER_ALREADY_SUBSCRIBED = "USER_ALREADY_SUBSCRIBED",
   PAYMENT_FAILED = "PAYMENT_FAILED",
-  USER_HAS_NO_SHOP_ID = "USER_HAS_NO_SHOP_ID",
+  USER_HAS_NO_SHOP = "USER_HAS_NO_SHOP",
   MONTHLY_PLAN_EXISTS = "MONTHLY_PLAN_EXISTS",
   YEARLY_PLAN_EXISTS = "YEARLY_PLAN_EXISTS",
   BOTH_PLANS_EXIST = "BOTH_PLANS_EXIST",
   NO_ACTIVE_SUBSCRIPTION = "NO_ACTIVE_SUBSCRIPTION",
+  SUBSCRIPTION_EXPIRED = "SUBSCRIPTION_EXPIRED",
   CATEGORY_NOT_FOUND = "CATEGORY_NOT_FOUND",
   MENU_ITEM_NOT_FOUND = "MENU_ITEM_NOT_FOUND",
   ORDER_NOT_FOUND = "ORDER_NOT_FOUND",
@@ -164,9 +165,9 @@ export const errMsg: {
     en: "Payment failed",
     ar: "فشل الدفع",
   },
-  USER_HAS_NO_SHOP_ID: {
-    en: "User does not have a shopId",
-    ar: "المستخدم ليس لديه معرف متجر",
+  USER_HAS_NO_SHOP: {
+    en: "User does not have a shop",
+    ar: "المستخدم ليس لديه متجر",
   },
   MONTHLY_PLAN_EXISTS: {
     en: "Monthly plan for this group already exists",
@@ -185,14 +186,18 @@ export const errMsg: {
     en: "No active subscription found for user",
     ar: "لا يوجد اشتراك نشط",
   },
-
-  CATEGORY_NOT_FOUND:{
-    en:"Category not found",
-    ar:"الفئة غير موجودة"
+  SUBSCRIPTION_EXPIRED: {
+    en: "Your subscription has expired. Please subscribe to continue.",
+    ar: "انتهت صلاحية اشتراكك. يرجى الاشتراك للمتابعة.",
   },
-  MENU_ITEM_NOT_FOUND:{
-    en:"Menu item not found",
-    ar:"العنصر غير موجود"
+
+  CATEGORY_NOT_FOUND: {
+    en: "Category not found",
+    ar: "الفئة غير موجودة",
+  },
+  MENU_ITEM_NOT_FOUND: {
+    en: "Menu item not found",
+    ar: "العنصر غير موجود",
   },
 
   ORDER_NOT_FOUND: {

@@ -14,7 +14,7 @@ import {
 } from "../common/types/contoller-response.types";
 //import { io } from "../sockets/socketServer";
 
-export const CreateOrderController: RequestHandler = async (req, res) => {
+export const createOrderHandler: RequestHandler = async (req, res) => {
   const orderData = req.body;
   const newOrder = await CreateOrder(orderData);
   // io.emit("newOrder", newOrder);
@@ -27,7 +27,7 @@ export const CreateOrderController: RequestHandler = async (req, res) => {
   res.status(201).json(response);
 };
 
-export const UpdateOrderStatusController: RequestHandler = async (req, res) => {
+export const updateOrderStatusHandler: RequestHandler = async (req, res) => {
   const orderId = req.params.id;
   const { status } = req.body;
   const updatedOrderStatus = await UpdateOrderStatus(orderId, status);
@@ -41,7 +41,7 @@ export const UpdateOrderStatusController: RequestHandler = async (req, res) => {
   res.status(200).json(response);
 };
 
-export const CancelledOrderController: RequestHandler = async (req, res) => {
+export const cancelledOrderHandler: RequestHandler = async (req, res) => {
   const orderId = req.params.id;
   const { status } = req.body;
   const cancelledOrder = await CancelledOrder(orderId, status);
@@ -55,7 +55,7 @@ export const CancelledOrderController: RequestHandler = async (req, res) => {
   res.status(200).json(response);
 };
 
-export const SendOrderToKitchenController: RequestHandler = async (req, res) => {
+export const sendOrderToKitchenHandler: RequestHandler = async (req, res) => {
   const orderId = req.params.id;
   const updatedOrder = await sendOrderToKitchen(orderId);
   // io.emit("orderSentToKitchen", updatedOrder);
@@ -68,7 +68,7 @@ export const SendOrderToKitchenController: RequestHandler = async (req, res) => 
   res.status(200).json(response);
 };
 
-export const GetOrdersByShopController: RequestHandler = async (req, res) => {
+export const getOrdersByShopHandler: RequestHandler = async (req, res) => {
   const shopId = req.params.shopId;
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
@@ -91,7 +91,7 @@ export const GetOrdersByShopController: RequestHandler = async (req, res) => {
   res.status(200).json(response);
 };
 
-export const GetOrderByIdController: RequestHandler = async (req, res) => {
+export const getOrderByIdHandler: RequestHandler = async (req, res) => {
   const orderId = req.params.id;
   const order = await GetOrderById(orderId);
 
@@ -103,26 +103,26 @@ export const GetOrderByIdController: RequestHandler = async (req, res) => {
   res.status(200).json(response);
 };
 
-export const GetOrdersByStatusController: RequestHandler = async (req, res) => {
+export const getOrdersByStatusHandler: RequestHandler = async (req, res) => {
   const shopId = req.params.shopId;
   const status = req.body.status;
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
   const skip = (page - 1) * limit;
 
-  const { orders, totalCount } = await GetOrdersByStatus(status,shopId);
+  const { orders, totalCount } = await GetOrdersByStatus(status, shopId);
 
   const paginated: PaginatedRespone<(typeof orders)[number]> = {
     data: orders.slice(skip, skip + limit),
     total: totalCount,
     page,
     totalPages: Math.ceil(totalCount / limit),
-  }
+  };
 
   const response: SuccessResponse<typeof paginated> = {
     message: "Orders retrieved successfully",
     data: paginated,
-  }
+  };
 
   res.status(200).json(response);
 };

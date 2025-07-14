@@ -1,25 +1,22 @@
 import express from "express";
 import { httpLogger, logger } from "./config/pino";
 import { connectDB } from "./config/db";
-import paymentRoutes from "./routes/payment.routes";
-import  shopRoutes from "./routes/shop.routes";
-
-// import menuItemRoutes from "./routes/shop.routes";
-// import orderRoutes from "./routes/shop.routes";
-// import categoryRoutes from "./routes/shop.routes";
+import authRoutes from "./routes/auth.routes";
 import userRoutes from "./routes/user.routes";
- import subscriptionRoutes from "./routes/subscription.routes";
+import subscriptionRoutes from "./routes/subscription.routes";
 // import kitchenRoutes from "./routes/shop.routes";
 // import http from "http";
 // import { initSocket } from "./sockets/socketServer";
 import { ErrorHandlerMiddleware } from "./middlewares/error-handling.middleware";
 import { languageMiddleware } from "./middlewares/language.middleware";
 import planRoutes from "./routes/plan.routes";
-
-
+import paymentRoutes from "./routes/payment.routes";
+import shopRoutes from "./routes/shop.routes";
+import cors from "cors";
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -29,20 +26,18 @@ app.use(languageMiddleware);
 // const server = http.createServer(app);
 // initSocket(server);
 
-app.use("/api/v1/auth/user", userRoutes);
-app.use("/api/v1/subscriptions", subscriptionRoutes);
-// app.use("/api/v1/shopid/orders", orderRoutes);
-// app.use("/api/v1/shopid/menu-items", menuItemRoutes);
-// app.use("/api/v1/shopid/category", categoryRoutes);
+app.get("/", (req, res) => {
+  res.send("API is running 🚀");
+});
+
 app.use("/api/v1/plans", planRoutes);
+app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/subscriptions", subscriptionRoutes);
 app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/shops", shopRoutes);
 
 app.use(ErrorHandlerMiddleware);
-
-
-
-
 
 const PORT = process.env.PORT || 3000;
 connectDB().then(() => {

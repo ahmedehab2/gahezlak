@@ -1,39 +1,33 @@
-import { Shops } from '../models/Shop';
-import { CategoryModel } from '../models/Category';
-import { MenuItemModel, IMenuItem } from '../models/MenuItem';
-import { Errors } from '../errors';
-import { errMsg } from '../common/err-messages';
-import { buildLocalizedMenuItem } from '../utils/menu-item-utils';
+import { Shops } from "../models/Shop";
+import { CategoryModel } from "../models/Category";
+import { MenuItemModel, IMenuItem } from "../models/MenuItem";
+import { Errors } from "../errors";
+import { errMsg } from "../common/err-messages";
+import { buildLocalizedMenuItem } from "../utils/menu-item-utils";
+import { getCategoryById } from "./category.service";
 
-export const createMenuItemAndAddToCategory = async (
+export const createMenuItem = async (
   shopId: string,
-  menuItemData: IMenuItem,
-  categoryId: string
+  menuItemData: Pick<
+    IMenuItem,
+    "name" | "description" | "price" | "categoryId" | "imgUrl" | "discount"
+  >
 ) => {
-  const shop = await Shops.findById(shopId);
-  if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
+  await getCategoryById(shopId, menuItemData.categoryId.toString()); // make sure the category exists
 
-  const category = await CategoryModel.findOne({ _id: categoryId, shopId });
-  if (!category) throw new Errors.NotFoundError(errMsg.CATEGORY_NOT_FOUND);
-
-  const item = new MenuItemModel({
+  const menuItem = await MenuItemModel.create({
     ...menuItemData,
     shopId,
-    category: category._id
   });
 
-  const savedItem = await item.save();
-
-  const alreadyExists = category.menuItems?.some(id => id.toString() === savedItem._id.toString());
-  if (!alreadyExists) {
-    category.menuItems?.push(savedItem._id);
-    await category.save();
-  }
-
-  return savedItem.toObject();
+  return menuItem.toObject();
 };
 
-export const getMenuItemById = async (shopId: string, itemId: string, lang: 'en' | 'ar') => {
+export const getMenuItemById = async (
+  shopId: string,
+  itemId: string,
+  lang: "en" | "ar"
+) => {
   const shop = await Shops.findById(shopId);
   if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
 
@@ -47,7 +41,10 @@ export const deleteMenuItem = async (shopId: string, itemId: string) => {
   const shop = await Shops.findById(shopId);
   if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
 
-  const menuItem = await MenuItemModel.findOneAndDelete({ _id: itemId, shopId });
+  const menuItem = await MenuItemModel.findOneAndDelete({
+    _id: itemId,
+    shopId,
+  });
   if (!menuItem) throw new Errors.NotFoundError(errMsg.MENU_ITEM_NOT_FOUND);
 
   await CategoryModel.updateMany(
@@ -55,10 +52,16 @@ export const deleteMenuItem = async (shopId: string, itemId: string) => {
     { $pull: { menuItems: itemId } }
   );
 
-  return { message: 'Menu item deleted and removed from categories successfully' };
+  return {
+    message: "Menu item deleted and removed from categories successfully",
+  };
 };
 
-export const toggleItemAvailability = async (shopId: string, itemId: string, isAvailable: boolean) => {
+export const toggleItemAvailability = async (
+  shopId: string,
+  itemId: string,
+  isAvailable: boolean
+) => {
   const shop = await Shops.findById(shopId);
   if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
 

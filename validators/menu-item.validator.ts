@@ -2,7 +2,6 @@ import { body, param } from "express-validator";
 import { validate } from "../middlewares/validators";
 
 export const validateCreateMenuItem = [
-  param("shopId").isMongoId().withMessage("Invalid shopId"),
   body("name").isString().notEmpty().withMessage("Name is required"),
   body("description")
     .isString()
@@ -73,11 +72,11 @@ export const validateUpdateMenuItem = [
 export const validateToggleAvailability = [
   param("shopId").isMongoId().withMessage("Invalid shopId"),
   param("itemId").isMongoId().withMessage("Invalid itemId"),
-  validate
+  validate,
 ];
 
 export const validateGetOrDeleteItemById = [
   param("shopId").isMongoId().withMessage("Invalid shopId"),
   param("itemId").isMongoId().withMessage("Invalid itemId"),
-  validate
+  validate,
 ];

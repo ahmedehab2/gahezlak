@@ -21,6 +21,7 @@ export interface IShop {
   ownerId: ObjectId;
   members: IShopMember[];
   isPaymentDone: boolean;
+  qrCodeImage?: string; // Base64 encoded QR code image
   subscriptionId: ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
@@ -47,6 +48,7 @@ const ShopSchema = new Schema<IShop>(
       ref: collectionsName.SUBSCRIPTIONS,
       default: null,
     },
+    qrCodeImage: { type: String }, 
     members: {
       type: [
         {

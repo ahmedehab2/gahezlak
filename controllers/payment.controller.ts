@@ -1,6 +1,6 @@
 import { RequestHandler } from "express";
 import * as paymentService from "../services/payment.service";
-import { IPayment, PaymentMethods, PaymentStatus } from "../models/Payment";
+import { PaymentMethods, PaymentStatus } from "../models/Payment";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
 import { SuccessResponse } from "../common/types/contoller-response.types";
@@ -8,7 +8,7 @@ import * as planService from "../services/plan.service";
 import * as subscriptionService from "../services/subscription.service";
 import * as userService from "../services/user.service";
 import { updateShop } from "../services/shop.service";
-import mongoose, { Mongoose, ObjectId } from "mongoose";
+import mongoose from "mongoose";
 
 // Helper function to mock payment processing
 function mockPay(paymentMethod: string): Promise<PaymentStatus> {
@@ -43,8 +43,8 @@ export const payForPlanHandler: RequestHandler<
   }
   const user = await userService.getUserById(userId.toString());
 
-  if (!user.shopId) {
-    throw new Errors.BadRequestError(errMsg.USER_HAS_NO_SHOP_ID);
+  if (!user.shop) {
+    throw new Errors.BadRequestError(errMsg.USER_HAS_NO_SHOP);
   }
 
   const mockedPayment = await mockPay(paymentMethod);
@@ -65,10 +65,10 @@ export const payForPlanHandler: RequestHandler<
 
   const subscription = await subscriptionService.createSubscription({
     userId,
-    shop: user.shopId,
+    shop: user.shop,
     plan,
   });
-  await updateShop(user.shopId.toString(), {
+  await updateShop(user.shop.toString(), {
     subscriptionId: subscription.id,
   });
 

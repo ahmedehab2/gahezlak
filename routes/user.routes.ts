@@ -1,40 +1,28 @@
 import { Router } from "express";
 import {
-  signUpHandler,
-  verifyCodeHandler,
-  resendVerificationCodeHandler,
-  loginHandler,
-  forgotPasswordHandler,
-  resetPasswordHandler,
   requestEmailChangeHandler,
   confirmEmailChangeHandler,
-  refreshTokenHandler,
-  signOutHandler,
+  getUserProfileHandler,
+  updateUserProfileHandler,
+  getAllUsersHandler,
+  getUserByIdHandler,
 } from "../controllers/user.controller";
 import {
-  validateRegister,
-  validateVerifyCode,
-  validateResendVerificationCode,
-  validateLogin,
-  validateForgotPassword,
-  validateResetPassword,
   validateRequestEmailChange,
   validateConfirmEmailChange,
-  validateRefreshToken,
+  validateUpdateProfile,
+  validateGetAllUsers,
+  validateUserId,
 } from "../validators/user.validator";
 import { protect } from "../middlewares/auth";
 
 const router = Router();
-router.post("/register", validateRegister, signUpHandler);
-router.post("/login", validateLogin, loginHandler);
-router.post("/verify-code", validateVerifyCode, verifyCodeHandler);
-router.post(
-  "/resend-verification-code",
-  validateResendVerificationCode,
-  resendVerificationCodeHandler
-);
-router.post("/forgot-password", validateForgotPassword, forgotPasswordHandler);
-router.post("/reset-password", validateResetPassword, resetPasswordHandler);
+
+// User profile endpoints (authenticated users)
+router.get("/profile", protect, getUserProfileHandler);
+router.put("/profile", protect, validateUpdateProfile, updateUserProfileHandler);
+
+// Email change endpoints (authenticated users)
 router.post(
   "/request-email-change",
   protect,
@@ -47,7 +35,9 @@ router.post(
   validateConfirmEmailChange,
   confirmEmailChangeHandler
 );
-router.post("/refresh", validateRefreshToken, refreshTokenHandler);
-router.post("/signout", protect, signOutHandler);
+
+// Admin endpoints (should add admin middleware later)
+router.get("/users", protect, validateGetAllUsers, getAllUsersHandler);
+router.get("/users/:id", protect, validateUserId, getUserByIdHandler);
 
 export default router;

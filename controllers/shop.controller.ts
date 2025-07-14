@@ -1,23 +1,45 @@
-import { Request, Response, NextFunction, RequestHandler } from "express";
+import { RequestHandler } from "express";
 import * as ShopService from "../services/shop.service";
 import { IShop } from "../models/Shop";
 import { SuccessResponse } from "../common/types/contoller-response.types";
 import { Users } from "../models/User";
 import { Types } from "mongoose";
+import { generateMenuQRCode, QRCodeOptions } from "../utils/qrCodeGenerator";
+import { MenuItemModel, IMenuItem } from "../models/MenuItem";
+import { Role, Roles } from "../models/Role";
+import { Errors } from "../errors";
+import { errMsg } from "../common/err-messages";
 
-export const createShop: RequestHandler<
+export const createShopHandler: RequestHandler<
   {},
   SuccessResponse<IShop>,
-  IShop
+  Pick<IShop, "name" | "type" | "address" | "phoneNumber" | "email">
 > = async (req, res) => {
-  const shop = await ShopService.createShop(req.body, req.user?.userId!);
-  console.log(req.user?.userId);
+  const { name } = req.body;
+
+  // Generate QR code for the new shop
+  const qrCodeResult = await generateMenuQRCode(name);
+
+  // Create the shop
+  const shop = await ShopService.createShop(
+    { ...req.body, qrCodeImage: qrCodeResult.qrCodeImage },
+    req.user?.userId!
+  );
+
+  // Get the shop owner role
+  const shopOwnerRole = await Roles.findOne({ name: Role.SHOP_OWNER });
+  if (!shopOwnerRole) {
+    throw new Errors.NotFoundError(errMsg.ROLE_NOT_FOUND);
+  }
+
+  // Update the user's shopId
   await Users.updateOne(
     {
       _id: new Types.ObjectId(req.user?.userId),
     },
     {
-      shopId: shop._id,
+      shop: shop._id,
+      role: shopOwnerRole._id,
     }
   );
   res.status(201).json({
@@ -26,40 +48,72 @@ export const createShop: RequestHandler<
   });
 };
 
-export const updateShop = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const updateShopHandler: RequestHandler<
+  {
+    id: string;
+  },
+  SuccessResponse<IShop>,
+  Pick<IShop, "name" | "type" | "address" | "phoneNumber" | "email">
+> = async (req, res) => {
   const shop = await ShopService.updateShop(req.params.id, req.body);
-
-  await Users.updateOne(
-    {
-      _id: new Types.ObjectId(req.user?.userId),
-    },
-    {
-      $set: {
-        shopId: shop._id,
-      },
-    }
-  );
-  res.status(200).json(shop);
+  res.status(200).json({
+    message: "Shop updated successfully",
+    data: shop,
+  });
 };
 
-export const deleteShop = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const result = await ShopService.deleteShop(req.params.id);
-  res.status(200).json(result);
-};
+// export const deleteShopHandler: RequestHandler<
+//   {
+//     id: string;
+//   },
+//   SuccessResponse<IShop>,
+//   unknown
+// > = async (req, res) => {
+//   const shop = await ShopService.deleteShop(req.params.id);
 
-export const getAllShops = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+// };
+
+export const getAllShops: RequestHandler<
+  {},
+  SuccessResponse<IShop[]>,
+  unknown
+> = async (req, res) => {
   const shops = await ShopService.getAllShops();
-  res.status(200).json(shops);
+  res.status(200).json({
+    message: "Shops fetched successfully",
+    data: shops,
+  });
+};
+
+/**
+ * Regenerate QR code for shop
+ */
+export const regenerateQRCodeHandler: RequestHandler<
+  unknown,
+  SuccessResponse<{ qrCodeImage: string; menuUrl: string }>,
+  QRCodeOptions
+> = async (req, res) => {
+  const result = await ShopService.regenerateShopQRCode(
+    req.user?.shopId!,
+    req.body
+  );
+  res.status(200).json({
+    message: "QR code regenerated successfully",
+    data: result,
+  });
+};
+
+/**
+ * Get shop menu URL
+ */
+export const getMenuUrlHandler: RequestHandler<
+  { shopName: string },
+  SuccessResponse<{ menuUrl: string }>,
+  any
+> = async (req, res) => {
+  const menuUrl = await ShopService.getShopMenuUrl(req.params.shopName);
+  res.status(200).json({
+    message: "Menu URL retrieved successfully",
+    data: { menuUrl },
+  });
 };

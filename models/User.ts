@@ -1,7 +1,8 @@
 import { ObjectId } from "mongodb";
-import mongoose, { Schema, Document, model } from "mongoose";
+import mongoose, { Schema, model } from "mongoose";
 import { collectionsName } from "../common/collections-name";
 import { IShop } from "./Shop";
+import { IRole } from "./Role";
 
 export interface IUser {
   _id: ObjectId;
@@ -19,9 +20,9 @@ export interface IUser {
   };
   isVerified: boolean;
   newEmail?: string | null;
-  role: mongoose.Types.ObjectId;
+  role: mongoose.Types.ObjectId | IRole;
   refreshToken: string;
-  shopId?: mongoose.Types.ObjectId | IShop;
+  shop: mongoose.Types.ObjectId | IShop;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -29,7 +30,7 @@ const UserSchema = new Schema<IUser>(
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String, required: true, select: false },
     phoneNumber: { type: String, required: true },
     verificationCode: {
       code: { type: String, default: null },
@@ -41,13 +42,12 @@ const UserSchema = new Schema<IUser>(
     role: {
       type: mongoose.Schema.Types.ObjectId,
       ref: collectionsName.ROLES,
-      //   required: true,
+      required: true,
     },
     refreshToken: { type: String, default: "" },
-    shopId: {
+    shop: {
       type: mongoose.Schema.Types.ObjectId,
       ref: collectionsName.SHOPS,
-      default: null,
     },
   },
   {

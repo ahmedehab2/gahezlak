@@ -1,16 +1,11 @@
-import { validationResult } from 'express-validator';
-import { RequestHandler } from 'express';
-import { sendValidationErrors } from '../utils/responseHelper';
+import { validationResult } from "express-validator";
+import { RequestHandler } from "express";
+import { Errors } from "../errors";
 
 export const validate: RequestHandler = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    const formattedErrors = errors.array().map((err: any) => ({
-      message: err.msg,
-      field: err.param !== undefined ? err.param : undefined,
-    }));
-    sendValidationErrors(res, formattedErrors);
-    return;
+    throw new Errors.ValidationError(errors.array());
   }
   next();
 };
