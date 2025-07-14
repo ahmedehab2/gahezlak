@@ -47,6 +47,7 @@ import {
   GetOrdersByShopController,
   GetOrderByIdController,
   SendOrderToKitchenController,
+  GetOrdersByStatusController
 } from "../controllers/order.controller";
 import {  isAllowed } from "../middlewares/auth";
 import {
@@ -96,13 +97,13 @@ router.put("/:shopId/categories/:categoryId", categoryParamValidators, categoryI
 router.delete("/:shopId/categories/:categoryId", categoryParamValidators, categoryIdValidator, deleteCategoryAndItemsController);
 
 router.put(
-  "/:shopId/:categoryId/:itemId",
+  "/:shopId/categories/:categoryId/items/:itemId",
   categoryParamValidators,
   categoryIdValidator,
   updateItemInCategoryValidator,
   updateItemInCategoryController
 );
-router.get("/:shopId/:categoryId", categoryParamValidators, categoryIdValidator, getItemsInCategoryController);
+router.get("/:shopId/categories/:categoryId/items", categoryParamValidators, categoryIdValidator, getItemsInCategoryController);
 
 
 // order routes
@@ -139,6 +140,13 @@ router.put(
   protect,
   isAllowed(["Cashier", "Admin"]),
   SendOrderToKitchenController
+);
+
+router.get(
+  "/:shopId/orders/:status",
+  protect,
+  isAllowed(["Cashier", "Admin"]),
+  GetOrdersByStatusController
 );
 
 
