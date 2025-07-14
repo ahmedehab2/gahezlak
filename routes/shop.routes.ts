@@ -28,6 +28,7 @@ import {
   deleteCategoryAndItemsHandler,
   getItemsInCategoryHandler,
   getCategoryByIdHandler,
+  updateItemInCategoryHandler,
 } from "../controllers/category.controller";
 
 import {
@@ -163,7 +164,7 @@ router.put(
   categoryParamValidators,
   categoryIdValidator,
   updateItemInCategoryValidator,
-  updateItemInCategoryController
+  updateItemInCategoryHandler
 );
 router.get(
   "/:shopId/:categoryId",

@@ -72,16 +72,16 @@ export const getCategoriesWithItemsByShopHandler: RequestHandler = async (
 export const updateItemInCategoryHandler: RequestHandler = async (req, res) => {
   const { shopId, categoryId, itemId } = req.params;
   const updateData = req.body;
-  const updatedItem = await updateItemInCategory(
+  const item = await updateItemInCategory(
     shopId,
     categoryId,
     itemId,
     updateData
   );
 
-  const response: SuccessResponse<typeof updatedItem> = {
-    message: "Item updated in category",
-    data: updatedItem,
+  const response: SuccessResponse<typeof item> = {
+    message: "Item in category updated successfully",
+    data: item,
   };
 
   res.status(200).json(response);

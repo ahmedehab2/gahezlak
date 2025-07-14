@@ -25,7 +25,8 @@ export const createMenuItemAndAddToCategoryHandler: RequestHandler = async (
 
 export const getMenuItemByIdHandler: RequestHandler = async (req, res) => {
   const { shopId, itemId } = req.params;
-  const item = await getMenuItemById(shopId, itemId);
+  const lang = req.lang as "en" | "ar";
+  const item = await getMenuItemById(shopId, itemId, lang);
 
   const response: SuccessResponse<typeof item> = {
     message: "Menu item retrieved",
@@ -52,7 +53,8 @@ export const toggleItemAvailabilityHandler: RequestHandler = async (
   res
 ) => {
   const { shopId, itemId } = req.params;
-  const item = await toggleItemAvailability(shopId, itemId);
+  const { isAvailable } = req.body;
+  const item = await toggleItemAvailability(shopId, itemId, isAvailable);
 
   const response: SuccessResponse<typeof item> = {
     message: "Item availability toggled",
