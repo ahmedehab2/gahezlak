@@ -1,16 +1,21 @@
-import { CustomError, } from './abstract-error-class';
-import { ErrorResponse } from '../common/types/contoller-response.types';
-import { LangType, MessageError } from '../common/types/general-types';
-
+import { CustomError } from "./abstract-error-class";
+import { ErrorResponse } from "../common/types/contoller-response.types";
+import { LangType, MessageError } from "../common/types/general-types";
 
 export class UnprocessableError extends CustomError {
   statusCode: number = 406;
   customMessage: MessageError;
   lang: LangType;
   constructor(message?: MessageError, lang?: LangType) {
-    super(message || { en: 'bad request error', ar: 'هناك مشكلة بالطلب' }, lang);
-    this.customMessage = message || { en: 'bad request error', ar: 'هناك مشكلة بالطلب' };
-    this.lang = lang || 'ar';
+    super(
+      message || { en: "bad request error", ar: "هناك مشكلة بالطلب" },
+      lang
+    );
+    this.customMessage = message || {
+      en: "bad request error",
+      ar: "هناك مشكلة بالطلب",
+    };
+    this.lang = lang || "en";
   }
 
   serializeError(): ErrorResponse {
