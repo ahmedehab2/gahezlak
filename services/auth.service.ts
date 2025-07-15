@@ -98,12 +98,14 @@ export async function signUp(userData: {
     ...user
   } = await Users.create(newUser);
 
-  // Send verification email only after successful user creation
-  sendEmail(
-    email,
-    "Your Verification Code",
-    `Your verification code is: <b>${code}</b>. It will expire in 10 minutes.`
-  );
+  // Send verification email only after successful user creation in a separate thread
+  setImmediate(() => {
+    sendEmail(
+      email,
+      "Your Verification Code",
+      `Your verification code is: <b>${code}</b>. It will expire in 10 minutes.`
+    ).catch(console.error);
+  });
 
   return user;
 }
@@ -172,11 +174,13 @@ export async function resendVerificationCode(userData: { email: string }) {
     $set: { verificationCode },
   });
 
-  sendEmail(
-    user.email,
-    "Your New Verification Code",
-    `Your new verification code is: <b>${verificationCode.code}</b>. It will expire in 10 minutes.`
-  );
+  setImmediate(() => {
+    sendEmail(
+      user.email,
+      "Your New Verification Code",
+      `Your new verification code is: <b>${verificationCode.code}</b>. It will expire in 10 minutes.`
+    );
+  });
 
   return { message: "A new verification code has been sent to your email." };
 }
@@ -225,12 +229,13 @@ export async function forgotPassword(userData: { email: string }) {
     $set: { verificationCode },
   });
 
-  sendEmail(
-    user.email,
-    "Your Password Reset Code",
-    `Your password reset code is: <b>${verificationCode.code}</b>. It will expire in 10 minutes.`
-  );
-
+  setImmediate(() => {
+    sendEmail(
+      user.email,
+      "Your Password Reset Code",
+      `Your password reset code is: <b>${verificationCode.code}</b>. It will expire in 10 minutes.`
+    );
+  });
   return { message: "A password reset code has been sent to your email." };
 }
 
