@@ -10,7 +10,11 @@ import { Role, Roles } from "../models/Role";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
 import { Shops } from "../models/Shop";
-import { Subscriptions } from "../models/Subscription";
+import { Subscriptions, ISubscription } from "../models/Subscription";
+import {
+  getUserActiveSubscription,
+  cancelSubscription,
+} from "../services/subscription.service";
 
 export const createShopHandler: RequestHandler<
   {},
@@ -114,77 +118,22 @@ export const regenerateQRCodeHandler: RequestHandler<
 
 // Cancel shop subscription
 export const cancelShopSubscriptionHandler: RequestHandler<
-  { shopId: string },
+  {},
   SuccessResponse<{}>,
   {}
 > = async (req, res) => {
-  const { shopId } = req.params;
-  const userId = req.user?.userId;
+  const { userId } = req.user!;
 
-  if (!userId) {
-    throw new Errors.UnauthorizedError(errMsg.USER_NOT_AUTHENTICATED);
-  }
-
-  // Verify shop ownership
-  const shop = await Shops.findById(shopId);
-  if (!shop) {
-    throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
-  }
-
-  if (shop.ownerId.toString() !== userId) {
-    throw new Errors.UnauthorizedError(errMsg.UNAUTHORIZED_SHOP_SUBSCRIPTION_CANCEL);
-  }
-
-  // Get shop's subscription
-  const subscription = await (await import("../services/subscription.service")).getUserActiveSubscription(userId);
+  const subscription = await getUserActiveSubscription(userId);
   if (!subscription) {
     throw new Errors.NotFoundError(errMsg.NO_SUBSCRIPTION_FOUND);
   }
 
   // Cancel the subscription
-  await (await import("../services/subscription.service")).cancelSubscription((subscription as any)._id.toString());
+  await cancelSubscription(subscription.id);
 
   res.status(200).json({
     message: "Shop subscription cancelled successfully",
     data: {},
   });
 };
-
-// Get shop subscription
-// export const getShopSubscriptionHandler: RequestHandler<
-//   { shopId: string },
-//   SuccessResponse<any>,
-//   {}
-// > = async (req, res) => {
-//   const { shopId } = req.params;
-//   const userId = req.user?.userId;
-
-//   if (!userId) {
-//     throw new Errors.UnauthorizedError(errMsg.USER_NOT_AUTHENTICATED);
-//   }
-
-//   // Verify shop ownership
-//   const shop = await Shops.findById(shopId);
-//   if (!shop) {
-//     throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
-//   }
-
-//   if (shop.ownerId.toString() !== userId) {
-//     throw new Errors.UnauthorizedError(errMsg.UNAUTHORIZED_SHOP_SUBSCRIPTION_VIEW);
-//   }
-
-//   // Get shop's subscription by subscriptionId
-//   if (!shop.subscriptionId) {
-//     throw new Errors.NotFoundError(errMsg.NO_SUBSCRIPTION_FOUND);
-//   }
-
-//   const subscription = await Subscriptions.findById(shop.subscriptionId);
-//   if (!subscription) {
-//     throw new Errors.NotFoundError(errMsg.NO_SUBSCRIPTION_FOUND);
-//   }
-
-//   res.status(200).json({
-//     message: "Shop subscription retrieved successfully",
-//     data: subscription,
-//   });
-// };

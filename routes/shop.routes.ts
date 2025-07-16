@@ -210,17 +210,10 @@ router.put(
 // subscription routes
 
 router.post(
-  "/:shopId/subscription/cancel",
+  "/subscription/cancel",
   protect,
   isAllowed([Role.SHOP_OWNER]),
   controllers.cancelShopSubscriptionHandler
 );
-
-// router.get(
-//   "/:shopId/subscription",
-//   protect,
-//   isAllowed([Role.SHOP_OWNER]),
-//   controllers.getShopSubscriptionHandler
-// );
 
 export default router;
