@@ -41,11 +41,11 @@ app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/shops", shopRoutes);
 app.use("/api/v1/roles", roleRoutes);
 
-app.use(ErrorHandlerMiddleware);
-
 app.use((req, res, next) => {
-  next(new Errors.NotFoundError(errMsg.ROUTE_NOT_FOUND));
+  throw new Errors.NotFoundError(errMsg.ROUTE_NOT_FOUND);
 });
+
+app.use(ErrorHandlerMiddleware);
 
 const PORT = process.env.PORT || 3000;
 connectDB().then(() => {
