@@ -9,40 +9,41 @@ export interface IOrderItem {
   price: number;
 }
 
-
-export enum OrderStatus { 
-    Pending = 'Pending', 
-    Confirmed = 'Confirmed',
-     InProgress = 'InProgress',
-     Preparing = 'Preparing',
-      Ready = 'Ready',
-       Delivered = 'Delivered', 
-       Cancelled = 'Cancelled' } 
-
-export interface IOrder {
-    _id: ObjectId;
-    shopId: ObjectId;
-    tableNumber?: number;  // Optional field for dine-in orders
-    orderStatus: OrderStatus;
-    totalAmount: number;
-    orderItems: IOrderItem[];
-    isSentToKitchen: boolean; // Indicates if the order has been sent to the kitchen
-    createdAt: Date;
-    updatedAt: Date;
+export enum OrderStatus {
+  Pending = "Pending",
+  Confirmed = "Confirmed",
+  InProgress = "InProgress",
+  Preparing = "Preparing",
+  Ready = "Ready",
+  Delivered = "Delivered",
+  Cancelled = "Cancelled",
 }
 
+export interface IOrder {
+  _id: ObjectId;
+  shopId: ObjectId;
+  tableNumber?: number; // Optional field for dine-in orders
+  orderStatus: OrderStatus;
+  totalAmount: number;
+  orderItems: IOrderItem[];
+  isSentToKitchen: boolean; // Indicates if the order has been sent to the kitchen
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-
-
-
-const OrderSchema = new Schema<IOrder>({
-    shopId: { type: Schema.Types.ObjectId, ref: collectionsName.SHOPS, required: true },
+const OrderSchema = new Schema<IOrder>(
+  {
+    shopId: {
+      type: Schema.Types.ObjectId,
+      ref: collectionsName.SHOPS,
+      required: true,
+    },
     tableNumber: { type: Number },
-    orderStatus: { 
-        type: String, 
-        enum: Object.values(OrderStatus), 
-        required: true,  
-        default: OrderStatus.Pending 
+    orderStatus: {
+      type: String,
+      enum: Object.values(OrderStatus),
+      required: true,
+      default: OrderStatus.Pending,
     },
 
     totalAmount: { type: Number, required: true },
@@ -56,17 +57,15 @@ const OrderSchema = new Schema<IOrder>({
         quantity: { type: Number, required: true },
         customizationDetails: { type: String },
         price: { type: Number, required: true },
-
-    }],
-    isSentToKitchen: { type: Boolean, default: false}
-
-}
-    ,
-    {
-        timestamps: true,
-        collection: collectionsName.ORDERS
-    });
-
+      },
+    ],
+    isSentToKitchen: { type: Boolean, default: false },
+  },
+  {
+    timestamps: true,
+    collection: collectionsName.ORDERS,
+  }
+);
 
 export const Orders = mongoose.model<IOrder>(
   collectionsName.ORDERS,

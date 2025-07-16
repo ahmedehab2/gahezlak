@@ -2,7 +2,7 @@ import { body, param } from "express-validator";
 import { validate } from "../middlewares/validators";
 
 export const shopIdValidator = [
-  param("shopId").isInt().withMessage("Shop ID must be an integer"),
+  param("shopId").isMongoId().withMessage("Invalid shopId"),
   validate,
 ];
 

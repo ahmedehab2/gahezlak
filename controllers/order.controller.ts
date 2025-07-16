@@ -2,7 +2,6 @@ import { RequestHandler } from "express";
 import {
   CreateOrder,
   UpdateOrderStatus,
-  CancelledOrder,
   GetOrdersByShop,
   GetOrderById,
   sendOrderToKitchen,
@@ -12,20 +11,32 @@ import {
   SuccessResponse,
   PaginatedRespone,
 } from "../common/types/contoller-response.types";
+
+import {
+  getKitchenOrders,
+} from "../services/order.service";
 //import { io } from "../sockets/socketServer";
+
 
 export const createOrderHandler: RequestHandler = async (req, res) => {
   const orderData = req.body;
-  const newOrder = await CreateOrder(orderData);
-  // io.emit("newOrder", newOrder);
 
-  const response: SuccessResponse<typeof newOrder> = {
+  const newOrder = await CreateOrder(orderData);
+    // io.emit("newOrder", newOrder);
+
+  const paymentUrl = `http://localhost:3000/payment?orderId=${newOrder._id}`; // رابط صفحة الدفع
+
+  const response: SuccessResponse<typeof newOrder & { paymentUrl: string }> = {
     message: "Order created successfully",
-    data: newOrder,
+    data: {
+      ...newOrder,
+      paymentUrl,
+    },
   };
 
   res.status(201).json(response);
 };
+
 
 export const updateOrderStatusHandler: RequestHandler = async (req, res) => {
   const orderId = req.params.id;
@@ -41,19 +52,6 @@ export const updateOrderStatusHandler: RequestHandler = async (req, res) => {
   res.status(200).json(response);
 };
 
-export const cancelledOrderHandler: RequestHandler = async (req, res) => {
-  const orderId = req.params.id;
-  const { status } = req.body;
-  const cancelledOrder = await CancelledOrder(orderId, status);
-  // io.emit("orderCancelled", cancelledOrder);
-
-  const response: SuccessResponse<typeof cancelledOrder> = {
-    message: "Order cancelled successfully",
-    data: cancelledOrder,
-  };
-
-  res.status(200).json(response);
-};
 
 export const sendOrderToKitchenHandler: RequestHandler = async (req, res) => {
   const orderId = req.params.id;
@@ -126,3 +124,19 @@ export const getOrdersByStatusHandler: RequestHandler = async (req, res) => {
 
   res.status(200).json(response);
 };
+
+
+
+export const getKitchenOrdersHandler: RequestHandler = async (req, res) => {
+  const shopId = req.params.shopId;
+  const orders = await getKitchenOrders(shopId);
+
+  const response: SuccessResponse<typeof orders> = {
+    message: "Kitchen orders retrieved successfully",
+    data: orders,
+  };
+
+  res.status(200).json(response);
+};
+
+

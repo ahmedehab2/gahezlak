@@ -8,7 +8,7 @@ import {
 import { SuccessResponse } from "../common/types/contoller-response.types";
 import { IMenuItem } from "../models/MenuItem";
 import { getUserShop } from "../services/shop.service";
-
+import { uploadImageToImgBB } from "../utils/imgbb";
 export const createMenuItemAndAddToCategoryHandler: RequestHandler<
   unknown,
   SuccessResponse<IMenuItem>,
@@ -23,18 +23,28 @@ export const createMenuItemAndAddToCategoryHandler: RequestHandler<
     | "options"
     | "isAvailable"
   >
-> = async (req, res) => {
-  const shopId = req.user?.shopId!;
+> = async (req, res, next) => {
 
-  await getUserShop(req.user?.userId!); // make sure the req.user is member of the shop
+    const shopId = req.user?.shopId!;
+    await getUserShop(req.user?.userId!);
 
-  const item = await createMenuItem(shopId, req.body);
+    let imageUrl: string | undefined;
+    
+    if (req.file) {
+      imageUrl = await uploadImageToImgBB(req.file.buffer);
+    }
 
-  res.status(201).json({
-    message: "Menu item created successfully",
-    data: item,
-  });
-};
+    const item = await createMenuItem(shopId, {
+      ...req.body,
+      imgUrl: imageUrl,
+    });
+
+    res.status(201).json({
+      message: "Menu item created successfully",
+      data: item,
+    });
+  };
+
 
 export const getMenuItemByIdHandler: RequestHandler<
   { shopId: string; itemId: string },

@@ -5,8 +5,14 @@ import { collectionsName } from '../common/collections-name';
 export interface IMenuItem {
   _id: ObjectId;
   shopId: ObjectId;
-  name: string;
-  description?: string;
+  name:{
+    en: string;
+    ar:string;
+  };
+  description?:{
+    en: string;
+    ar:string;
+  };
     price: number;
   categoryId: ObjectId;
   isAvailable: boolean;
@@ -28,8 +34,14 @@ export interface IMenuItem {
 
 const MenuItemSchema = new Schema<IMenuItem>({
   shopId: { type: Schema.Types.ObjectId, ref: collectionsName.SHOPS, required: true },
-  name: { type: String, required: true },
-  description: { type: String },
+  name: {
+    en: { type: String, required: true },
+    ar: { type: String, required: true },
+  },
+  description: { 
+    en: { type: String },
+    ar: { type: String },
+   },
   price: { type: Number, required: true },
   categoryId: { type:Schema.Types.ObjectId, ref: collectionsName.CATEGORIES, required: true },
   isAvailable: { type: Boolean, default: true },
