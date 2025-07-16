@@ -8,13 +8,17 @@ export async function CreateOrder(orderData: Partial<IOrder>) {
   return newOrder.toObject();
 }
 
+
 export async function UpdateOrderStatus(orderId: string, newStatus: OrderStatus) {
   const order = await Orders.findById(orderId);
   if (!order) {
+
+
     throw new Errors.NotFoundError(errMsg.ORDER_NOT_FOUND);
   }
 
   const currentStatus = order.orderStatus;
+
 
   const statusFlow: OrderStatus[] = [
     OrderStatus.Pending,
@@ -24,6 +28,7 @@ export async function UpdateOrderStatus(orderId: string, newStatus: OrderStatus)
     OrderStatus.Ready,
     OrderStatus.Delivered,
   ];
+
 
   const currentIndex = statusFlow.indexOf(currentStatus);
   const newIndex = statusFlow.indexOf(newStatus);

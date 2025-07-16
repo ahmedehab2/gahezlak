@@ -5,6 +5,8 @@ import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
 import { buildLocalizedMenuItem } from "../utils/menu-item-utils";
 import { getCategoryById } from "./category.service";
+import { LangType } from "../common/types/general-types";
+import mongoose, { FilterQuery } from "mongoose";
 
 export const createMenuItem = async (
   shopId: string,
@@ -74,3 +76,34 @@ export const toggleItemAvailability = async (
 
   return menuItem.toObject();
 };
+
+
+export async function getMenuItemsByShop({
+  shopId,
+  shopName,
+  lang,
+}: {
+  shopId?: string;
+  shopName?: string;
+  lang: LangType;
+}) {
+  let query: FilterQuery<IMenuItem> = {};
+
+  if (shopId) {
+    query.shopId = new mongoose.Types.ObjectId(shopId);
+  }
+
+  if (shopName) {
+    const shop = await Shops.findOne({ name: shopName }).lean();
+    if (!shop) {
+      throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
+    }
+    query.shopId = shop._id;
+  }
+
+  const menuItems = await MenuItemModel.find(query, {
+    shopId: 0, // exclude shopId from the response
+  }).lean();
+  return menuItems;
+
+}

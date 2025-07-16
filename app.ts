@@ -11,7 +11,10 @@ import { languageMiddleware } from "./middlewares/language.middleware";
 import planRoutes from "./routes/plan.routes";
 import paymentRoutes from "./routes/payment.routes";
 import shopRoutes from "./routes/shop.routes";
+import roleRoutes from "./routes/role.routes";
 import cors from "cors";
+import { errMsg } from "./common/err-messages";
+import { Errors } from "./errors";
 
 const app = express();
 
@@ -35,6 +38,11 @@ app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/subscriptions", subscriptionRoutes);
 app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/shops", shopRoutes);
+app.use("/api/v1/roles", roleRoutes);
+
+app.use((req, res, next) => {
+  throw new Errors.NotFoundError(errMsg.ROUTE_NOT_FOUND);
+});
 
 app.use(ErrorHandlerMiddleware);
 

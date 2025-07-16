@@ -52,14 +52,6 @@ router.post(
   controllers.regenerateQRCodeHandler
 );
 
-// Menu URL (authenticated)
-router.get(
-  "/:shopName/menu-url",
-  protect,
-  shopValidators.shopNameParamValidator,
-  controllers.getMenuUrlHandler
-);
-
 // Admin endpoints
 router.get("/", protect, isAllowed([Role.ADMIN]), controllers.getAllShops); // ADMIN ENDPOINT FOR NOW
 
@@ -67,20 +59,35 @@ router.get("/", protect, isAllowed([Role.ADMIN]), controllers.getAllShops); // A
 
 router.post(
   "/menu-items",
-  //protect,
-  //isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
   uploadMiddleware,
   menuItemValidators.validateCreateMenuItem,
   menuItemControllers.createMenuItemAndAddToCategoryHandler
 );
 
-router
-  .get(
+router.get(
     "/:shopId/menu-items/:itemId",
     menuItemValidators.validateGetOrDeleteItemById,
     menuItemControllers.getMenuItemByIdHandler
-  )
-  .delete(
+  );
+
+// for logged in shop workers
+router.get(
+  "/menu-items",
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER, Role.SHOP_STAFF]),
+  menuItemControllers.getMenuItemsByShopHandler
+);
+
+//for public usage (customers)
+router.get(
+  "/:shopName/menu-items",
+  shopValidators.shopNameParamValidator,
+  menuItemControllers.getMenuItemsByShopHandler
+);
+
+router.delete(
     "/:shopId/menu-items/:itemId",
     menuItemValidators.validateGetOrDeleteItemById,
     menuItemControllers.deleteMenuItemHandler
@@ -96,8 +103,8 @@ router.patch(
 
 router.post(
   "/categories",
-  // protect,
-  // isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  protect,
+   isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
   categoryValidators.createCategoryValidator,
   categoryControllers.createCategoryHandler
 );
@@ -105,39 +112,39 @@ router.post(
 // for logged in shop workers
 router.get(
   "/categories",
-  // protect,
-  // isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER, Role.SHOP_STAFF]),
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER, Role.SHOP_STAFF]),
   categoryControllers.getCategoriesByShopHandler
 );
 
 //for public usage (customers)
 router.get(
   "/:shopName/categories",
-  shopValidators.shopNameParamValidator,               ///error in route here   (not found)
+  shopValidators.shopNameParamValidator,
   categoryControllers.getCategoriesByShopHandler
 );
 
 router
   .get(
     "/:shopId/categories/:categoryId",
-    //protect,
+    protect,
     categoryValidators.categoryIdValidator,
     categoryControllers.getCategoryByIdHandler
   )
   .put(
-    "/:shopId/categories/:categoryId",
-    //protect,
-    //isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+
+    "/categories/:categoryId",
+    protect,
+    isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
     categoryValidators.updateCategoryValidator,
     categoryControllers.updateCategoryHandler
   )
   .delete(
-    "/:shopId/categories/:categoryId",
-    //protect,
-    //isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-    shopValidators.shopIdValidator,
+    "/categories/:categoryId",
+    protect,
+    isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
     categoryValidators.categoryIdValidator,
-    categoryControllers.deleteCategoryAndItemsHandler
+    categoryControllers.deleteCategoryHandler
   );
 
 // router.put(
@@ -201,5 +208,14 @@ router.get(
   orderControllers.getKitchenOrdersHandler
 );
 
+
+// subscription routes
+
+router.post(
+  "/subscription/cancel",
+  protect,
+  isAllowed([Role.SHOP_OWNER]),
+  controllers.cancelShopSubscriptionHandler
+);
 
 export default router;

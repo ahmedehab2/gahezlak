@@ -1,16 +1,21 @@
-import { CustomError, } from './abstract-error-class';
-import { ErrorResponse } from '../common/types/contoller-response.types';
-import { LangType, MessageError } from '../common/types/general-types';
-
+import { CustomError } from "./abstract-error-class";
+import { ErrorResponse } from "../common/types/contoller-response.types";
+import { LangType, MessageError } from "../common/types/general-types";
 
 export class UnauthorizedError extends CustomError {
   statusCode = 403;
   customMessage: MessageError;
   lang: LangType;
   constructor(message?: MessageError, lang?: LangType) {
-    super(message || { en: 'unauthorized error', ar: 'لا تملك صلاحية الوصول' }, lang);
-    this.customMessage = message || { en: 'unauthorized error', ar: 'لا تملك صلاحية الوصول' };
-    this.lang = lang || 'ar';
+    super(
+      message || { en: "unauthorized error", ar: "لا تملك صلاحية الوصول" },
+      lang
+    );
+    this.customMessage = message || {
+      en: "unauthorized error",
+      ar: "لا تملك صلاحية الوصول",
+    };
+    this.lang = lang || "en";
   }
 
   serializeError(): ErrorResponse {

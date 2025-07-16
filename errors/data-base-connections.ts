@@ -1,7 +1,6 @@
-import { CustomError } from './abstract-error-class';
-import { ErrorResponse } from '../common/types/contoller-response.types';
-import { LangType, MessageError } from '../common/types/general-types';
-
+import { CustomError } from "./abstract-error-class";
+import { ErrorResponse } from "../common/types/contoller-response.types";
+import { LangType, MessageError } from "../common/types/general-types";
 
 export class DatabaseConnectionError extends CustomError {
   statusCode = 500;
@@ -9,14 +8,17 @@ export class DatabaseConnectionError extends CustomError {
   lang: LangType;
   constructor(message?: MessageError, lang?: LangType) {
     super(
-      message || { en: 'Error connecting to database', ar: 'Error connecting to database' },
-      lang,
+      message || {
+        en: "Error connecting to database",
+        ar: "خطأ في الاتصال بقاعدة البيانات",
+      },
+      lang
     );
     this.customMessage = message || {
-      en: 'Error connecting to database',
-      ar: 'Error connecting to database',
+      en: "Error connecting to database",
+      ar: "خطأ في الاتصال بقاعدة البيانات",
     };
-    this.lang = lang || 'ar';
+    this.lang = lang || "en";
   }
 
   serializeError(): ErrorResponse {

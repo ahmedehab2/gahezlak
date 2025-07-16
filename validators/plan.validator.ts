@@ -5,7 +5,7 @@ export const createPlanValidator = [
   body("planGroup")
     .exists()
     .withMessage("planGroup is required")
-    .isIn(["Pro", "Starter"])
+    // .isIn(["Pro", "Starter"]) // TODO: uncomment this when the plan group is ready
     .withMessage("planGroup must be Pro or Starter"),
   body("description").exists().withMessage("description is required"),
   body("frequency")

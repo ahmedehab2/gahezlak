@@ -3,6 +3,7 @@ import {
   createMenuItem,
   deleteMenuItem,
   getMenuItemById,
+  getMenuItemsByShop,
   toggleItemAvailability,
 } from "../services/menu-item.service";
 import { SuccessResponse } from "../common/types/contoller-response.types";
@@ -88,4 +89,22 @@ export const toggleItemAvailabilityHandler: RequestHandler = async (
   };
 
   res.status(200).json(response);
+};
+
+export const getMenuItemsByShopHandler: RequestHandler<
+  {
+    shopName?: string;
+  },
+  SuccessResponse<IMenuItem[]>
+> = async (req, res) => {
+  const shopId = req.user?.shopId;
+  const shopName = req.params.shopName;
+  const lang = req.lang;
+
+  const menuItems = await getMenuItemsByShop({ shopId, shopName, lang });
+
+  res.status(200).json({
+    message: "MenuItems retrieved",
+    data: menuItems,
+  });
 };

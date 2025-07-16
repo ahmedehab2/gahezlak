@@ -4,9 +4,13 @@ import { protect } from "../middlewares/auth";
 
 const router = Router();
 
-// router.post("/", protect, subscriptionController.createSubscriptionHandler);
-// router.post('/cancel', protect, cancelSubscriptionHandler);
-// router.get('/status', protect, getSubscriptionStatusHandler);
-// router.get('/', protect, getAllSubscriptionsHandler);
+// Create subscription (existing)
+router.post("/", protect, subscriptionController.createSubscriptionHandler);
+
+// Get all subscriptions (admin only)
+router.get("/", protect, subscriptionController.getAllSubscriptionsHandler);
+
+// Get subscription by ID (admin only)
+router.get("/:subscriptionId", protect, subscriptionController.getSubscriptionByIdHandler);
 
 export default router;

@@ -7,6 +7,7 @@ import {
   updateUserProfile,
   getAllUsers,
   getUserByIdAdmin,
+  changePassword,
 } from "../services/user.service";
 
 export const requestEmailChangeHandler: RequestHandler<
@@ -88,5 +89,24 @@ export const getUserByIdHandler: RequestHandler<
   res.status(200).json({
     message: "User retrieved successfully",
     data: user,
+  });
+};
+
+export const changePasswordHandler: RequestHandler<
+  {},
+  SuccessResponse<{}>,
+  {
+    oldPassword: string;
+    newPassword: string;
+  }
+> = async (req, res) => {
+  const userId = (req as any).user?.userId;
+  const { oldPassword, newPassword } = req.body;
+  
+  const result = await changePassword(userId, oldPassword, newPassword);
+  
+  res.status(200).json({
+    message: "Password changed successfully",
+    data: {},
   });
 };

@@ -6,6 +6,7 @@ import {
   updateUserProfileHandler,
   getAllUsersHandler,
   getUserByIdHandler,
+  changePasswordHandler,
 } from "../controllers/user.controller";
 import {
   validateRequestEmailChange,
@@ -13,6 +14,7 @@ import {
   validateUpdateProfile,
   validateGetAllUsers,
   validateUserId,
+  validateChangePassword,
 } from "../validators/user.validator";
 import { protect } from "../middlewares/auth";
 
@@ -21,6 +23,9 @@ const router = Router();
 // User profile endpoints (authenticated users)
 router.get("/profile", protect, getUserProfileHandler);
 router.put("/profile", protect, validateUpdateProfile, updateUserProfileHandler);
+
+// Change password endpoint (authenticated users)
+router.put("/change-password", protect, validateChangePassword, changePasswordHandler);
 
 // Email change endpoints (authenticated users)
 router.post(
@@ -36,8 +41,8 @@ router.post(
   confirmEmailChangeHandler
 );
 
-// Admin endpoints (should add admin middleware later)
-router.get("/users", protect, validateGetAllUsers, getAllUsersHandler);
-router.get("/users/:id", protect, validateUserId, getUserByIdHandler);
+// Admin endpoints
+router.get("/", protect, validateGetAllUsers, getAllUsersHandler);
+router.get("/:id", protect, validateUserId, getUserByIdHandler);
 
 export default router;
