@@ -92,4 +92,38 @@ export const payForOrderHandler: RequestHandler<
   }
 > = async (req, res) => {
   const { orderId, paymentMethod, paymentMethodDetails } = req.body;
+  const userId = req.user ? new mongoose.Types.ObjectId(req.user.userId) : undefined;
+
+  // 1. Validate order exists and is Pending
+  const order = await (await import("../services/order.service")).GetOrderById(orderId);
+  if (!order) {
+    throw new Errors.NotFoundError(errMsg.ORDER_NOT_FOUND);
+  }
+  if (order.orderStatus !== "Pending") {
+    throw new Errors.BadRequestError(errMsg.ORDER_NOT_PENDING);
+  }
+
+  // 2. Mock payment processing
+  const mockedPayment = await mockPay(paymentMethod);
+  if (mockedPayment !== PaymentStatus.COMPLETED) {
+    throw new Errors.BadRequestError(errMsg.PAYMENT_FAILED);
+  }
+
+  // 3. Create payment record for the order
+  const payment = await paymentService.createPaymentForOrder({
+    userId,
+    orderId: order._id,
+    shopId: order.shopId,
+    amount: order.totalAmount,
+    paymentMethod: paymentMethod,
+  });
+
+  // 4. Update order status to Confirmed
+  await (await import("../services/order.service")).UpdateOrderStatus(orderId, "Confirmed");
+
+  // 5. Return paymentId and status
+  res.status(201).json({
+    message: "Order payment created successfully",
+    data: { paymentId: payment._id.toString(), status: mockedPayment },
+  });
 };

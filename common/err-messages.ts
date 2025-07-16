@@ -35,6 +35,8 @@ enum errorMessage {
   USER_ALREADY_SUBSCRIBED = "USER_ALREADY_SUBSCRIBED",
   PAYMENT_FAILED = "PAYMENT_FAILED",
   USER_HAS_NO_SHOP = "USER_HAS_NO_SHOP",
+  USER_HAS_NO_PASSWORD = "USER_HAS_NO_PASSWORD",
+  BOTH_PASSWORDS_REQUIRED = "BOTH_PASSWORDS_REQUIRED",
   MONTHLY_PLAN_EXISTS = "MONTHLY_PLAN_EXISTS",
   YEARLY_PLAN_EXISTS = "YEARLY_PLAN_EXISTS",
   BOTH_PLANS_EXIST = "BOTH_PLANS_EXIST",
@@ -43,8 +45,14 @@ enum errorMessage {
   CATEGORY_NOT_FOUND = "CATEGORY_NOT_FOUND",
   MENU_ITEM_NOT_FOUND = "MENU_ITEM_NOT_FOUND",
   ORDER_NOT_FOUND = "ORDER_NOT_FOUND",
-  ROLE_EXISTS = "ROLE_EXISTS",
-  ROUTE_NOT_FOUND = "ROUTE_NOT_FOUND",
+  ORDER_NOT_PENDING = "ORDER_NOT_PENDING",
+  SUBSCRIPTION_NOT_FOUND = "SUBSCRIPTION_NOT_FOUND",
+  SUBSCRIPTION_ALREADY_CANCELLED = "SUBSCRIPTION_ALREADY_CANCELLED",
+  SUBSCRIPTION_CANNOT_BE_CANCELLED = "SUBSCRIPTION_CANNOT_BE_CANCELLED",
+  UNAUTHORIZED_SHOP_SUBSCRIPTION_CANCEL = "UNAUTHORIZED_SHOP_SUBSCRIPTION_CANCEL",
+  UNAUTHORIZED_SHOP_SUBSCRIPTION_VIEW = "UNAUTHORIZED_SHOP_SUBSCRIPTION_VIEW",
+  INVALID_OLD_PASSWORD = "INVALID_OLD_PASSWORD",
+  SAME_PASSWORD_ERROR = "SAME_PASSWORD_ERROR",
 }
 
 export const errMsg: {
@@ -171,6 +179,14 @@ export const errMsg: {
     en: "User does not have a shop",
     ar: "المستخدم ليس لديه متجر",
   },
+  USER_HAS_NO_PASSWORD: {
+    en: "User does not have a password",
+    ar: "المستخدم ليس لديه كلمة مرور",
+  },
+  BOTH_PASSWORDS_REQUIRED: {
+    en: "Both old and new passwords are required.",
+    ar: "كلمة المرور القديمة وكلمة المرور الجديدة مطلوبة.",
+  },
   MONTHLY_PLAN_EXISTS: {
     en: "Monthly plan for this group already exists",
     ar: "الخطة الشهرية لهذه المجموعة موجودة بالفعل",
@@ -206,12 +222,36 @@ export const errMsg: {
     en: "Order not found",
     ar: "الطلب غير موجود",
   },
-  ROLE_EXISTS: {
-    en: "Role already exists",
-    ar: "الدور موجود بالفعل",
+  ORDER_NOT_PENDING: {
+    en: "Order is not pending and cannot be paid.",
+    ar: "لا يمكن دفع الطلب لأنه ليس في حالة انتظار.",
   },
-  ROUTE_NOT_FOUND: {
-    en: "Route not found",
-    ar: "الرابط غير موجود",
+  SUBSCRIPTION_NOT_FOUND: {
+    en: "Subscription not found",
+    ar: "الاشتراك غير موجود",
+  },
+  SUBSCRIPTION_ALREADY_CANCELLED: {
+    en: "Subscription is already cancelled",
+    ar: "الاشتراك ملغي بالفعل",
+  },
+  SUBSCRIPTION_CANNOT_BE_CANCELLED: {
+    en: "Subscription cannot be cancelled",
+    ar: "الاشتراك غير قابل للإلغاء",
+  },
+  UNAUTHORIZED_SHOP_SUBSCRIPTION_CANCEL: {
+    en: "You are not authorized to cancel this shop's subscription.",
+    ar: "أنت غير مصرح لإلغاء الاشتراك لهذا المتجر.",
+  },
+  UNAUTHORIZED_SHOP_SUBSCRIPTION_VIEW: {
+    en: "You are not authorized to view this shop's subscription.",
+    ar: "أنت غير مصرح لعرض الاشتراك لهذا المتجر.",
+  },
+  INVALID_OLD_PASSWORD: {
+    en: "Invalid old password.",
+    ar: "كلمة المرور القديمة غير صالحة.",
+  },
+  SAME_PASSWORD_ERROR: {
+    en: "New password cannot be the same as old password.",
+    ar: "كلمة المرور الجديدة غير مسموح بها لأنها تطابق كلمة المرور القديمة.",
   },
 };

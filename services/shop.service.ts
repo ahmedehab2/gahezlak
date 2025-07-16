@@ -88,25 +88,11 @@ async function regenerateShopQRCode(
   return qrCodeResult;
 }
 
-/**
- * Get shop menu URL
- */
-async function getShopMenuUrl(shopName: string): Promise<string> {
-  const shop = await Shops.findOne({ name: shopName });
-  if (!shop) {
-    throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
-  }
-
-  const baseUrl = process.env.FRONTEND_URL || "http://localhost:3000";
-  return `${baseUrl}/menu/${shopName}`;
-}
-
 export {
   createShop,
   updateShop,
   getAllShops,
   deleteShop,
   getUserShop,
-  getShopMenuUrl,
   regenerateShopQRCode,
 };

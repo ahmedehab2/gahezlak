@@ -9,6 +9,8 @@ import { MenuItemModel, IMenuItem } from "../models/MenuItem";
 import { Role, Roles } from "../models/Role";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
+import { Shops } from "../models/Shop";
+import { Subscriptions } from "../models/Subscription";
 
 export const createShopHandler: RequestHandler<
   {},
@@ -50,12 +52,12 @@ export const createShopHandler: RequestHandler<
 
 export const updateShopHandler: RequestHandler<
   {
-    id: string;
+    shopId: string;
   },
   SuccessResponse<IShop>,
   Pick<IShop, "name" | "type" | "address" | "phoneNumber" | "email">
 > = async (req, res) => {
-  const shop = await ShopService.updateShop(req.params.id, req.body);
+  const shop = await ShopService.updateShop(req.params.shopId, req.body);
   res.status(200).json({
     message: "Shop updated successfully",
     data: shop,
@@ -89,31 +91,100 @@ export const getAllShops: RequestHandler<
  * Regenerate QR code for shop
  */
 export const regenerateQRCodeHandler: RequestHandler<
-  unknown,
+  {},
   SuccessResponse<{ qrCodeImage: string; menuUrl: string }>,
-  QRCodeOptions
+  { options?: any }
 > = async (req, res) => {
+  const userId = req.user?.userId;
+  const user = await Users.findById(userId);
+  if (!user || !user.shop) {
+    throw new Errors.NotFoundError(errMsg.USER_HAS_NO_SHOP);
+  }
+
   const result = await ShopService.regenerateShopQRCode(
-    req.user?.shopId!,
-    req.body
+    user.shop.toString(),
+    req.body.options
   );
+
   res.status(200).json({
     message: "QR code regenerated successfully",
     data: result,
   });
 };
 
-/**
- * Get shop menu URL
- */
-export const getMenuUrlHandler: RequestHandler<
-  { shopName: string },
-  SuccessResponse<{ menuUrl: string }>,
-  any
+// Cancel shop subscription
+export const cancelShopSubscriptionHandler: RequestHandler<
+  { shopId: string },
+  SuccessResponse<{}>,
+  {}
 > = async (req, res) => {
-  const menuUrl = await ShopService.getShopMenuUrl(req.params.shopName);
+  const { shopId } = req.params;
+  const userId = req.user?.userId;
+
+  if (!userId) {
+    throw new Errors.UnauthorizedError(errMsg.USER_NOT_AUTHENTICATED);
+  }
+
+  // Verify shop ownership
+  const shop = await Shops.findById(shopId);
+  if (!shop) {
+    throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
+  }
+
+  if (shop.ownerId.toString() !== userId) {
+    throw new Errors.UnauthorizedError(errMsg.UNAUTHORIZED_SHOP_SUBSCRIPTION_CANCEL);
+  }
+
+  // Get shop's subscription
+  const subscription = await (await import("../services/subscription.service")).getUserActiveSubscription(userId);
+  if (!subscription) {
+    throw new Errors.NotFoundError(errMsg.NO_SUBSCRIPTION_FOUND);
+  }
+
+  // Cancel the subscription
+  await (await import("../services/subscription.service")).cancelSubscription((subscription as any)._id.toString());
+
   res.status(200).json({
-    message: "Menu URL retrieved successfully",
-    data: { menuUrl },
+    message: "Shop subscription cancelled successfully",
+    data: {},
   });
 };
+
+// Get shop subscription
+// export const getShopSubscriptionHandler: RequestHandler<
+//   { shopId: string },
+//   SuccessResponse<any>,
+//   {}
+// > = async (req, res) => {
+//   const { shopId } = req.params;
+//   const userId = req.user?.userId;
+
+//   if (!userId) {
+//     throw new Errors.UnauthorizedError(errMsg.USER_NOT_AUTHENTICATED);
+//   }
+
+//   // Verify shop ownership
+//   const shop = await Shops.findById(shopId);
+//   if (!shop) {
+//     throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
+//   }
+
+//   if (shop.ownerId.toString() !== userId) {
+//     throw new Errors.UnauthorizedError(errMsg.UNAUTHORIZED_SHOP_SUBSCRIPTION_VIEW);
+//   }
+
+//   // Get shop's subscription by subscriptionId
+//   if (!shop.subscriptionId) {
+//     throw new Errors.NotFoundError(errMsg.NO_SUBSCRIPTION_FOUND);
+//   }
+
+//   const subscription = await Subscriptions.findById(shop.subscriptionId);
+//   if (!subscription) {
+//     throw new Errors.NotFoundError(errMsg.NO_SUBSCRIPTION_FOUND);
+//   }
+
+//   res.status(200).json({
+//     message: "Shop subscription retrieved successfully",
+//     data: subscription,
+//   });
+// };

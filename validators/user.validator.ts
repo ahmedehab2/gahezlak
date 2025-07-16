@@ -56,3 +56,17 @@ export const validateUserId = [
     .withMessage("Invalid user ID format"),
   validate,
 ];
+
+export const validateChangePassword = [
+  body("oldPassword")
+    .isString()
+    .notEmpty()
+    .withMessage("Old password is required"),
+  body("newPassword")
+    .isString()
+    .isLength({ min: 8 })
+    .withMessage("New password must be at least 8 characters long")
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .withMessage("New password must contain at least one lowercase letter, one uppercase letter, and one number"),
+  validate,
+];

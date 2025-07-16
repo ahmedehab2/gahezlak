@@ -34,50 +34,83 @@ export async function createSubscription(
   return newSubscription;
 }
 
-// export async function cancelSubscription(userId: string) {
-//   const sub = await Subscriptions.findOne({ userId });
-//   if (!sub) {
-//     throw new Errors.NotFoundError(errMsg.NO_SUBSCRIPTION_FOUND);
-//   }
-//   sub.status = status.EXPIRED;
-//   await sub.save();
-// }
+// Cancel subscription
+export async function cancelSubscription(subscriptionId: string): Promise<ISubscription> {
+  const subscription = await Subscriptions.findById(subscriptionId);
+  
+  if (!subscription) {
+    throw new Errors.NotFoundError(errMsg.SUBSCRIPTION_NOT_FOUND);
+  }
 
-// export async function getSubscriptionStatus(userId: string) {
-//   const sub = await Subscriptions.findOne({ userId });
-//   if (!sub) {
-//     return { status: "none", message: "No subscription found." };
-//   }
-//   const now = new Date();
-//   // Auto-expire logic
-//   if (sub.status === "trial" && sub.trialEnd < now) {
-//     sub.status = "expired";
-//     await sub.save();
-//   } else if (sub.status === "active" && sub.paidEnd && sub.paidEnd < now) {
-//     sub.status = "expired";
-//     await sub.save();
-//   }
-//   return {
-//     status: sub.status,
-//     trialStart: sub.trialStart,
-//     trialEnd: sub.trialEnd,
-//     paidStart: sub.paidStart,
-//     paidEnd: sub.paidEnd,
-//   };
-// }
+  // Check if already cancelled
+  if (subscription.status === SubscriptionStatus.CANCELLED) {
+    throw new Errors.BadRequestError(errMsg.SUBSCRIPTION_ALREADY_CANCELLED);
+  }
 
-// export async function getAllSubscriptions(filters: {
-//   userId?: string;
-//   plan?: string;
-//   status?: string;
-// }) {
-//   const { userId, plan, status } = filters;
-//   const filter: any = {};
-//   if (userId) filter.userId = userId;
-//   if (plan) filter.plan = plan;
-//   if (status) filter.status = status;
-//   const subs = await Subscriptions.find(filter)
-//     .populate("userId", "name email")
-//     .populate("shopId", "name");
-//   return subs;
-// }
+  // Check if subscription can be cancelled (not expired)
+  if (subscription.status === SubscriptionStatus.EXPIRED) {
+    throw new Errors.BadRequestError(errMsg.SUBSCRIPTION_CANNOT_BE_CANCELLED);
+  }
+
+  // Update subscription status to cancelled
+  subscription.status = SubscriptionStatus.CANCELLED;
+  subscription.cancelledAt = new Date();
+  await subscription.save();
+
+  return subscription;
+}
+
+// Get user's active subscription
+export async function getUserActiveSubscription(userId: string): Promise<ISubscription | null> {
+  const subscription = await Subscriptions.findOne({
+    userId,
+    status: { $in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING, SubscriptionStatus.PENDING] },
+  })
+    .populate("plan", "planGroup title description price currency frequency features")
+    .populate("shop", "name email phoneNumber");
+
+  return subscription;
+}
+
+// Get all subscriptions (admin)
+export async function getAllSubscriptions(filters: {
+  page?: number;
+  limit?: number;
+  userId?: string;
+  status?: SubscriptionStatus;
+  planId?: string;
+}): Promise<{ subscriptions: ISubscription[]; totalCount: number }> {
+  const { page = 1, limit = 10, userId, status, planId } = filters;
+  const skip = (page - 1) * limit;
+
+  // Build filter object
+  const filter: any = {};
+  if (userId) filter.userId = userId;
+  if (status) filter.status = status;
+  if (planId) filter.plan = planId;
+
+  const subscriptions = await Subscriptions.find(filter)
+    .populate("userId", "firstName lastName email phoneNumber")
+    .populate("shop", "name email phoneNumber address")
+    .populate("plan", "planGroup title description price currency frequency")
+    .skip(skip)
+    .limit(limit)
+    .sort({ createdAt: -1 });
+
+  const totalCount = await Subscriptions.countDocuments(filter);
+
+  return {
+    subscriptions,
+    totalCount,
+  };
+}
+
+// Get subscription by ID (admin)
+export async function getSubscriptionById(subscriptionId: string): Promise<ISubscription | null> {
+  const subscription = await Subscriptions.findById(subscriptionId)
+    .populate("userId", "firstName lastName email phoneNumber")
+    .populate("shop", "name email phoneNumber address")
+    .populate("plan", "planGroup title description price currency frequency features");
+
+  return subscription;
+}
