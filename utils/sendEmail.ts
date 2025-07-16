@@ -1,6 +1,22 @@
 import { createTransport, SendMailOptions } from "nodemailer";
-
 import type { Attachment } from "nodemailer/lib/mailer";
+import { logger } from "../config/pino";
+
+const user = process.env.sendEmail;
+const pass = process.env.emailPassword;
+
+if (!user || !pass) {
+  throw new Error("Email credentials are not set in environment variables.");
+}
+
+// ✅ Create transporter ONCE (outside function)
+const transporter = createTransport({
+  service: "gmail",
+  auth: {
+    user,
+    pass,
+  },
+});
 
 export const sendEmail = async (
   to: string,
@@ -8,22 +24,6 @@ export const sendEmail = async (
   html: string,
   attachments: Attachment[] = []
 ): Promise<boolean> => {
-  const user = process.env.sendEmail;
-  const pass = process.env.emailPassword;
-
-  if (!user || !pass) {
-    throw new Error("Email credentials are not set in environment variables.");
-  }
-
-  const transporter = createTransport({
-    service: "gmail",
-    auth: {
-      user,
-      pass,
-    },
-  });
-
-  // Styled HTML wrapper
   const wrappedHtml = `
     <div style="font-family: Arial, sans-serif; background: #f9f9f9; padding: 30px;">
       <div style="max-width: 500px; margin: auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding: 32px 24px;">
@@ -47,7 +47,18 @@ export const sendEmail = async (
     attachments,
   };
 
-  const info = await transporter.sendMail(mailOptions);
-  console.log(info);
-  return info.accepted.length > 0;
+  try {
+    const info = await transporter.sendMail(mailOptions);
+
+    return (
+      info.accepted && Array.isArray(info.accepted) && info.accepted.length > 0
+    );
+  } catch (error) {
+    if (error instanceof Error) {
+      logger.error(error.name);
+    } else {
+      logger.error("Unknown error occurred in sendEmail");
+    }
+    return false;
+  }
 };

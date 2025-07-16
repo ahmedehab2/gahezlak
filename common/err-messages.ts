@@ -43,6 +43,8 @@ enum errorMessage {
   CATEGORY_NOT_FOUND = "CATEGORY_NOT_FOUND",
   MENU_ITEM_NOT_FOUND = "MENU_ITEM_NOT_FOUND",
   ORDER_NOT_FOUND = "ORDER_NOT_FOUND",
+  ROLE_EXISTS = "ROLE_EXISTS",
+  ROUTE_NOT_FOUND = "ROUTE_NOT_FOUND",
 }
 
 export const errMsg: {
@@ -203,5 +205,13 @@ export const errMsg: {
   ORDER_NOT_FOUND: {
     en: "Order not found",
     ar: "الطلب غير موجود",
+  },
+  ROLE_EXISTS: {
+    en: "Role already exists",
+    ar: "الدور موجود بالفعل",
+  },
+  ROUTE_NOT_FOUND: {
+    en: "Route not found",
+    ar: "الرابط غير موجود",
   },
 };

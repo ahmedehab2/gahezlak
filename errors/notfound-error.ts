@@ -1,8 +1,6 @@
-import { CustomError } from './abstract-error-class';
-import { ErrorResponse } from '../common/types/contoller-response.types';
-import { LangType, MessageError } from '../common/types/general-types';
-
-
+import { CustomError } from "./abstract-error-class";
+import { ErrorResponse } from "../common/types/contoller-response.types";
+import { LangType, MessageError } from "../common/types/general-types";
 
 export class NotFoundError extends CustomError {
   statusCode = 404;
@@ -10,9 +8,12 @@ export class NotFoundError extends CustomError {
   lang: LangType;
 
   constructor(message?: MessageError, lang?: LangType) {
-    super(message || { en: 'not found error', ar: 'العنصر غير موجود' }, lang);
-    this.customMessage = message || { en: 'not found error', ar: 'العنصر غير موجود' };
-    this.lang = lang || 'ar';
+    super(message || { en: "not found error", ar: "العنصر غير موجود" }, lang);
+    this.customMessage = message || {
+      en: "not found error",
+      ar: "العنصر غير موجود",
+    };
+    this.lang = lang || "en";
   }
 
   serializeError(): ErrorResponse {

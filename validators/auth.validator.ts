@@ -10,10 +10,8 @@ export const validateRegister = [
     .isLength({ min: 8 })
     .withMessage("Password must be at least 8 characters long"),
   body("phoneNumber")
-    .isString()
-    .notEmpty()
-    .withMessage("Phone number is required"),
-  body("role").optional().isString().withMessage("Role must be a string"),
+    .isMobilePhone("ar-EG")
+    .withMessage("Phone number must be a valid Egyptian phone number"),
   validate,
 ];
 
@@ -62,4 +60,4 @@ export const validateRefreshToken = [
     .notEmpty()
     .withMessage("Refresh token is required"),
   validate,
-]; 
+];

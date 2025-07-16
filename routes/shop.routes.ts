@@ -128,19 +128,18 @@ router
     categoryControllers.getCategoryByIdHandler
   )
   .put(
-    "/:shopId/categories/:categoryId",
-    // protect,
+    "/categories/:categoryId",
+    protect,
     isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
     categoryValidators.updateCategoryValidator,
     categoryControllers.updateCategoryHandler
   )
   .delete(
-    "/:shopId/categories/:categoryId",
+    "/categories/:categoryId",
     protect,
     isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-    shopValidators.shopIdValidator,
     categoryValidators.categoryIdValidator,
-    categoryControllers.deleteCategoryAndItemsHandler
+    categoryControllers.deleteCategoryHandler
   );
 
 // router.put(

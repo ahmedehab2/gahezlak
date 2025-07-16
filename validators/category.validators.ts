@@ -39,7 +39,6 @@ export const createCategoryValidator = [
 
 // Update category validator
 export const updateCategoryValidator = [
-  param("shopId").isMongoId().withMessage("Invalid shopId"),
   param("categoryId").isMongoId().withMessage("Invalid categoryId"),
   body("name")
     .optional()
