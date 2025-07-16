@@ -7,8 +7,7 @@ import {
 } from "../services/menu-item.service";
 import { SuccessResponse } from "../common/types/contoller-response.types";
 import { IMenuItem } from "../models/MenuItem";
-import { getUserShop } from "../services/shop.service";
-import { uploadImageToImgBB } from "../utils/imgbb";
+import uploadToImgbb from "../utils/uploadToImgbb";
 export const createMenuItemAndAddToCategoryHandler: RequestHandler<
   unknown,
   SuccessResponse<IMenuItem>,
@@ -24,35 +23,33 @@ export const createMenuItemAndAddToCategoryHandler: RequestHandler<
     | "isAvailable"
   >
 > = async (req, res, next) => {
+  const shopId = req.user?.shopId!;
 
-    const shopId = req.user?.shopId!;
-    await getUserShop(req.user?.userId!);
+  let imageUrl: string | undefined;
 
-    let imageUrl: string | undefined;
-    
-    if (req.file) {
-      imageUrl = await uploadImageToImgBB(req.file.buffer);
-    }
+  if (req.file) {
+    imageUrl = await uploadToImgbb(req.file);
+  }
 
-    const item = await createMenuItem(shopId, {
-      ...req.body,
-      imgUrl: imageUrl,
-    });
+  const item = await createMenuItem(shopId, {
+    ...req.body,
+    imgUrl: imageUrl,
+  });
 
-    res.status(201).json({
-      message: "Menu item created successfully",
-      data: item,
-    });
-  };
-
+  res.status(201).json({
+    message: "Menu item created successfully",
+    data: item,
+  });
+};
 
 export const getMenuItemByIdHandler: RequestHandler<
-  { shopId: string; itemId: string },
+  { itemId: string },
   SuccessResponse<IMenuItem>,
   unknown,
   { lang: "en" | "ar" }
 > = async (req, res) => {
-  const { shopId, itemId } = req.params;
+  const { itemId } = req.params;
+  const shopId = req.user?.shopId!;
   const lang = req.lang;
   const item = await getMenuItemById(shopId, itemId, lang);
 
@@ -63,7 +60,8 @@ export const getMenuItemByIdHandler: RequestHandler<
 };
 
 export const deleteMenuItemHandler: RequestHandler = async (req, res) => {
-  const { shopId, itemId } = req.params;
+  const { itemId } = req.params;
+  const shopId = req.user?.shopId!;
   const deleted = await deleteMenuItem(shopId, itemId);
 
   const response: SuccessResponse<typeof deleted> = {
@@ -78,7 +76,8 @@ export const toggleItemAvailabilityHandler: RequestHandler = async (
   req,
   res
 ) => {
-  const { shopId, itemId } = req.params;
+  const { itemId } = req.params;
+  const shopId = req.user?.shopId!;
   const { isAvailable } = req.body;
   const item = await toggleItemAvailability(shopId, itemId, isAvailable);
 

@@ -2,7 +2,6 @@ import { body, param } from "express-validator";
 import { validate } from "../middlewares/validators";
 
 export const validateCreateMenuItem = [
-  param("shopId").isMongoId().withMessage("Invalid shopId"),
   body("name.en").isString().withMessage("English name is required"),
   body("name.ar").isString().withMessage("Arabic name is required"),
 
@@ -47,7 +46,6 @@ export const validateCreateMenuItem = [
   validate,
 ];
 
-
 export const validateUpdateMenuItem = [
   param("shopId").isMongoId().withMessage("Invalid shopId"),
   param("itemId").isMongoId().withMessage("Invalid itemId"),
@@ -80,13 +78,11 @@ export const validateUpdateMenuItem = [
 ];
 
 export const validateToggleAvailability = [
-  param("shopId").isMongoId().withMessage("Invalid shopId"),
   param("itemId").isMongoId().withMessage("Invalid itemId"),
   validate,
 ];
 
 export const validateGetOrDeleteItemById = [
-  param("shopId").isMongoId().withMessage("Invalid shopId"),
   param("itemId").isMongoId().withMessage("Invalid itemId"),
   validate,
 ];

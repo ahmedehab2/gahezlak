@@ -1,5 +1,5 @@
 import { ICategory, CategoryModel } from "../models/Category";
-import {  MenuItemModel } from "../models/MenuItem";
+import { MenuItemModel } from "../models/MenuItem";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
 import mongoose from "mongoose";
@@ -11,7 +11,7 @@ export async function createCategory(
 ) {
   const category = await CategoryModel.create({
     ...categoryData,
-    shopId: new mongoose.Types.ObjectId(shopId),
+    shopId,
   });
   return category.toObject();
 }
@@ -24,7 +24,7 @@ export async function updateCategory(
   const category = await CategoryModel.findOneAndUpdate(
     {
       _id: new mongoose.Types.ObjectId(categoryId),
-      shopId: new mongoose.Types.ObjectId(shopId),
+      shopId,
     },
     updateData,
     { new: true }
@@ -43,7 +43,7 @@ export async function deleteCategoryAndItems(
 ) {
   const category = await CategoryModel.findOneAndDelete({
     _id: new mongoose.Types.ObjectId(categoryId),
-    shopId: new mongoose.Types.ObjectId(shopId),
+    shopId,
   });
 
   if (!category) {
@@ -82,7 +82,7 @@ export async function getCategoriesByShop(query: string, lang: "en" | "ar") {
 export async function getCategoryById(shopId: string, categoryId: string) {
   const category = await CategoryModel.findOne({
     _id: new mongoose.Types.ObjectId(categoryId),
-    shopId: new mongoose.Types.ObjectId(shopId),
+    shopId,
   }).lean();
 
   if (!category) {

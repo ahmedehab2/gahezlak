@@ -21,8 +21,6 @@ import * as categoryValidators from "../validators/category.validators";
 import * as orderControllers from "../controllers/order.controller";
 import * as orderValidators from "../validators/order.validator";
 
-
-
 import { validateOrderId } from "../validators/order.validator";
 import { uploadMiddleware } from "../middlewares/multer";
 
@@ -67,8 +65,8 @@ router.get("/", protect, isAllowed([Role.ADMIN]), controllers.getAllShops); // A
 
 router.post(
   "/menu-items",
-  //protect,
-  //isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
   uploadMiddleware,
   menuItemValidators.validateCreateMenuItem,
   menuItemControllers.createMenuItemAndAddToCategoryHandler
@@ -76,27 +74,32 @@ router.post(
 
 router
   .get(
-    "/:shopId/menu-items/:itemId",
+    "/menu-items/:itemId",
     menuItemValidators.validateGetOrDeleteItemById,
     menuItemControllers.getMenuItemByIdHandler
   )
   .delete(
-    "/:shopId/menu-items/:itemId",
+    "/menu-items/:itemId",
+    protect,
+    isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
     menuItemValidators.validateGetOrDeleteItemById,
     menuItemControllers.deleteMenuItemHandler
   );
 
 router.patch(
-  "/:shopId/menu-items/:itemId/toggle",
+  "/menu-items/:itemId/toggle",
   menuItemValidators.validateToggleAvailability,
   menuItemControllers.toggleItemAvailabilityHandler
 );
+
+//get all menu items
+//get all menuitems by shopname
 
 //category routes
 
 router.post(
   "/categories",
-  // protect,
+  protect,
   // isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
   categoryValidators.createCategoryValidator,
   categoryControllers.createCategoryHandler
@@ -105,36 +108,36 @@ router.post(
 // for logged in shop workers
 router.get(
   "/categories",
-  // protect,
-  // isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER, Role.SHOP_STAFF]),
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER, Role.SHOP_STAFF]),
   categoryControllers.getCategoriesByShopHandler
 );
 
 //for public usage (customers)
 router.get(
   "/:shopName/categories",
-  shopValidators.shopNameParamValidator,               ///error in route here   (not found)
+  shopValidators.shopNameParamValidator,
   categoryControllers.getCategoriesByShopHandler
 );
 
 router
   .get(
     "/:shopId/categories/:categoryId",
-    //protect,
+    protect,
     categoryValidators.categoryIdValidator,
     categoryControllers.getCategoryByIdHandler
   )
   .put(
     "/:shopId/categories/:categoryId",
-    //protect,
-    //isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+    // protect,
+    isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
     categoryValidators.updateCategoryValidator,
     categoryControllers.updateCategoryHandler
   )
   .delete(
     "/:shopId/categories/:categoryId",
-    //protect,
-    //isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+    protect,
+    isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
     shopValidators.shopIdValidator,
     categoryValidators.categoryIdValidator,
     categoryControllers.deleteCategoryAndItemsHandler
@@ -170,7 +173,6 @@ router.put(
   orderControllers.updateOrderStatusHandler
 );
 
-
 router.get(
   "/:shopId/orders",
   protect,
@@ -193,13 +195,11 @@ router.put(
   orderControllers.sendOrderToKitchenHandler
 );
 
-
 router.get(
   "/:shopId/orders/kitchen",
   protect,
   isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER, Role.SHOP_STAFF]),
   orderControllers.getKitchenOrdersHandler
 );
-
 
 export default router;
