@@ -8,6 +8,7 @@ import { Subscriptions, SubscriptionStatus } from "../models/Subscription";
 import { Users } from "../models/User";
 import { SuccessResponse } from "../common/types/contoller-response.types";
 import { Shops } from "../models/Shop";
+import * as subscriptionService from "../services/subscription.service";
 // import * as subscriptionService from "../services/subscription.service";
 
 export const createSubscriptionHandler: RequestHandler<
@@ -73,5 +74,59 @@ export const createSubscriptionHandler: RequestHandler<
   res.status(200).json({
     message: "Subscription created successfully",
     data: {},
+  });
+};
+
+// Get subscription by ID (admin)
+export const getSubscriptionByIdHandler: RequestHandler<
+  { subscriptionId: string },
+  SuccessResponse<any>,
+  {}
+> = async (req, res) => {
+  const { subscriptionId } = req.params;
+
+  const subscription = await subscriptionService.getSubscriptionById(subscriptionId);
+
+  if (!subscription) {
+    throw new Errors.NotFoundError(errMsg.SUBSCRIPTION_NOT_FOUND);
+  }
+
+  res.status(200).json({
+    message: "Subscription retrieved successfully",
+    data: subscription,
+  });
+};
+
+// Get all subscriptions (admin)
+export const getAllSubscriptionsHandler: RequestHandler<
+  {},
+  SuccessResponse<any>,
+  {},
+  {
+    page?: string;
+    limit?: string;
+    userId?: string;
+    status?: SubscriptionStatus;
+    planId?: string;
+  }
+> = async (req, res) => {
+  const { page, limit, userId, status, planId } = req.query;
+
+  const result = await subscriptionService.getAllSubscriptions({
+    page: page ? parseInt(page) : 1,
+    limit: limit ? parseInt(limit) : 10,
+    userId,
+    status,
+    planId,
+  });
+
+  res.status(200).json({
+    message: "Subscriptions retrieved successfully",
+    data: {
+      subscriptions: result.subscriptions,
+      totalCount: result.totalCount,
+      currentPage: page ? parseInt(page) : 1,
+      totalPages: Math.ceil(result.totalCount / (limit ? parseInt(limit) : 10)),
+    },
   });
 };

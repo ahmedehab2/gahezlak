@@ -53,14 +53,6 @@ router.post(
   controllers.regenerateQRCodeHandler
 );
 
-// Menu URL (authenticated)
-router.get(
-  "/:shopName/menu-url",
-  protect,
-  shopValidators.shopNameParamValidator,
-  controllers.getMenuUrlHandler
-);
-
 // Admin endpoints
 router.get("/", protect, isAllowed([Role.ADMIN]), controllers.getAllShops); // ADMIN ENDPOINT FOR NOW
 
@@ -214,5 +206,21 @@ router.put(
   validateOrderId,
   kitchenControllers.updateKitchenOrderStatusHandler
 );
+
+// subscription routes
+
+router.post(
+  "/:shopId/subscription/cancel",
+  protect,
+  isAllowed([Role.SHOP_OWNER]),
+  controllers.cancelShopSubscriptionHandler
+);
+
+// router.get(
+//   "/:shopId/subscription",
+//   protect,
+//   isAllowed([Role.SHOP_OWNER]),
+//   controllers.getShopSubscriptionHandler
+// );
 
 export default router;

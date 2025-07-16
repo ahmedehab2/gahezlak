@@ -11,7 +11,7 @@ export async function CreateOrder(orderData: Partial<IOrder>) {
 export async function UpdateOrderStatus(orderId: string, status: string) {
   const updatedOrder = await Orders.findByIdAndUpdate(
     orderId,
-    { status },
+    { orderStatus: status },
     { new: true }
   );
 
@@ -25,7 +25,7 @@ export async function UpdateOrderStatus(orderId: string, status: string) {
 export async function CancelledOrder(orderId: string, status: string) {
   const cancelledOrder = await Orders.findByIdAndUpdate(
     orderId,
-    { status },
+    { orderStatus: status },
     { new: true }
   );
 
