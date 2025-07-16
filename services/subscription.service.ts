@@ -40,16 +40,18 @@ export async function cancelSubscription(
 ): Promise<ISubscription> {
   const subscription = await Subscriptions.findOne({
     userId,
-    status: { $in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING] },
+    status: {
+      $in: [
+        SubscriptionStatus.ACTIVE,
+        SubscriptionStatus.TRIALING,
+        SubscriptionStatus.PENDING,
+        SubscriptionStatus.EXPIRED,
+      ],
+    },
   });
 
   if (!subscription) {
     throw new Errors.NotFoundError(errMsg.NO_ACTIVE_SUBSCRIPTION);
-  }
-
-  // Check if already cancelled
-  if (subscription.status === SubscriptionStatus.CANCELLED) {
-    throw new Errors.BadRequestError(errMsg.SUBSCRIPTION_ALREADY_CANCELLED);
   }
 
   // Check if subscription can be cancelled (not expired)
