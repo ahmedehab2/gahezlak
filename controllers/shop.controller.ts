@@ -52,12 +52,12 @@ export const createShopHandler: RequestHandler<
 
 export const updateShopHandler: RequestHandler<
   {
-    id: string;
+    shopId: string;
   },
   SuccessResponse<IShop>,
   Pick<IShop, "name" | "type" | "address" | "phoneNumber" | "email">
 > = async (req, res) => {
-  const shop = await ShopService.updateShop(req.params.id, req.body);
+  const shop = await ShopService.updateShop(req.params.shopId, req.body);
   res.status(200).json({
     message: "Shop updated successfully",
     data: shop,
