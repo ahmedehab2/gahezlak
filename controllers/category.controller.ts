@@ -2,9 +2,9 @@ import { RequestHandler } from "express";
 import {
   createCategory,
   updateCategory,
-  deleteCategoryAndItems,
   getCategoryById,
   getCategoriesByShop,
+  deleteCategory,
 } from "../services/category.service";
 import { SuccessResponse } from "../common/types/contoller-response.types";
 import { ICategory } from "../models/Category";
