@@ -35,11 +35,16 @@ export async function createSubscription(
 }
 
 // Cancel subscription
-export async function cancelSubscription(subscriptionId: string): Promise<ISubscription> {
-  const subscription = await Subscriptions.findById(subscriptionId);
-  
+export async function cancelSubscription(
+  userId: string
+): Promise<ISubscription> {
+  const subscription = await Subscriptions.findOne({
+    userId,
+    status: { $in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING] },
+  });
+
   if (!subscription) {
-    throw new Errors.NotFoundError(errMsg.SUBSCRIPTION_NOT_FOUND);
+    throw new Errors.NotFoundError(errMsg.NO_ACTIVE_SUBSCRIPTION);
   }
 
   // Check if already cancelled
@@ -61,12 +66,23 @@ export async function cancelSubscription(subscriptionId: string): Promise<ISubsc
 }
 
 // Get user's active subscription
-export async function getUserActiveSubscription(userId: string): Promise<ISubscription | null> {
+export async function getUserActiveSubscription(
+  userId: string
+): Promise<ISubscription | null> {
   const subscription = await Subscriptions.findOne({
     userId,
-    status: { $in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING, SubscriptionStatus.PENDING] },
+    status: {
+      $in: [
+        SubscriptionStatus.ACTIVE,
+        SubscriptionStatus.TRIALING,
+        SubscriptionStatus.PENDING,
+      ],
+    },
   })
-    .populate("plan", "planGroup title description price currency frequency features")
+    .populate(
+      "plan",
+      "planGroup title description price currency frequency features"
+    )
     .populate("shop", "name email phoneNumber");
 
   return subscription;
@@ -106,11 +122,16 @@ export async function getAllSubscriptions(filters: {
 }
 
 // Get subscription by ID (admin)
-export async function getSubscriptionById(subscriptionId: string): Promise<ISubscription | null> {
+export async function getSubscriptionById(
+  subscriptionId: string
+): Promise<ISubscription | null> {
   const subscription = await Subscriptions.findById(subscriptionId)
     .populate("userId", "firstName lastName email phoneNumber")
     .populate("shop", "name email phoneNumber address")
-    .populate("plan", "planGroup title description price currency frequency features");
+    .populate(
+      "plan",
+      "planGroup title description price currency frequency features"
+    );
 
   return subscription;
 }

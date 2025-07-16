@@ -124,13 +124,8 @@ export const cancelShopSubscriptionHandler: RequestHandler<
 > = async (req, res) => {
   const { userId } = req.user!;
 
-  const subscription = await getUserActiveSubscription(userId);
-  if (!subscription) {
-    throw new Errors.NotFoundError(errMsg.NO_SUBSCRIPTION_FOUND);
-  }
-
   // Cancel the subscription
-  await cancelSubscription(subscription.id);
+  await cancelSubscription(userId);
 
   res.status(200).json({
     message: "Shop subscription cancelled successfully",
