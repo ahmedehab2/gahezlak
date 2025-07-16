@@ -1,9 +1,8 @@
 import { ICategory, CategoryModel } from "../models/Category";
-import { IMenuItem, MenuItemModel } from "../models/MenuItem";
+import {  MenuItemModel } from "../models/MenuItem";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
 import mongoose from "mongoose";
-import { calculateFinalPrice } from "../utils/menu-item-utils";
 import { Shops } from "../models/Shop";
 
 export async function createCategory(

@@ -66,7 +66,7 @@ router.get("/", protect, isAllowed([Role.ADMIN]), controllers.getAllShops); // A
 // menu item routes
 
 router.post(
-  "/:shopId/menu-items",
+  "/menu-items",
   //protect,
   //isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
   uploadMiddleware,
