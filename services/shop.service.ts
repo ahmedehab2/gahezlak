@@ -2,12 +2,12 @@ import { IShop, Shops } from "../models/Shop";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
 import mongoose from "mongoose";
-import { generateMenuQRCode, QRCodeOptions } from "../utils/qrCodeGenerator";
+import { generateAndUploadMenuQRCode, QRCodeOptions } from "../utils/qrCodeGenerator";
 
 async function createShop(
   shopData: Pick<
     IShop,
-    "name" | "type" | "address" | "phoneNumber" | "email" | "qrCodeImage"
+    "name" | "type" | "address" | "phoneNumber" | "email" | "qrCodeUrl" | "logoUrl"
   >,
   currentUserId: string
 ) {
@@ -73,16 +73,16 @@ async function getAllShops() {
 async function regenerateShopQRCode(
   shopId: string,
   options: QRCodeOptions = {}
-): Promise<{ qrCodeImage: string; menuUrl: string }> {
+): Promise<{ qrCodeUrl: string; menuUrl: string }> {
   const shop = await Shops.findById(shopId);
   if (!shop) {
     throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
   }
 
-  const qrCodeResult = await generateMenuQRCode(shop.name, undefined, options);
+  const qrCodeResult = await generateAndUploadMenuQRCode(shop.name, undefined, options);
 
-  // Update shop with new QR code base64 data
-  shop.qrCodeImage = qrCodeResult.qrCodeImage;
+  // Update shop with new QR code URL
+  shop.qrCodeUrl = qrCodeResult.qrCodeUrl;
   await shop.save();
 
   return qrCodeResult;

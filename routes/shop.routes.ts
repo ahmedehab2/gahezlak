@@ -26,18 +26,21 @@ import * as orderValidators from "../validators/order.validator";
 import * as kitchenControllers from "../controllers/kitchen.controller";
 
 import { validateOrderId } from "../validators/order.validator";
+import { uploadMiddleware } from "../middlewares/multer";
 
 const router = express.Router();
 
 router.post(
   "/",
   protect,
+  uploadMiddleware("logo"), // handle logo image upload
   shopValidators.creatShopValidator,
   controllers.createShopHandler
 );
 router.put(
   "/:shopId",
   protect,
+  uploadMiddleware("logo"), // handle logo image upload
   isAllowed([Role.ADMIN, Role.SHOP_OWNER, Role.SHOP_MANAGER]),
   shopValidators.updateShopValidator,
   controllers.updateShopHandler
