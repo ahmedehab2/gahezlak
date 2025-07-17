@@ -21,8 +21,6 @@ import * as categoryValidators from "../validators/category.validators";
 import * as orderControllers from "../controllers/order.controller";
 import * as orderValidators from "../validators/order.validator";
 
-
-
 import { validateOrderId } from "../validators/order.validator";
 import { uploadMiddleware } from "../middlewares/multer";
 
@@ -57,22 +55,7 @@ router.get("/", protect, isAllowed([Role.ADMIN]), controllers.getAllShops); // A
 
 // menu item routes
 
-router.post(
-  "/menu-items",
-  protect,
-  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-  uploadMiddleware,
-  menuItemValidators.validateCreateMenuItem,
-  menuItemControllers.createMenuItemAndAddToCategoryHandler
-);
-
-router.get(
-    "/:shopId/menu-items/:itemId",
-    menuItemValidators.validateGetOrDeleteItemById,
-    menuItemControllers.getMenuItemByIdHandler
-  );
-
-// for logged in shop workers
+// For logged in shop workers
 router.get(
   "/menu-items",
   protect,
@@ -80,31 +63,41 @@ router.get(
   menuItemControllers.getMenuItemsByShopHandler
 );
 
-//for public usage (customers)
+// For public usage (customers)
 router.get(
   "/:shopName/menu-items",
   shopValidators.shopNameParamValidator,
   menuItemControllers.getMenuItemsByShopHandler
 );
 
+// Get menu item by id (for logged in shop workers)
+router.get(
+  "/menu-items/:itemId",
+  menuItemValidators.validateGetOrDeleteItemById,
+  menuItemControllers.getMenuItemByIdHandler
+);
+
+// Delete menu item by id (for logged in shop workers)
 router.delete(
-    "/:shopId/menu-items/:itemId",
-    menuItemValidators.validateGetOrDeleteItemById,
-    menuItemControllers.deleteMenuItemHandler
-  );
+  "/menu-items/:itemId",
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  menuItemValidators.validateGetOrDeleteItemById,
+  menuItemControllers.deleteMenuItemHandler
+);
 
 router.patch(
-  "/:shopId/menu-items/:itemId/toggle",
+  "/menu-items/:itemId/toggle",
   menuItemValidators.validateToggleAvailability,
   menuItemControllers.toggleItemAvailabilityHandler
 );
 
-//category routes
+// category routes
 
 router.post(
   "/categories",
   protect,
-   isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
   categoryValidators.createCategoryValidator,
   categoryControllers.createCategoryHandler
 );
@@ -132,7 +125,6 @@ router
     categoryControllers.getCategoryByIdHandler
   )
   .put(
-
     "/categories/:categoryId",
     protect,
     isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
@@ -163,7 +155,6 @@ router
 
 // order routes
 
-
 router.post(
   "/:shopId/orders",
   orderValidators.validateCreateOrder,
@@ -184,7 +175,6 @@ router.put(
   orderValidators.validateUpdateOrderStatus,
   orderControllers.updateOrderStatusHandler
 );
-
 
 router.get(
   "/:shopId/orders",
@@ -208,12 +198,7 @@ router.put(
   orderControllers.sendOrderToKitchenHandler
 );
 
-
-
-
-
 // subscription routes
-
 router.post(
   "/subscription/cancel",
   protect,

@@ -1,13 +1,11 @@
 import { ICategory, CategoryModel } from "../models/Category";
-import {  MenuItemModel } from "../models/MenuItem";
+import { MenuItemModel } from "../models/MenuItem";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
-
 import mongoose, { FilterQuery } from "mongoose";
 import { calculateFinalPrice } from "../utils/menu-item-utils";
 import { LangType } from "../common/types/general-types";
 import { IShop, Shops } from "../models/Shop";
-
 
 export async function createCategory(
   shopId: string,
@@ -15,7 +13,7 @@ export async function createCategory(
 ) {
   const category = await CategoryModel.create({
     ...categoryData,
-    shopId: new mongoose.Types.ObjectId(shopId),
+    shopId,
   });
   return category.toObject();
 }
@@ -28,7 +26,7 @@ export async function updateCategory(
   const category = await CategoryModel.findOneAndUpdate(
     {
       _id: new mongoose.Types.ObjectId(categoryId),
-      shopId: new mongoose.Types.ObjectId(shopId),
+      shopId,
     },
     updateData,
     { new: true }
@@ -44,7 +42,7 @@ export async function updateCategory(
 export async function deleteCategory(shopId: string, categoryId: string) {
   const category = await CategoryModel.findOneAndDelete({
     _id: new mongoose.Types.ObjectId(categoryId),
-    shopId: new mongoose.Types.ObjectId(shopId),
+    shopId,
   });
 
   if (!category) {
@@ -58,6 +56,7 @@ export async function deleteCategory(shopId: string, categoryId: string) {
 
   return category;
 }
+
 
 
 // export async function updateItemInCategory(
@@ -82,6 +81,7 @@ export async function deleteCategory(shopId: string, categoryId: string) {
 
 //   return item.toObject();
 // }
+
 
 export async function getCategoriesByShop({
   shopId,
@@ -109,9 +109,37 @@ export async function getCategoriesByShop({
   const categories = await CategoryModel.find(query, {
     shopId: 0, // exclude shopId from the response
   }).lean();
-  return categories;
 
+  return categories;
 }
+
+// export async function getItemsInCategory(
+//   shopId: string,
+//   categoryId: string,
+//   lang: "en" | "ar"
+// ) {
+//   const items = await MenuItemModel.find({
+//     shopId,
+//     category: categoryId,
+//     isAvailable: true,
+//   });
+
+//   return items.map((item) => ({
+//     _id: item._id,
+//     name: typeof item.name === "object" ? item.name[lang] : item.name,
+//     description:
+//       typeof item.description === "object"
+//         ? item.description[lang]
+//         : item.description,
+//     price: item.price,
+//     discount: item.discount,
+//     finalPrice: calculateFinalPrice(item.price, item.discount),
+//     isAvailable: item.isAvailable,
+//     categoryId: item.categoryId,
+//     createdAt: item.createdAt,
+//     updatedAt: item.updatedAt,
+//   }));
+// }
 
 export async function getCategoryById(shopId: string, categoryId: string) {
   const category = await CategoryModel.findOne(

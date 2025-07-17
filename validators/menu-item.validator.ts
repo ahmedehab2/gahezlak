@@ -46,7 +46,6 @@ export const validateCreateMenuItem = [
   validate,
 ];
 
-
 export const validateUpdateMenuItem = [
   param("shopId").isMongoId().withMessage("Invalid shopId"),
   param("itemId").isMongoId().withMessage("Invalid itemId"),
@@ -79,13 +78,11 @@ export const validateUpdateMenuItem = [
 ];
 
 export const validateToggleAvailability = [
-  param("shopId").isMongoId().withMessage("Invalid shopId"),
   param("itemId").isMongoId().withMessage("Invalid itemId"),
   validate,
 ];
 
 export const validateGetOrDeleteItemById = [
-  param("shopId").isMongoId().withMessage("Invalid shopId"),
   param("itemId").isMongoId().withMessage("Invalid itemId"),
   validate,
 ];
