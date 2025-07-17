@@ -170,7 +170,7 @@ router.post(
 );
 
 router.put(
-  "/:shopId/orders/:orderId/status",
+  "/orders/:orderId/status",
   protect,
   isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
   orderValidators.validateUpdateOrderStatus,

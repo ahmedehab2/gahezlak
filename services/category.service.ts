@@ -120,7 +120,7 @@ export async function getCategoryById(shopId: string, categoryId: string) {
       shopId: new mongoose.Types.ObjectId(shopId),
     },
     {
-      shopId: 0,
+      shopId: 0,  // exclude shopId from the response
     }
   ).lean();
 

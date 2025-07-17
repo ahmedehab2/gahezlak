@@ -1,4 +1,5 @@
 import { RequestHandler } from "express";
+import { getUserShop } from "../services/shop.service";
 import {
   CreateOrder,
   UpdateOrderStatus,
@@ -19,8 +20,11 @@ import {
 
 
 export const createOrderHandler: RequestHandler = async (req, res) => {
-  const orderData = req.body;
-
+  const { shopId } = req.params;
+  const orderData = {
+    ...req.body,
+    shopId,
+  };
   const newOrder = await CreateOrder(orderData);
     // io.emit("newOrder", newOrder);
 
@@ -39,23 +43,27 @@ export const createOrderHandler: RequestHandler = async (req, res) => {
 
 
 export const updateOrderStatusHandler: RequestHandler = async (req, res) => {
-  const orderId = req.params.id;
+  const shopId = req.user?.shopId!;
+  await getUserShop(req.user?.userId!);
+  const {orderId} = req.params;
   const { status } = req.body;
-  const updatedOrderStatus = await UpdateOrderStatus(orderId, status);
+  const updatedOrderStatus = await UpdateOrderStatus(orderId, shopId, status);
   // io.emit("orderStatusUpdated", updatedOrderStatus);
 
   const response: SuccessResponse<typeof updatedOrderStatus> = {
     message: "Order status updated successfully",
     data: updatedOrderStatus,
   };
-
+console.log('Updating order:', { orderId, shopId, status });
   res.status(200).json(response);
 };
 
 
 export const sendOrderToKitchenHandler: RequestHandler = async (req, res) => {
+  const shopId = req.user?.shopId!;
+  await getUserShop(req.user?.userId!);
   const orderId = req.params.id;
-  const updatedOrder = await sendOrderToKitchen(orderId);
+  const updatedOrder = await sendOrderToKitchen(orderId, shopId);
   // io.emit("orderSentToKitchen", updatedOrder);
 
   const response: SuccessResponse<typeof updatedOrder> = {

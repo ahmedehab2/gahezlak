@@ -15,7 +15,6 @@ export const validateCreateOrder = [
 ];
 
 export const validateUpdateOrderStatus = [
-  param('id').isMongoId().withMessage('Invalid order ID'),
   body('status')
     .isIn(Object.values(OrderStatus))
     .withMessage(`Status must be one of: ${Object.values(OrderStatus).join(', ')}`),
@@ -24,7 +23,7 @@ export const validateUpdateOrderStatus = [
 
 
 export const validateOrderId = [
-  param("id").isMongoId().withMessage("Invalid order ID"),
+  param("orderId").isMongoId().withMessage("Invalid order ID"),
   validate,
 ];
 

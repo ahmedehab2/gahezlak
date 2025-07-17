@@ -2,7 +2,6 @@ import { body, param } from "express-validator";
 import { validate } from "../middlewares/validators";
 
 export const validateCreateMenuItem = [
-  param("shopId").isMongoId().withMessage("Invalid shopId"),
   body("name.en").isString().withMessage("English name is required"),
   body("name.ar").isString().withMessage("Arabic name is required"),
 

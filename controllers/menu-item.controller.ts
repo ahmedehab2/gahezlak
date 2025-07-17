@@ -9,7 +9,7 @@ import {
 import { SuccessResponse } from "../common/types/contoller-response.types";
 import { IMenuItem } from "../models/MenuItem";
 import { getUserShop } from "../services/shop.service";
-import { uploadImageToImgBB } from "../utils/imgbb";
+import uploadToImgbb from "../utils/uploadToImgbb";
 export const createMenuItemAndAddToCategoryHandler: RequestHandler<
   unknown,
   SuccessResponse<IMenuItem>,
@@ -32,7 +32,7 @@ export const createMenuItemAndAddToCategoryHandler: RequestHandler<
     let imageUrl: string | undefined;
     
     if (req.file) {
-      imageUrl = await uploadImageToImgBB(req.file.buffer);
+      imageUrl = await uploadToImgbb(req.file);
     }
 
     const item = await createMenuItem(shopId, {
