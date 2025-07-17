@@ -51,7 +51,7 @@ export async function UpdateOrderStatus(shopId: string, orderId: string, status:
     });
   }
 
-  if (!isCancel && (newIndex <= currentIndex || newIndex === -1)) {
+  if (!isCancel && (newIndex !== currentIndex + 1)) {
     throw new Errors.BadRequestError({
       en:"Invalid status transition",
       ar:"انتقال الحالة غير صالح",
@@ -65,7 +65,7 @@ export async function UpdateOrderStatus(shopId: string, orderId: string, status:
 
 export async function sendOrderToKitchen(shopId: string, orderId: string) {
   const order = await Orders.findOne({
-    _id: new mongoose.Types.ObjectId(orderId),
+    _id: orderId,
     shopId: new mongoose.Types.ObjectId(shopId)
   });
 
@@ -104,8 +104,8 @@ export async function GetOrderById(orderId: string) {
 }
 
 export async function GetOrdersByStatus(status: string, shopId: string) {
-  const orders = await Orders.find({ status, shopId });
-  const totalCount = await Orders.countDocuments({ status });
+  const orders = await Orders.find({ orderStatus: status, shopId });
+  const totalCount = await Orders.countDocuments({ orderStatus: status,shopId });
   return { orders: orders.map((order) => order.toObject()), totalCount };
 }
 
@@ -114,8 +114,8 @@ export async function GetOrdersByStatus(status: string, shopId: string) {
 export async function getKitchenOrders(shopId: string) {
   const orders = await Orders.find({
     shopId: new mongoose.Types.ObjectId(shopId),
-    status: OrderStatus.InProgress,
-    sentToKitchen: true,
+    orderStatus: OrderStatus.InProgress,
+    isSentToKitchen: true,
   }).populate('orderItems.menuItemId');
 
   return orders.map((order) => order.toObject());

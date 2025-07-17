@@ -3,7 +3,6 @@ import { CategoryModel } from "../models/Category";
 import { MenuItemModel, IMenuItem } from "../models/MenuItem";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
-import { buildLocalizedMenuItem } from "../utils/menu-item-utils";
 import { getCategoryById } from "./category.service";
 import { LangType } from "../common/types/general-types";
 import mongoose, { FilterQuery } from "mongoose";
@@ -36,7 +35,7 @@ export const getMenuItemById = async (
   const menuItem = await MenuItemModel.findOne({ _id: itemId, shopId });
   if (!menuItem) throw new Errors.NotFoundError(errMsg.MENU_ITEM_NOT_FOUND);
 
-  return buildLocalizedMenuItem(menuItem, lang);
+  return menuItem.toObject();
 };
 
 export const deleteMenuItem = async (shopId: string, itemId: string) => {

@@ -47,7 +47,7 @@ export const updateOrderStatusHandler: RequestHandler = async (req, res) => {
   await getUserShop(req.user?.userId!);
   const {orderId} = req.params;
   const { status } = req.body;
-  const updatedOrderStatus = await UpdateOrderStatus(orderId, shopId, status);
+  const updatedOrderStatus = await UpdateOrderStatus( shopId,orderId, status);
   // io.emit("orderStatusUpdated", updatedOrderStatus);
 
   const response: SuccessResponse<typeof updatedOrderStatus> = {
@@ -62,8 +62,8 @@ console.log('Updating order:', { orderId, shopId, status });
 export const sendOrderToKitchenHandler: RequestHandler = async (req, res) => {
   const shopId = req.user?.shopId!;
   await getUserShop(req.user?.userId!);
-  const orderId = req.params.id;
-  const updatedOrder = await sendOrderToKitchen(orderId, shopId);
+  const orderId = req.params.orderId;
+  const updatedOrder = await sendOrderToKitchen(shopId, orderId);
   // io.emit("orderSentToKitchen", updatedOrder);
 
   const response: SuccessResponse<typeof updatedOrder> = {
@@ -98,7 +98,7 @@ export const getOrdersByShopHandler: RequestHandler = async (req, res) => {
 };
 
 export const getOrderByIdHandler: RequestHandler = async (req, res) => {
-  const orderId = req.params.id;
+  const orderId = req.params.orderId;
   const order = await GetOrderById(orderId);
 
   const response: SuccessResponse<typeof order> = {

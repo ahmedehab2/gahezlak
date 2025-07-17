@@ -40,15 +40,25 @@ export const createCategoryValidator = [
 // Update category validator
 export const updateCategoryValidator = [
   param("categoryId").isMongoId().withMessage("Invalid categoryId"),
-  body("name")
+  body("name.en")
     .optional()
     .isString()
-    .withMessage("Category name must be a string"),
+    .withMessage("Category name in english must be a string"),
 
-  body("description")
+    body("name.ar")
     .optional()
     .isString()
-    .withMessage("Description must be a string"),
+    .withMessage("Category name in arabic must be a string"),
+
+  body("description.en")
+    .optional()
+    .isString()
+    .withMessage("Description in english must be a string"),
+
+    body("description.ar")
+    .optional()
+    .isString()
+    .withMessage("Description in arabic must be a string"), 
 
   validate,
 ];

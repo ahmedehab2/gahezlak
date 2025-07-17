@@ -163,10 +163,18 @@ router
 
 // order routes
 
+
 router.post(
   "/:shopId/orders",
   orderValidators.validateCreateOrder,
   orderControllers.createOrderHandler
+);
+
+router.get(
+  "/:shopId/orders/kitchen",
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER, Role.SHOP_STAFF]),
+  orderControllers.getKitchenOrdersHandler
 );
 
 router.put(
@@ -201,12 +209,7 @@ router.put(
 );
 
 
-router.get(
-  "/:shopId/orders/kitchen",
-  protect,
-  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER, Role.SHOP_STAFF]),
-  orderControllers.getKitchenOrdersHandler
-);
+
 
 
 // subscription routes
