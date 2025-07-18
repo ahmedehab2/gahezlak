@@ -55,6 +55,14 @@ router.get("/", protect, isAllowed([Role.ADMIN]), controllers.getAllShops); // A
 
 // menu item routes
 
+router.post(
+  "/menu-items",
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  menuItemValidators.validateCreateMenuItem,
+  menuItemControllers.createMenuItemAndAddToCategoryHandler
+);
+
 // For logged in shop workers
 router.get(
   "/menu-items",
@@ -73,6 +81,8 @@ router.get(
 // Get menu item by id (for logged in shop workers)
 router.get(
   "/menu-items/:itemId",
+  protect,  
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER, Role.SHOP_STAFF]),
   menuItemValidators.validateGetOrDeleteItemById,
   menuItemControllers.getMenuItemByIdHandler
 );
@@ -88,6 +98,8 @@ router.delete(
 
 router.patch(
   "/menu-items/:itemId/toggle",
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
   menuItemValidators.validateToggleAvailability,
   menuItemControllers.toggleItemAvailabilityHandler
 );
@@ -119,7 +131,7 @@ router.get(
 
 router
   .get(
-    "/:shopId/categories/:categoryId",
+    "/categories/:categoryId",
     protect,
     categoryValidators.categoryIdValidator,
     categoryControllers.getCategoryByIdHandler
@@ -155,6 +167,7 @@ router
 
 // order routes
 
+
 router.post(
   "/:shopId/orders",
   orderValidators.validateCreateOrder,
@@ -175,6 +188,7 @@ router.put(
   orderValidators.validateUpdateOrderStatus,
   orderControllers.updateOrderStatusHandler
 );
+
 
 router.get(
   "/:shopId/orders",

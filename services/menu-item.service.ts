@@ -29,6 +29,8 @@ export const getMenuItemById = async (
   itemId: string,
   lang: "en" | "ar"
 ) => {
+  
+
   const shop = await Shops.findById(shopId);
   if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
 

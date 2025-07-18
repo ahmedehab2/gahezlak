@@ -26,7 +26,12 @@ export const validateCreateMenuItem = [
     .withMessage("Discount must be between 0 and 100"),
 
   body("options").optional().isArray(),
-  body("options.*.name").isString().withMessage("Option name is required"),
+  body("options.*.name.en")
+    .isString()
+    .withMessage("English option name is required"),
+  body("options.*.name.ar")
+    .isString()
+    .withMessage("Arabic option name is required"),
   body("options.*.type")
     .isIn(["single", "multiple"])
     .withMessage("Invalid option type"),
@@ -34,9 +39,12 @@ export const validateCreateMenuItem = [
     .isBoolean()
     .withMessage("Required must be a boolean"),
   body("options.*.choices").isArray().withMessage("Choices must be an array"),
-  body("options.*.choices.*.name")
+  body("options.*.choices.*.name.en")
     .isString()
-    .withMessage("Choice name is required"),
+    .withMessage("English choice name is required"),
+  body("options.*.choices.*.name.ar")
+    .isString()
+    .withMessage("Arabic choice name is required"),
   body("options.*.choices.*.price")
     .isFloat({ min: 0 })
     .withMessage("Choice price must be non-negative"),

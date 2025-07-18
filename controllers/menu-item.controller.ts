@@ -9,6 +9,7 @@ import {
 import { SuccessResponse } from "../common/types/contoller-response.types";
 import { IMenuItem } from "../models/MenuItem";
 import uploadToImgbb from "../utils/uploadToImgbb";
+import { getUserShop } from "../services/shop.service";
 export const createMenuItemAndAddToCategoryHandler: RequestHandler<
   unknown,
   SuccessResponse<IMenuItem>,
@@ -25,6 +26,7 @@ export const createMenuItemAndAddToCategoryHandler: RequestHandler<
   >
 > = async (req, res, next) => {
   const shopId = req.user?.shopId!;
+  await getUserShop(req.user?.userId!); // make sure the req.user is member of the shop
 
   let imageUrl: string | undefined;
   if (req.file) {
@@ -48,7 +50,7 @@ export const getMenuItemByIdHandler: RequestHandler<
   unknown,
   { lang: "en" | "ar" }
 > = async (req, res) => {
-  const { itemId } = req.params;
+  const  itemId = req.params.itemId;
   const shopId = req.user?.shopId!;
   const lang = req.lang;
   const item = await getMenuItemById(shopId, itemId, lang);
@@ -60,7 +62,7 @@ export const getMenuItemByIdHandler: RequestHandler<
 };
 
 export const deleteMenuItemHandler: RequestHandler = async (req, res) => {
-  const { itemId } = req.params;
+  const  itemId  = req.params.itemId;
   const shopId = req.user?.shopId!;
   const deleted = await deleteMenuItem(shopId, itemId);
 
