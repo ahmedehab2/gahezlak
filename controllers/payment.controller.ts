@@ -123,7 +123,11 @@ export const payForOrderHandler: RequestHandler<
   });
 
   // 4. Update order status to Confirmed
-  await orderService.UpdateOrderStatus(orderId, OrderStatus.Confirmed);
+  await orderService.UpdateOrderStatus(
+    order.shopId.toString(),
+    order._id.toString(),
+    OrderStatus.Confirmed
+  );
 
   // 5. Return paymentId and status
   res.status(201).json({
