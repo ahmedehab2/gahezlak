@@ -9,7 +9,15 @@ import uploadToImgbb from "../utils/uploadToImgbb";
 import { Role, Roles } from "../models/Role";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
-import { cancelSubscription } from "../services/subscription.service";
+import {
+  cancelSubscription
+} from "../services/subscription.service";
+import {
+  addMemberToShop,
+  removeMemberFromShop,
+  updateMemberRole,
+} from "../services/shop.service";
+
 
 export const createShopHandler: RequestHandler<
   {},
@@ -71,9 +79,7 @@ export const updateShopHandler: RequestHandler<
 
   // Handle logo image upload if present
   if (req.file) {
-    const imgbbResponse = await (
-      await import("../utils/uploadToImgbb")
-    ).default(req.file);
+    const imgbbResponse = await uploadToImgbb(req.file);
     const logoUrl = imgbbResponse?.data?.url;
     if (!logoUrl) {
       throw new Error("Failed to upload logo image to imgbb");
@@ -150,5 +156,34 @@ export const cancelShopSubscriptionHandler: RequestHandler<
   res.status(200).json({
     message: "Shop subscription cancelled successfully",
     data: {},
+  });
+};
+
+export const addMemberHandler: RequestHandler = async (req, res) => {
+  const { shopId } = req.params;
+  const { userId, roleId } = req.body;
+  const shop = await addMemberToShop(shopId, userId, roleId);
+  res.status(200).json({
+    message: "Member added successfully",
+    data: shop,
+  });
+};
+
+export const removeMemberHandler: RequestHandler = async (req, res) => {
+  const { shopId, userId } = req.params;
+  const shop = await removeMemberFromShop(shopId, userId);
+  res.status(200).json({
+    message: "Member removed successfully",
+    data: shop,
+  });
+};
+
+export const updateMemberRoleHandler: RequestHandler = async (req, res) => {
+  const { shopId, userId } = req.params;
+  const { roleId } = req.body;
+  const shop = await updateMemberRole(shopId, userId, roleId);
+  res.status(200).json({
+    message: "Member role updated successfully",
+    data: shop,
   });
 };

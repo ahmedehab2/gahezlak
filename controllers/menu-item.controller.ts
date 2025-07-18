@@ -5,6 +5,7 @@ import {
   getMenuItemById,
   getMenuItemsByShop,
   toggleItemAvailability,
+  updateMenuItem,
 } from "../services/menu-item.service";
 import { SuccessResponse } from "../common/types/contoller-response.types";
 import { IMenuItem } from "../models/MenuItem";
@@ -30,13 +31,43 @@ export const createMenuItemAndAddToCategoryHandler: RequestHandler<
 
   let imageUrl: string | undefined;
   if (req.file) {
-    imageUrl = await uploadToImgbb(req.file);
+    const uploadResult = await uploadToImgbb(req.file);
+    imageUrl = uploadResult?.data?.url; // Only use the direct image URL
   }
 
-  const item = await createMenuItem(shopId, {
+  // Parse options if sent as a string (from multipart/form-data)
+  let options = req.body.options;
+  if (typeof options === "string") {
+    try {
+      options = JSON.parse(options);
+    } catch (e) {
+      const errorResponse: SuccessResponse<null> = {
+        message: "Invalid JSON for options",
+        data: null,
+      };
+      res.status(400).json(errorResponse as any);
+      return;
+    }
+  }
+
+  if (!req.body.categoryId) {
+    const errorResponse: SuccessResponse<null> = {
+      message: "categoryId is required",
+      data: null,
+    };
+    res.status(400).json(errorResponse as any);
+    return;
+  }
+
+  const menuItemPayload: any = {
     ...req.body,
     imgUrl: imageUrl,
-  });
+  };
+  if (options !== undefined) {
+    menuItemPayload.options = options;
+  }
+
+  const item = await createMenuItem(shopId, menuItemPayload);
 
   res.status(201).json({
     message: "Menu item created successfully",
@@ -90,6 +121,86 @@ export const toggleItemAvailabilityHandler: RequestHandler = async (
 
   res.status(200).json(response);
 };
+
+
+
+
+
+
+
+
+
+
+export const updateMenuItemHandler: RequestHandler<
+  { shopId: string; itemId: string },
+  SuccessResponse<IMenuItem>,
+  Partial<IMenuItem>
+> = async (req, res, next) => {
+  const { shopId, itemId } = req.params;
+  let updateData = { ...req.body };
+
+  // Handle image upload if present
+  if (req.file) {
+    const uploadResult = await uploadToImgbb(req.file);
+    updateData.imgUrl = uploadResult?.data?.url; // Only use the direct image URL
+  }
+
+  // Parse options if sent as a string (from multipart/form-data)
+  if (typeof updateData.options === "string") {
+    try {
+      updateData.options = JSON.parse(updateData.options);
+    } catch (e) {
+      const errorResponse: SuccessResponse<null> = {
+        message: "Invalid JSON for options",
+        data: null,
+      };
+      res.status(400).json(errorResponse as any);
+      return;
+    }
+  }
+  // Parse name if sent as a string
+  if (typeof updateData.name === "string") {
+    try {
+      updateData.name = JSON.parse(updateData.name);
+    } catch (e) {}
+  }
+  // Parse description if sent as a string
+  if (typeof updateData.description === "string") {
+    try {
+      updateData.description = JSON.parse(updateData.description);
+    } catch (e) {}
+  }
+  // Convert price and discount to numbers if sent as strings
+  if (typeof updateData.price === "string") {
+    updateData.price = Number(updateData.price);
+  }
+  if (typeof updateData.discount === "string") {
+    updateData.discount = Number(updateData.discount);
+  }
+  // Convert isAvailable to boolean if sent as a string
+  if (typeof updateData.isAvailable === "string") {
+    updateData.isAvailable = updateData.isAvailable === "true";
+  }
+
+  const updatedItem = await updateMenuItem(shopId, itemId, updateData);
+
+  res.status(200).json({
+    message: "Menu item updated successfully",
+    data: updatedItem,
+  });
+};
+
+
+
+
+
+
+
+
+
+
+
+
 
 export const getMenuItemsByShopHandler: RequestHandler<
   {

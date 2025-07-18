@@ -55,6 +55,13 @@ enum errorMessage {
   SAME_PASSWORD_ERROR = "SAME_PASSWORD_ERROR",
   IMAGE_UPLOAD_FAILED = "IMAGE_UPLOAD_FAILED",
   ROUTE_NOT_FOUND = "ROUTE_NOT_FOUND",
+  MEMBER_ALREADY_EXISTS = "MEMBER_ALREADY_EXISTS",
+  MEMBER_NOT_FOUND = "MEMBER_NOT_FOUND",
+  INVALID_ROLE = "INVALID_ROLE",
+  INVALID_USER_ID = "INVALID_USER_ID",
+  INVALID_ROLE_ID = "INVALID_ROLE_ID",
+  CANNOT_REMOVE_OWNER = "CANNOT_REMOVE_OWNER",
+  CANNOT_UPDATE_OWNER_ROLE = "CANNOT_UPDATE_OWNER_ROLE",
 }
 
 export const errMsg: {
@@ -263,5 +270,33 @@ export const errMsg: {
   ROUTE_NOT_FOUND: {
     en: "Route not found",
     ar: "الرابط غير موجود",
+  },
+  MEMBER_ALREADY_EXISTS: {
+    en: "User is already a member of this shop.",
+    ar: "المستخدم عضو بالفعل في هذا المتجر.",
+  },
+  MEMBER_NOT_FOUND: {
+    en: "Member not found in this shop.",
+    ar: "العضو غير موجود في هذا المتجر.",
+  },
+  INVALID_ROLE: {
+    en: "Invalid role.",
+    ar: "دور غير صالح.",
+  },
+  INVALID_USER_ID: {
+    en: "Invalid user ID.",
+    ar: "معرف المستخدم غير صالح.",
+  },
+  INVALID_ROLE_ID: {
+    en: "Invalid role ID.",
+    ar: "معرف الدور غير صالح.",
+  },
+  CANNOT_REMOVE_OWNER: {
+    en: "Cannot remove the shop owner from members.",
+    ar: "لا يمكن إزالة مالك المتجر من الأعضاء.",
+  },
+  CANNOT_UPDATE_OWNER_ROLE: {
+    en: "Cannot update the role of the shop owner.",
+    ar: "لا يمكن تحديث دور مالك المتجر.",
   },
 };

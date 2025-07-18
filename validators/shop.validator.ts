@@ -87,3 +87,23 @@ export const shopNameParamValidator = [
   param("shopName").isString().withMessage("Shop name must be a string").trim(),
   validate,
 ];
+
+export const addMemberValidator = [
+  param("shopId").isMongoId().withMessage("Shop ID must be a valid MongoDB ID"),
+  body("userId").isMongoId().withMessage("User ID must be a valid MongoDB ID"),
+  body("roleId").isMongoId().withMessage("Role ID must be a valid MongoDB ID"),
+  validate,
+];
+
+export const removeMemberValidator = [
+  param("shopId").isMongoId().withMessage("Shop ID must be a valid MongoDB ID"),
+  param("userId").isMongoId().withMessage("User ID must be a valid MongoDB ID"),
+  validate,
+];
+
+export const updateMemberRoleValidator = [
+  param("shopId").isMongoId().withMessage("Shop ID must be a valid MongoDB ID"),
+  param("userId").isMongoId().withMessage("User ID must be a valid MongoDB ID"),
+  body("roleId").isMongoId().withMessage("Role ID must be a valid MongoDB ID"),
+  validate,
+];

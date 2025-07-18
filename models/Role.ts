@@ -8,6 +8,7 @@ export enum Role {
   SHOP_OWNER = "shop_owner",
   SHOP_MANAGER = "shop_manager",
   SHOP_STAFF = "shop_staff",
+  KITCHEN = "kitchen", 
 }
 
 export interface IRole {

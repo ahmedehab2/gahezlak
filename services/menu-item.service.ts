@@ -78,6 +78,24 @@ export const toggleItemAvailability = async (
   return menuItem.toObject();
 };
 
+export const updateMenuItem = async (
+  shopId: string,
+  itemId: string,
+  updateData: Partial<IMenuItem>
+) => {
+  const shop = await Shops.findById(shopId);
+  if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
+
+  const menuItem = await MenuItemModel.findOneAndUpdate(
+    { _id: itemId, shopId },
+    updateData,
+    { new: true }
+  );
+  if (!menuItem) throw new Errors.NotFoundError(errMsg.MENU_ITEM_NOT_FOUND);
+
+  return menuItem.toObject();
+};
+
 
 export async function getMenuItemsByShop({
   shopId,

@@ -57,8 +57,10 @@ export const validateCreateMenuItem = [
 export const validateUpdateMenuItem = [
   param("shopId").isMongoId().withMessage("Invalid shopId"),
   param("itemId").isMongoId().withMessage("Invalid itemId"),
-  body("name").optional().isString(),
-  body("description").optional().isString(),
+  body("name.en").optional().isString(),
+  body("name.ar").optional().isString(),
+  body("description.en").optional().isString(),
+  body("description.ar").optional().isString(),
   body("price").optional().isFloat({ min: 0 }),
   body("categoryId").optional().isMongoId().withMessage("Invalid categoryId"),
   body("imgUrl").optional().isString(),
@@ -66,21 +68,15 @@ export const validateUpdateMenuItem = [
     .optional()
     .isFloat({ min: 0, max: 100 })
     .withMessage("Discount must be between 0 and 100"),
-  body("options").optional().isArray().withMessage("Options must be an array"),
-  body("options.*.group").isString().withMessage("Option group is required"),
-  body("options.*.type")
-    .isIn(["single", "multiple"])
-    .withMessage("Invalid option type"),
-  body("options.*.required")
-    .isBoolean()
-    .withMessage("Required must be a boolean"),
-  body("options.*.choices").isArray().withMessage("Choices must be an array"),
-  body("options.*.choices.*.label")
-    .isString()
-    .withMessage("Choice label is required"),
-  body("options.*.choices.*.price")
-    .isFloat({ min: 0 })
-    .withMessage("Choice price must be non-negative"),
+  body("options").optional().isArray(),
+  body("options.*.name.en").optional().isString(),
+  body("options.*.name.ar").optional().isString(),
+  body("options.*.type").optional().isIn(["single", "multiple"]),
+  body("options.*.required").optional().isBoolean(),
+  body("options.*.choices").optional().isArray(),
+  body("options.*.choices.*.name.en").optional().isString(),
+  body("options.*.choices.*.name.ar").optional().isString(),
+  body("options.*.choices.*.price").optional().isFloat({ min: 0 }),
   body("isAvailable").optional().isBoolean(),
   validate,
 ];

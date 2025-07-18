@@ -1,14 +1,14 @@
 import express from "express";
 import * as controllers from "../controllers/shop.controller";
-import { isAllowed, protect } from "../middlewares/auth";
+import { isAllowed, protect, isShopOwner } from "../middlewares/auth";
 import * as shopValidators from "../validators/shop.validator";
 import { Role } from "../models/Role";
 
 // menu items imports
 
 import * as menuItemControllers from "../controllers/menu-item.controller";
-
-import * as menuItemValidators from "../validators/menu-item.validator";
+import { updateMenuItemHandler } from "../controllers/menu-item.controller";
+import { validateUpdateMenuItem } from "../validators/menu-item.validator";
 
 // category imports
 
@@ -61,7 +61,7 @@ router.post(
   "/menu-items",
   protect,
   isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-  menuItemValidators.validateCreateMenuItem,
+  uploadMiddleware("image"), // handle image upload for menu item
   menuItemControllers.createMenuItemAndAddToCategoryHandler
 );
 
@@ -85,7 +85,6 @@ router.get(
   "/menu-items/:itemId",
   protect,  
   isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER, Role.SHOP_STAFF]),
-  menuItemValidators.validateGetOrDeleteItemById,
   menuItemControllers.getMenuItemByIdHandler
 );
 
@@ -94,7 +93,6 @@ router.delete(
   "/menu-items/:itemId",
   protect,
   isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-  menuItemValidators.validateGetOrDeleteItemById,
   menuItemControllers.deleteMenuItemHandler
 );
 
@@ -102,8 +100,15 @@ router.patch(
   "/menu-items/:itemId/toggle",
   protect,
   isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-  menuItemValidators.validateToggleAvailability,
   menuItemControllers.toggleItemAvailabilityHandler
+);
+
+router.put(
+  "/:shopId/menu-items/:itemId",
+  protect,
+  uploadMiddleware("image"), // handle image upload for menu item update
+  validateUpdateMenuItem,
+  updateMenuItemHandler
 );
 
 // category routes
@@ -220,6 +225,31 @@ router.post(
   protect,
   isAllowed([Role.SHOP_OWNER]),
   controllers.cancelShopSubscriptionHandler
+);
+
+// Shop member management routes
+router.post(
+  "/:shopId/members",
+  protect,
+  isShopOwner,
+  shopValidators.addMemberValidator,
+  controllers.addMemberHandler
+);
+
+router.delete(
+  "/:shopId/members/:userId",
+  protect,
+  isShopOwner,
+  shopValidators.removeMemberValidator,
+  controllers.removeMemberHandler
+);
+
+router.put(
+  "/:shopId/members/:userId",
+  protect,
+  isShopOwner,
+  shopValidators.updateMemberRoleValidator,
+  controllers.updateMemberRoleHandler
 );
 
 export default router;

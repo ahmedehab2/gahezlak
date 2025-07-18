@@ -91,7 +91,7 @@ export async function getUserProfile(userId: string) {
     .populate({
       path: "shop",
       select:
-        "name description address phoneNumber type email qrCodeImage subscriptionId createdAt updatedAt",
+        "name address phoneNumber type email qrCodeUrl logoUrl subscriptionId createdAt updatedAt",
       populate: {
         path: "subscriptionId",
         select: "status currentPeriodStart currentPeriodEnd plan",
@@ -170,7 +170,7 @@ export async function getAllUsers(
     .populate("role", "name")
     .populate(
       "shop",
-      "name description address phoneNumber email ownerId subscriptionId"
+      "name  address phoneNumber email ownerId subscriptionId"
     )
     .select("-password -refreshToken -verificationCode")
     .skip(skip)
@@ -196,7 +196,7 @@ export async function getUserByIdAdmin(userId: string) {
     .populate("role", "name")
     .populate(
       "shop",
-      "name description address phoneNumber email ownerId subscriptionId"
+      "name  address phoneNumber email ownerId subscriptionId"
     )
     .select("-password -refreshToken -verificationCode");
 
