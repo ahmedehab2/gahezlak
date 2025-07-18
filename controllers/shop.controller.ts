@@ -4,17 +4,12 @@ import { IShop } from "../models/Shop";
 import { SuccessResponse } from "../common/types/contoller-response.types";
 import { Users } from "../models/User";
 import { Types } from "mongoose";
-import { generateAndUploadMenuQRCode, QRCodeOptions } from "../utils/qrCodeGenerator";
-import { MenuItemModel, IMenuItem } from "../models/MenuItem";
+import { generateAndUploadMenuQRCode } from "../utils/qrCodeGenerator";
+import uploadToImgbb from "../utils/uploadToImgbb";
 import { Role, Roles } from "../models/Role";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
-import { Shops } from "../models/Shop";
-import { Subscriptions, ISubscription } from "../models/Subscription";
-import {
-  getUserActiveSubscription,
-  cancelSubscription,
-} from "../services/subscription.service";
+import { cancelSubscription } from "../services/subscription.service";
 
 export const createShopHandler: RequestHandler<
   {},
@@ -29,11 +24,8 @@ export const createShopHandler: RequestHandler<
   // Upload logo image to imgbb (if provided)
   let logoUrl: string | undefined = undefined;
   if (req.file) {
-    const imgbbResponse = await (await import("../utils/uploadToImgbb")).default(req.file);
+    const imgbbResponse = await uploadToImgbb(req.file);
     logoUrl = imgbbResponse?.data?.url;
-    if (!logoUrl) {
-      throw new Error("Failed to upload logo image to imgbb");
-    }
   }
 
   // Create the shop
@@ -79,7 +71,9 @@ export const updateShopHandler: RequestHandler<
 
   // Handle logo image upload if present
   if (req.file) {
-    const imgbbResponse = await (await import("../utils/uploadToImgbb")).default(req.file);
+    const imgbbResponse = await (
+      await import("../utils/uploadToImgbb")
+    ).default(req.file);
     const logoUrl = imgbbResponse?.data?.url;
     if (!logoUrl) {
       throw new Error("Failed to upload logo image to imgbb");
