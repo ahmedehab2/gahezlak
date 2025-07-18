@@ -1,5 +1,8 @@
-async function uploadToImgbb(file: Express.Multer.File): Promise<any> //Todo: Define a proper return type
-{
+import { errMsg } from "../common/err-messages";
+import { Errors } from "../errors";
+
+async function uploadToImgbb(file: Express.Multer.File): Promise<any> {
+  //Todo: Define a proper return type
   const formData = new FormData();
 
   formData.append("image", file.buffer.toString("base64"));
@@ -11,7 +14,7 @@ async function uploadToImgbb(file: Express.Multer.File): Promise<any> //Todo: De
     }
   );
   if (!response.ok) {
-    throw new Error("Failed to upload image");
+    throw new Errors.BadRequestError(errMsg.IMAGE_UPLOAD_FAILED);
   }
   const data = await response.json();
 

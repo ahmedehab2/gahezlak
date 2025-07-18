@@ -29,12 +29,14 @@ const router = express.Router();
 router.post(
   "/",
   protect,
+  uploadMiddleware("logo"), // handle logo image upload
   shopValidators.creatShopValidator,
   controllers.createShopHandler
 );
 router.put(
   "/:shopId",
   protect,
+  uploadMiddleware("logo"), // handle logo image upload
   isAllowed([Role.ADMIN, Role.SHOP_OWNER, Role.SHOP_MANAGER]),
   shopValidators.updateShopValidator,
   controllers.updateShopHandler

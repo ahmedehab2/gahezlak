@@ -4,17 +4,12 @@ import { IShop } from "../models/Shop";
 import { SuccessResponse } from "../common/types/contoller-response.types";
 import { Users } from "../models/User";
 import { Types } from "mongoose";
-import { generateMenuQRCode, QRCodeOptions } from "../utils/qrCodeGenerator";
-import { MenuItemModel, IMenuItem } from "../models/MenuItem";
+import { generateAndUploadMenuQRCode } from "../utils/qrCodeGenerator";
+import uploadToImgbb from "../utils/uploadToImgbb";
 import { Role, Roles } from "../models/Role";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
-import { Shops } from "../models/Shop";
-import { Subscriptions, ISubscription } from "../models/Subscription";
-import {
-  getUserActiveSubscription,
-  cancelSubscription,
-} from "../services/subscription.service";
+import { cancelSubscription } from "../services/subscription.service";
 
 export const createShopHandler: RequestHandler<
   {},
@@ -23,12 +18,23 @@ export const createShopHandler: RequestHandler<
 > = async (req, res) => {
   const { name } = req.body;
 
-  // Generate QR code for the new shop
-  const qrCodeResult = await generateMenuQRCode(name);
+  // Generate and upload QR code for the new shop
+  const qrCodeResult = await generateAndUploadMenuQRCode(name);
+
+  // Upload logo image to imgbb (if provided)
+  let logoUrl: string | undefined = undefined;
+  if (req.file) {
+    const imgbbResponse = await uploadToImgbb(req.file);
+    logoUrl = imgbbResponse?.data?.url;
+  }
 
   // Create the shop
   const shop = await ShopService.createShop(
-    { ...req.body, qrCodeImage: qrCodeResult.qrCodeImage },
+    {
+      ...req.body,
+      qrCodeUrl: qrCodeResult.qrCodeUrl,
+      logoUrl,
+    },
     req.user?.userId!
   );
 
@@ -59,9 +65,23 @@ export const updateShopHandler: RequestHandler<
     shopId: string;
   },
   SuccessResponse<IShop>,
-  Pick<IShop, "name" | "type" | "address" | "phoneNumber" | "email">
+  Partial<IShop>
 > = async (req, res) => {
-  const shop = await ShopService.updateShop(req.params.shopId, req.body);
+  let updateData = { ...req.body };
+
+  // Handle logo image upload if present
+  if (req.file) {
+    const imgbbResponse = await (
+      await import("../utils/uploadToImgbb")
+    ).default(req.file);
+    const logoUrl = imgbbResponse?.data?.url;
+    if (!logoUrl) {
+      throw new Error("Failed to upload logo image to imgbb");
+    }
+    updateData.logoUrl = logoUrl;
+  }
+
+  const shop = await ShopService.updateShop(req.params.shopId, updateData);
   res.status(200).json({
     message: "Shop updated successfully",
     data: shop,
@@ -96,7 +116,7 @@ export const getAllShops: RequestHandler<
  */
 export const regenerateQRCodeHandler: RequestHandler<
   {},
-  SuccessResponse<{ qrCodeImage: string; menuUrl: string }>,
+  SuccessResponse<{ qrCodeUrl: string; menuUrl: string }>,
   { options?: any }
 > = async (req, res) => {
   const userId = req.user?.userId;
@@ -124,13 +144,8 @@ export const cancelShopSubscriptionHandler: RequestHandler<
 > = async (req, res) => {
   const { userId } = req.user!;
 
-  const subscription = await getUserActiveSubscription(userId);
-  if (!subscription) {
-    throw new Errors.NotFoundError(errMsg.NO_SUBSCRIPTION_FOUND);
-  }
-
   // Cancel the subscription
-  await cancelSubscription(subscription.id);
+  await cancelSubscription(userId);
 
   res.status(200).json({
     message: "Shop subscription cancelled successfully",
