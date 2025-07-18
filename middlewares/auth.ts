@@ -42,7 +42,7 @@ export const isShopOwner = async (req: Request, res: Response, next: NextFunctio
     if (!userId) {
       throw new NotAllowedError(errMsg.USER_NOT_AUTHENTICATED, req.lang);
     }
-    const shopId = req.params.shopId || req.body.shopId;
+    const shopId = req.params.shopId || req.body.shopId || req.user?.shopId;
     if (!shopId) {
       throw new NotAllowedError(errMsg.SHOP_NOT_FOUND, req.lang);
     }
@@ -51,7 +51,7 @@ export const isShopOwner = async (req: Request, res: Response, next: NextFunctio
       throw new NotAllowedError(errMsg.SHOP_NOT_FOUND, req.lang);
     }
     if (shop.ownerId.toString() !== userId.toString()) {
-      throw new NotAllowedError({ en: "You are not allowed to perform this action", ar: "غير مسموح لك بتنفيذ هذا الإجراء" }, req.lang);
+      throw new NotAllowedError(errMsg.NOT_ALLOWED_ACTION, req.lang);
     }
     next();
   } catch (err) {

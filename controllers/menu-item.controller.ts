@@ -30,16 +30,17 @@ export const createMenuItemAndAddToCategoryHandler: RequestHandler<
   await getUserShop(req.user?.userId!); // make sure the req.user is member of the shop
 
   let imageUrl: string | undefined;
+  let imgDeleteUrl: string | undefined;
   if (req.file) {
     const uploadResult = await uploadToImgbb(req.file);
-    imageUrl = uploadResult?.data?.url; // Only use the direct image URL
+    imageUrl = uploadResult?.data?.url;
+    imgDeleteUrl = uploadResult?.data?.delete_url;
   }
 
   // Parse options if sent as a string (from multipart/form-data)
-  let options = req.body.options;
-  if (typeof options === "string") {
+  if (typeof req.body.options === "string") {
     try {
-      options = JSON.parse(options);
+      req.body.options = JSON.parse(req.body.options);
     } catch (e) {
       const errorResponse: SuccessResponse<null> = {
         message: "Invalid JSON for options",
@@ -50,24 +51,14 @@ export const createMenuItemAndAddToCategoryHandler: RequestHandler<
     }
   }
 
-  if (!req.body.categoryId) {
-    const errorResponse: SuccessResponse<null> = {
-      message: "categoryId is required",
-      data: null,
-    };
-    res.status(400).json(errorResponse as any);
-    return;
-  }
-
-  const menuItemPayload: any = {
+  const payload: any = {
     ...req.body,
     imgUrl: imageUrl,
   };
-  if (options !== undefined) {
-    menuItemPayload.options = options;
+  if (imgDeleteUrl) {
+    payload.imgDeleteUrl = imgDeleteUrl;
   }
-
-  const item = await createMenuItem(shopId, menuItemPayload);
+  const item = await createMenuItem(shopId, payload);
 
   res.status(201).json({
     message: "Menu item created successfully",
@@ -141,8 +132,15 @@ export const updateMenuItemHandler: RequestHandler<
 
   // Handle image upload if present
   if (req.file) {
+    // If there is an old image, delete it from imgbb
+    const oldItem = await getMenuItemById(shopId, itemId, req.lang || 'en');
+    if (oldItem?.imgDeleteUrl) {
+      // Fire and forget, don't await
+      fetch(oldItem.imgDeleteUrl).catch(() => {});
+    }
     const uploadResult = await uploadToImgbb(req.file);
-    updateData.imgUrl = uploadResult?.data?.url; // Only use the direct image URL
+    updateData.imgUrl = uploadResult?.data?.url;
+    updateData.imgDeleteUrl = uploadResult?.data?.delete_url;
   }
 
   // Parse options if sent as a string (from multipart/form-data)

@@ -62,6 +62,7 @@ enum errorMessage {
   INVALID_ROLE_ID = "INVALID_ROLE_ID",
   CANNOT_REMOVE_OWNER = "CANNOT_REMOVE_OWNER",
   CANNOT_UPDATE_OWNER_ROLE = "CANNOT_UPDATE_OWNER_ROLE",
+  NOT_ALLOWED_ACTION = "NOT_ALLOWED_ACTION",
 }
 
 export const errMsg: {
@@ -298,5 +299,9 @@ export const errMsg: {
   CANNOT_UPDATE_OWNER_ROLE: {
     en: "Cannot update the role of the shop owner.",
     ar: "لا يمكن تحديث دور مالك المتجر.",
+  },
+  NOT_ALLOWED_ACTION: {
+    en: "You are not allowed to perform this action",
+    ar: "غير مسموح لك بتنفيذ هذا الإجراء",
   },
 };

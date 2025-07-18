@@ -17,6 +17,7 @@ async function uploadToImgbb(file: Express.Multer.File): Promise<any> {
     throw new Errors.BadRequestError(errMsg.IMAGE_UPLOAD_FAILED);
   }
   const data = await response.json();
+  console.log('imgbb response:', JSON.stringify(data, null, 2));
 
   return data;
 }

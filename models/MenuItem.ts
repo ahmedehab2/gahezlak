@@ -17,6 +17,7 @@ export interface IMenuItem {
   categoryId: ObjectId;
   isAvailable: boolean;
   imgUrl?: string;
+  imgDeleteUrl?: string;
   discount?: number; // percentage
   options?: Array<{
     name: {
@@ -52,6 +53,7 @@ const MenuItemSchema = new Schema<IMenuItem>({
   categoryId: { type: Schema.Types.ObjectId, ref: collectionsName.CATEGORIES, required: true },
   isAvailable: { type: Boolean, default: true },
   imgUrl: { type: String },
+  imgDeleteUrl: { type: String },
   discount: { type: Number, min: 0, max: 100 },
   options: [{
     name: { 

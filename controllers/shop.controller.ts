@@ -30,19 +30,27 @@ export const createShopHandler: RequestHandler<
   const qrCodeResult = await generateAndUploadMenuQRCode(name);
 
   // Upload logo image to imgbb (if provided)
-  let logoUrl: string | undefined = undefined;
-  if (req.file) {
-    const imgbbResponse = await uploadToImgbb(req.file);
-    logoUrl = imgbbResponse?.data?.url;
-  }
+let logoUrl;
+let logoDeleteUrl;
+if (req.file) {
+  const imgbbResponse = await uploadToImgbb(req.file);
+  logoUrl = imgbbResponse?.data?.url;
+  logoDeleteUrl = imgbbResponse?.data?.delete_url;
+  console.log('Extracted logoUrl:', logoUrl);
+  console.log('Extracted logoDeleteUrl:', logoDeleteUrl);
+}
 
   // Create the shop
+  const payload: any = {
+    ...req.body,
+    qrCodeUrl: qrCodeResult.qrCodeUrl,
+    logoUrl,
+  };
+  if (logoDeleteUrl) {
+    payload.logoDeleteUrl = logoDeleteUrl;
+  }
   const shop = await ShopService.createShop(
-    {
-      ...req.body,
-      qrCodeUrl: qrCodeResult.qrCodeUrl,
-      logoUrl,
-    },
+    payload,
     req.user?.userId!
   );
 
@@ -79,12 +87,29 @@ export const updateShopHandler: RequestHandler<
 
   // Handle logo image upload if present
   if (req.file) {
+    // If there is an old logo, delete it from imgbb
+    const oldShop = await ShopService.getShopById(req.params.shopId);
+    console.log('Old shop logoDeleteUrl:', oldShop?.logoDeleteUrl);
+    if (oldShop?.logoDeleteUrl) {
+      console.log('Attempting to delete old logo from imgbb...');
+      try {
+        await fetch(oldShop.logoDeleteUrl);
+        console.log('Old logo deleted successfully from imgbb');
+      } catch (error) {
+        console.log('Failed to delete old logo:', error);
+      }
+      console.log('Delete request sent to imgbb');
+    }
     const imgbbResponse = await uploadToImgbb(req.file);
     const logoUrl = imgbbResponse?.data?.url;
+    const logoDeleteUrl = imgbbResponse?.data?.delete_url;
+    console.log('New logoUrl:', logoUrl);
+    console.log('New logoDeleteUrl:', logoDeleteUrl);
     if (!logoUrl) {
       throw new Error("Failed to upload logo image to imgbb");
     }
     updateData.logoUrl = logoUrl;
+    updateData.logoDeleteUrl = logoDeleteUrl;
   }
 
   const shop = await ShopService.updateShop(req.params.shopId, updateData);
