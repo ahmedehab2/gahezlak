@@ -9,6 +9,8 @@ import * as subscriptionService from "../services/subscription.service";
 import * as userService from "../services/user.service";
 import { updateShop } from "../services/shop.service";
 import mongoose from "mongoose";
+import { OrderStatus } from "../models/Order";
+import * as orderService from "../services/order.service";
 
 // Helper function to mock payment processing
 function mockPay(paymentMethod: string): Promise<PaymentStatus> {
@@ -92,10 +94,12 @@ export const payForOrderHandler: RequestHandler<
   }
 > = async (req, res) => {
   const { orderId, paymentMethod, paymentMethodDetails } = req.body;
-  const userId = req.user ? new mongoose.Types.ObjectId(req.user.userId) : undefined;
+  const userId = req.user
+    ? new mongoose.Types.ObjectId(req.user.userId)
+    : undefined;
 
   // 1. Validate order exists and is Pending
-  const order = await (await import("../services/order.service")).GetOrderById(orderId);
+  const order = await orderService.GetOrderById(orderId);
   if (!order) {
     throw new Errors.NotFoundError(errMsg.ORDER_NOT_FOUND);
   }
@@ -119,7 +123,7 @@ export const payForOrderHandler: RequestHandler<
   });
 
   // 4. Update order status to Confirmed
-  await (await import("../services/order.service")).UpdateOrderStatus(orderId, "Confirmed");
+  await orderService.UpdateOrderStatus(orderId, OrderStatus.Confirmed);
 
   // 5. Return paymentId and status
   res.status(201).json({

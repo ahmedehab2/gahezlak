@@ -54,6 +54,7 @@ enum errorMessage {
   INVALID_OLD_PASSWORD = "INVALID_OLD_PASSWORD",
   SAME_PASSWORD_ERROR = "SAME_PASSWORD_ERROR",
   IMAGE_UPLOAD_FAILED = "IMAGE_UPLOAD_FAILED",
+  ROUTE_NOT_FOUND = "ROUTE_NOT_FOUND",
 }
 
 export const errMsg: {
@@ -258,5 +259,9 @@ export const errMsg: {
   IMAGE_UPLOAD_FAILED: {
     en: "Failed to upload image",
     ar: "فشل تحميل الصورة",
+  },
+  ROUTE_NOT_FOUND: {
+    en: "Route not found",
+    ar: "الرابط غير موجود",
   },
 };
