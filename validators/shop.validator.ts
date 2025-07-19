@@ -112,6 +112,7 @@ export const addMemberValidator = [
     .isLength({ min: 6 })
     .withMessage("Password must be at least 6 characters long"),
   body("phoneNumber")
+    .optional()
     .isMobilePhone("ar-EG")
     .withMessage("Phone number must be a valid Egyptian mobile number"),
   body("roleId").isMongoId().withMessage("Role ID must be a valid MongoDB ID"),
@@ -130,5 +131,3 @@ export const updateMemberRoleValidator = [
   body("roleId").isMongoId().withMessage("Role ID must be a valid MongoDB ID"),
   validate,
 ];
-
-
