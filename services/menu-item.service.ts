@@ -29,25 +29,17 @@ export const getMenuItemById = async (
   itemId: string,
   lang: "en" | "ar"
 ) => {
-  
-
-  const shop = await Shops.findById(shopId);
-  if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
-
-  const menuItem = await MenuItemModel.findOne({ _id: itemId, shopId });
+  const menuItem = await MenuItemModel.findOne({ _id: itemId, shopId }).lean();
   if (!menuItem) throw new Errors.NotFoundError(errMsg.MENU_ITEM_NOT_FOUND);
 
-  return menuItem.toObject();
+  return menuItem;
 };
 
 export const deleteMenuItem = async (shopId: string, itemId: string) => {
-  const shop = await Shops.findById(shopId);
-  if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
-
   const menuItem = await MenuItemModel.findOneAndDelete({
     _id: itemId,
     shopId,
-  });
+  }).lean();
   if (!menuItem) throw new Errors.NotFoundError(errMsg.MENU_ITEM_NOT_FOUND);
 
   await CategoryModel.updateMany(
@@ -55,9 +47,7 @@ export const deleteMenuItem = async (shopId: string, itemId: string) => {
     { $pull: { menuItems: itemId } }
   );
 
-  return {
-    message: "Menu item deleted and removed from categories successfully",
-  };
+  return menuItem;
 };
 
 export const toggleItemAvailability = async (
@@ -65,9 +55,6 @@ export const toggleItemAvailability = async (
   itemId: string,
   isAvailable: boolean
 ) => {
-  const shop = await Shops.findById(shopId);
-  if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
-
   const menuItem = await MenuItemModel.findOneAndUpdate(
     { _id: itemId, shopId },
     { isAvailable },
@@ -83,9 +70,6 @@ export const updateMenuItem = async (
   itemId: string,
   updateData: Partial<IMenuItem>
 ) => {
-  const shop = await Shops.findById(shopId);
-  if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
-
   const menuItem = await MenuItemModel.findOneAndUpdate(
     { _id: itemId, shopId },
     updateData,
@@ -95,7 +79,6 @@ export const updateMenuItem = async (
 
   return menuItem.toObject();
 };
-
 
 export async function getMenuItemsByShop({
   shopId,
@@ -124,5 +107,4 @@ export async function getMenuItemsByShop({
     shopId: 0, // exclude shopId from the response
   }).lean();
   return menuItems;
-
 }

@@ -1,15 +1,24 @@
 import { IShop, Shops } from "../models/Shop";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
-import mongoose from "mongoose";
-import { generateAndUploadMenuQRCode, QRCodeOptions } from "../utils/qrCodeGenerator";
+import mongoose, { FilterQuery, ProjectionFields } from "mongoose";
+import {
+  generateAndUploadMenuQRCode,
+  QRCodeOptions,
+} from "../utils/qrCodeGenerator";
 import { Users } from "../models/User";
 import { Roles } from "../models/Role";
 
 async function createShop(
   shopData: Pick<
     IShop,
-    "name" | "type" | "address" | "phoneNumber" | "email" | "qrCodeUrl" | "logoUrl"
+    | "name"
+    | "type"
+    | "address"
+    | "phoneNumber"
+    | "email"
+    | "qrCodeUrl"
+    | "logoUrl"
   >,
   currentUserId: string
 ) {
@@ -40,11 +49,34 @@ async function getUserShop(userId: string) {
   return shop;
 }
 
-async function getShopByName(shopName: string) {
-  const shop = await Shops.findOne({ name: shopName });
+async function getShop({
+  shopName,
+  shopId,
+}: {
+  shopName?: string;
+  shopId?: string;
+}) {
+  const query: FilterQuery<IShop> = {};
+  let select: ProjectionFields<IShop> = {};
+  if (shopName) {
+    query.name = shopName;
+    select = {
+      name: 1,
+      logoUrl: 1,
+      qrCodeUrl: 1,
+      type: 1,
+      address: 1,
+    };
+  }
+  if (shopId) {
+    query._id = shopId;
+  }
+
+  const shop = await Shops.findOne(query).select(select);
   if (!shop) {
     throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
   }
+
   return shop;
 }
 
@@ -81,7 +113,11 @@ async function regenerateShopQRCode(
     throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
   }
 
-  const qrCodeResult = await generateAndUploadMenuQRCode(shop.name, undefined, options);
+  const qrCodeResult = await generateAndUploadMenuQRCode(
+    shop.name,
+    undefined,
+    options
+  );
 
   // Update shop with new QR code URL
   shop.qrCodeUrl = qrCodeResult.qrCodeUrl;
@@ -112,7 +148,10 @@ async function addMemberToShop(shopId: string, userId: string, roleId: string) {
     throw new Errors.BadRequestError(errMsg.MEMBER_ALREADY_EXISTS);
   }
 
-  shop.members.push({ userId: new mongoose.Types.ObjectId(userId), roleId: new mongoose.Types.ObjectId(roleId) });
+  shop.members.push({
+    userId: new mongoose.Types.ObjectId(userId),
+    roleId: new mongoose.Types.ObjectId(roleId),
+  });
   await shop.save();
   return shop;
 }
@@ -126,7 +165,9 @@ async function removeMemberFromShop(shopId: string, userId: string) {
     throw new Errors.BadRequestError(errMsg.CANNOT_REMOVE_OWNER);
   }
 
-  const memberIndex = shop.members.findIndex((m) => m.userId.toString() === userId);
+  const memberIndex = shop.members.findIndex(
+    (m) => m.userId.toString() === userId
+  );
   if (memberIndex === -1) {
     throw new Errors.NotFoundError(errMsg.MEMBER_NOT_FOUND);
   }
@@ -136,7 +177,11 @@ async function removeMemberFromShop(shopId: string, userId: string) {
   return shop;
 }
 
-async function updateMemberRole(shopId: string, userId: string, roleId: string) {
+async function updateMemberRole(
+  shopId: string,
+  userId: string,
+  roleId: string
+) {
   const shop = await Shops.findById(shopId);
   if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
 
@@ -169,4 +214,5 @@ export {
   addMemberToShop,
   removeMemberFromShop,
   updateMemberRole,
+  getShop,
 };

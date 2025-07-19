@@ -49,9 +49,6 @@ export async function generateAndUploadMenuQRCode(
     // Upload to imgbb
     const imgbbResponse = await uploadToImgbb(fakeFile);
     const qrCodeUrl = imgbbResponse?.data?.url;
-    if (!qrCodeUrl) {
-      throw new Error("Failed to get QR code image URL from imgbb response");
-    }
 
     return {
       qrCodeUrl,

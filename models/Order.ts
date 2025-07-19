@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import { collectionsName } from "../common/collections-name";
 
 export interface IOrderItem {
@@ -12,7 +12,6 @@ export interface IOrderItem {
 export enum OrderStatus {
   Pending = "Pending",
   Confirmed = "Confirmed",
-  InProgress = "InProgress",
   Preparing = "Preparing",
   Ready = "Ready",
   Delivered = "Delivered",
@@ -26,7 +25,7 @@ export interface IOrder {
   orderStatus: OrderStatus;
   totalAmount: number;
   orderItems: IOrderItem[];
-  isSentToKitchen: boolean; // Indicates if the order has been sent to the kitchen
+  orderNumber: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -45,7 +44,6 @@ const OrderSchema = new Schema<IOrder>(
       required: true,
       default: OrderStatus.Pending,
     },
-
     totalAmount: { type: Number, required: true },
     orderItems: [
       {
@@ -59,7 +57,7 @@ const OrderSchema = new Schema<IOrder>(
         price: { type: Number, required: true },
       },
     ],
-    isSentToKitchen: { type: Boolean, default: false },
+    orderNumber: { type: Number, required: true, unique: true },
   },
   {
     timestamps: true,

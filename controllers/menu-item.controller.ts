@@ -10,7 +10,7 @@ import {
 import { SuccessResponse } from "../common/types/contoller-response.types";
 import { IMenuItem } from "../models/MenuItem";
 import uploadToImgbb from "../utils/uploadToImgbb";
-import { getUserShop } from "../services/shop.service";
+
 export const createMenuItemAndAddToCategoryHandler: RequestHandler<
   unknown,
   SuccessResponse<IMenuItem>,
@@ -27,38 +27,17 @@ export const createMenuItemAndAddToCategoryHandler: RequestHandler<
   >
 > = async (req, res, next) => {
   const shopId = req.user?.shopId!;
-  await getUserShop(req.user?.userId!); // make sure the req.user is member of the shop
-
   let imageUrl: string | undefined;
-  let imgDeleteUrl: string | undefined;
+
   if (req.file) {
     const uploadResult = await uploadToImgbb(req.file);
     imageUrl = uploadResult?.data?.url;
-    imgDeleteUrl = uploadResult?.data?.delete_url;
   }
 
-  // Parse options if sent as a string (from multipart/form-data)
-  if (typeof req.body.options === "string") {
-    try {
-      req.body.options = JSON.parse(req.body.options);
-    } catch (e) {
-      const errorResponse: SuccessResponse<null> = {
-        message: "Invalid JSON for options",
-        data: null,
-      };
-      res.status(400).json(errorResponse as any);
-      return;
-    }
-  }
-
-  const payload: any = {
+  const item = await createMenuItem(shopId, {
     ...req.body,
-    imgUrl: imageUrl,
-  };
-  if (imgDeleteUrl) {
-    payload.imgDeleteUrl = imgDeleteUrl;
-  }
-  const item = await createMenuItem(shopId, payload);
+    ...(imageUrl && { imgUrl: imageUrl }),
+  });
 
   res.status(201).json({
     message: "Menu item created successfully",
@@ -72,133 +51,72 @@ export const getMenuItemByIdHandler: RequestHandler<
   unknown,
   { lang: "en" | "ar" }
 > = async (req, res) => {
-  const  itemId = req.params.itemId;
+  const itemId = req.params.itemId;
   const shopId = req.user?.shopId!;
-  const lang = req.lang;
-  const item = await getMenuItemById(shopId, itemId, lang);
+
+  const item = await getMenuItemById(shopId, itemId, req.lang);
 
   res.status(200).json({
     message: "Menu item retrieved",
-    data: item as unknown as IMenuItem, // TODO: fix this
+    data: item,
   });
 };
 
-export const deleteMenuItemHandler: RequestHandler = async (req, res) => {
-  const  itemId  = req.params.itemId;
+export const deleteMenuItemHandler: RequestHandler<
+  { itemId: string },
+  SuccessResponse<IMenuItem>,
+  unknown
+> = async (req, res) => {
+  const itemId = req.params.itemId;
   const shopId = req.user?.shopId!;
   const deleted = await deleteMenuItem(shopId, itemId);
 
-  const response: SuccessResponse<typeof deleted> = {
+  res.status(200).json({
     message: "Menu item deleted",
     data: deleted,
-  };
-
-  res.status(200).json(response);
+  });
 };
 
-export const toggleItemAvailabilityHandler: RequestHandler = async (
-  req,
-  res
-) => {
+export const toggleItemAvailabilityHandler: RequestHandler<
+  { itemId: string },
+  SuccessResponse<IMenuItem>,
+  { isAvailable: boolean }
+> = async (req, res) => {
   const { itemId } = req.params;
   const shopId = req.user?.shopId!;
   const { isAvailable } = req.body;
   const item = await toggleItemAvailability(shopId, itemId, isAvailable);
 
-  const response: SuccessResponse<typeof item> = {
+  res.status(200).json({
     message: "Item availability toggled",
     data: item,
-  };
-
-  res.status(200).json(response);
+  });
 };
-
-
-
-
-
-
-
-
-
 
 export const updateMenuItemHandler: RequestHandler<
   { shopId: string; itemId: string },
   SuccessResponse<IMenuItem>,
   Partial<IMenuItem>
 > = async (req, res, next) => {
-  const { shopId, itemId } = req.params;
-  let updateData = { ...req.body };
+  const { itemId } = req.params;
+  const shopId = req.user?.shopId!;
+  let imageUrl: string | undefined;
 
-  // Handle image upload if present
   if (req.file) {
-    // If there is an old image, delete it from imgbb
-    const oldItem = await getMenuItemById(shopId, itemId, req.lang || 'en');
-    if (oldItem?.imgDeleteUrl) {
-      // Fire and forget, don't await
-      fetch(oldItem.imgDeleteUrl).catch(() => {});
-    }
     const uploadResult = await uploadToImgbb(req.file);
-    updateData.imgUrl = uploadResult?.data?.url;
-    updateData.imgDeleteUrl = uploadResult?.data?.delete_url;
+    imageUrl = uploadResult?.data?.url;
   }
 
-  // Parse options if sent as a string (from multipart/form-data)
-  if (typeof updateData.options === "string") {
-    try {
-      updateData.options = JSON.parse(updateData.options);
-    } catch (e) {
-      const errorResponse: SuccessResponse<null> = {
-        message: "Invalid JSON for options",
-        data: null,
-      };
-      res.status(400).json(errorResponse as any);
-      return;
-    }
-  }
-  // Parse name if sent as a string
-  if (typeof updateData.name === "string") {
-    try {
-      updateData.name = JSON.parse(updateData.name);
-    } catch (e) {}
-  }
-  // Parse description if sent as a string
-  if (typeof updateData.description === "string") {
-    try {
-      updateData.description = JSON.parse(updateData.description);
-    } catch (e) {}
-  }
-  // Convert price and discount to numbers if sent as strings
-  if (typeof updateData.price === "string") {
-    updateData.price = Number(updateData.price);
-  }
-  if (typeof updateData.discount === "string") {
-    updateData.discount = Number(updateData.discount);
-  }
-  // Convert isAvailable to boolean if sent as a string
-  if (typeof updateData.isAvailable === "string") {
-    updateData.isAvailable = updateData.isAvailable === "true";
-  }
-
-  const updatedItem = await updateMenuItem(shopId, itemId, updateData);
+  const updatedItem = await updateMenuItem(shopId, itemId, {
+    ...req.body,
+    ...(imageUrl && { imgUrl: imageUrl }),
+  });
 
   res.status(200).json({
     message: "Menu item updated successfully",
     data: updatedItem,
   });
 };
-
-
-
-
-
-
-
-
-
-
-
-
 
 export const getMenuItemsByShopHandler: RequestHandler<
   {

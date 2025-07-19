@@ -1,34 +1,49 @@
 import { RequestHandler } from "express";
-import { getUserShop } from "../services/shop.service";
+import * as ShopService from "../services/shop.service";
 import {
   CreateOrder,
   UpdateOrderStatus,
   GetOrdersByShop,
   GetOrderById,
-  sendOrderToKitchen,
+  // sendOrderToKitchen,
   GetOrdersByStatus,
+  getOrderDetailsByNumber,
 } from "../services/order.service";
 import {
   SuccessResponse,
   PaginatedRespone,
 } from "../common/types/contoller-response.types";
 
-import {
-  getKitchenOrders,
-} from "../services/order.service";
+import { getKitchenOrders } from "../services/order.service";
+import { Errors } from "../errors";
+import { errMsg } from "../common/err-messages";
+import { IOrder, OrderStatus } from "../models/Order";
+import { generateOrderNumber } from "../utils/generate-order-number";
+import { Role } from "../models/Role";
+import { FilterQuery } from "mongoose";
 //import { io } from "../sockets/socketServer";
 
+export const createOrderHandler: RequestHandler<
+  unknown,
+  SuccessResponse<IOrder>,
+  Pick<IOrder, "tableNumber" | "totalAmount" | "orderItems"> & {
+    shopName: string;
+  }
+> = async (req, res) => {
+  const { shopName, ...orderData } = req.body;
+  const shop = await ShopService.getShop({ shopName });
+  if (!shop) {
+    throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
+  }
 
-export const createOrderHandler: RequestHandler = async (req, res) => {
-  const { shopId } = req.params;
-  const orderData = {
-    ...req.body,
-    shopId,
-  };
-  const newOrder = await CreateOrder(orderData);
-    // io.emit("newOrder", newOrder);
+  const newOrder = await CreateOrder({
+    ...orderData,
+    shopId: shop._id,
+    orderNumber: await generateOrderNumber(shop._id.toString()),
+  });
+  // io.emit("newOrder", newOrder);
 
-  const paymentUrl = `http://localhost:3000/payment?orderId=${newOrder._id}`; // رابط صفحة الدفع
+  const paymentUrl = `${process.env.FRONTEND_URL}/payment?orderId=${newOrder._id}`;
 
   const response: SuccessResponse<typeof newOrder & { paymentUrl: string }> = {
     message: "Order created successfully",
@@ -41,60 +56,68 @@ export const createOrderHandler: RequestHandler = async (req, res) => {
   res.status(201).json(response);
 };
 
-
 export const updateOrderStatusHandler: RequestHandler = async (req, res) => {
   const shopId = req.user?.shopId!;
-  await getUserShop(req.user?.userId!);
-  const {orderId} = req.params;
+  const { orderId } = req.params;
   const { status } = req.body;
-  const updatedOrderStatus = await UpdateOrderStatus( shopId,orderId, status);
+  const updatedOrderStatus = await UpdateOrderStatus(shopId, orderId, status);
   // io.emit("orderStatusUpdated", updatedOrderStatus);
 
   const response: SuccessResponse<typeof updatedOrderStatus> = {
     message: "Order status updated successfully",
     data: updatedOrderStatus,
   };
-console.log('Updating order:', { orderId, shopId, status });
+
   res.status(200).json(response);
 };
 
+// export const sendOrderToKitchenHandler: RequestHandler = async (req, res) => {
+//   const shopId = req.user?.shopId!;
+//   const orderId = req.params.orderId;
+//   const updatedOrder = await sendOrderToKitchen(shopId, orderId);
+//   // io.emit("orderSentToKitchen", updatedOrder);
 
-export const sendOrderToKitchenHandler: RequestHandler = async (req, res) => {
+//   const response: SuccessResponse<typeof updatedOrder> = {
+//     message: "Order sent to kitchen successfully",
+//     data: updatedOrder,
+//   };
+
+//   res.status(200).json(response);
+// };
+
+export const getOrdersByShopHandler: RequestHandler<
+  unknown,
+  PaginatedRespone<IOrder>,
+  any
+> = async (req, res) => {
   const shopId = req.user?.shopId!;
-  await getUserShop(req.user?.userId!);
-  const orderId = req.params.orderId;
-  const updatedOrder = await sendOrderToKitchen(shopId, orderId);
-  // io.emit("orderSentToKitchen", updatedOrder);
-
-  const response: SuccessResponse<typeof updatedOrder> = {
-    message: "Order sent to kitchen successfully",
-    data: updatedOrder,
-  };
-
-  res.status(200).json(response);
-};
-
-export const getOrdersByShopHandler: RequestHandler = async (req, res) => {
-  const shopId = req.params.shopId;
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
   const skip = (page - 1) * limit;
 
-  const { orders, totalCount } = await GetOrdersByShop(shopId);
+  const query: FilterQuery<IOrder> = {};
 
-  const paginated: PaginatedRespone<(typeof orders)[number]> = {
-    data: orders.slice(skip, skip + limit),
+  if (req.user?.role === Role.KITCHEN) {
+    query.isSentToKitchen = true;
+    query.orderStatus = { $in: [OrderStatus.Pending, OrderStatus.Confirmed] };
+  }
+
+  const { orders, totalCount } = await GetOrdersByShop({
+    shopId,
+    query,
+    skip,
+    limit,
+  });
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  res.status(200).json({
+    message: "Orders retrieved successfully",
+    data: orders,
     total: totalCount,
     page,
-    totalPages: Math.ceil(totalCount / limit),
-  };
-
-  const response: SuccessResponse<typeof paginated> = {
-    message: "Orders retrieved successfully",
-    data: paginated,
-  };
-
-  res.status(200).json(response);
+    totalPages,
+  });
 };
 
 export const getOrderByIdHandler: RequestHandler = async (req, res) => {
@@ -109,42 +132,25 @@ export const getOrderByIdHandler: RequestHandler = async (req, res) => {
   res.status(200).json(response);
 };
 
-export const getOrdersByStatusHandler: RequestHandler = async (req, res) => {
-  const shopId = req.params.shopId;
-  const status = req.body.status;
-  const page = parseInt(req.query.page as string) || 1;
-  const limit = parseInt(req.query.limit as string) || 10;
-  const skip = (page - 1) * limit;
+export const getOrderDetailsByNumberHandler: RequestHandler<
+  {
+    orderNumber: string;
+  },
+  SuccessResponse<
+    Pick<IOrder, "orderNumber" | "orderStatus" | "totalAmount" | "createdAt">
+  >,
+  any
+> = async (req, res) => {
+  const { orderNumber } = req.params;
+  const order = await getOrderDetailsByNumber(Number(orderNumber));
 
-  const { orders, totalCount } = await GetOrdersByStatus(status, shopId);
-
-  const paginated: PaginatedRespone<(typeof orders)[number]> = {
-    data: orders.slice(skip, skip + limit),
-    total: totalCount,
-    page,
-    totalPages: Math.ceil(totalCount / limit),
-  };
-
-  const response: SuccessResponse<typeof paginated> = {
-    message: "Orders retrieved successfully",
-    data: paginated,
-  };
-
-  res.status(200).json(response);
+  res.status(200).json({
+    message: "Order details retrieved successfully",
+    data: {
+      orderNumber: order.orderNumber,
+      orderStatus: order.orderStatus,
+      totalAmount: order.totalAmount,
+      createdAt: order.createdAt,
+    },
+  });
 };
-
-
-
-export const getKitchenOrdersHandler: RequestHandler = async (req, res) => {
-  const shopId = req.params.shopId;
-  const orders = await getKitchenOrders(shopId);
-
-  const response: SuccessResponse<typeof orders> = {
-    message: "Kitchen orders retrieved successfully",
-    data: orders,
-  };
-
-  res.status(200).json(response);
-};
-
-

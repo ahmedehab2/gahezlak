@@ -23,7 +23,6 @@ export interface IShop {
   isPaymentDone: boolean;
   qrCodeUrl?: string; // imgbb QR code image URL
   logoUrl?: string; // imgbb restaurant logo image URL
-  logoDeleteUrl?: string; // imgbb delete url for logo
   subscriptionId: ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
@@ -51,8 +50,7 @@ const ShopSchema = new Schema<IShop>(
       default: null,
     },
     qrCodeUrl: { type: String }, // imgbb QR code image URL
-    logoUrl: { type: String }, // imgbb restaurant logo image URL
-    logoDeleteUrl: { type: String }, // imgbb delete url for logo
+    logoUrl: { type: String }, // imgbb restaurant logo image URL   logoDeleteUrl: { type: String }, // imgbb delete url for logo
     members: {
       type: [
         {

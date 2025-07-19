@@ -3,9 +3,8 @@ import { MenuItemModel } from "../models/MenuItem";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
 import mongoose, { FilterQuery } from "mongoose";
-import { calculateFinalPrice } from "../utils/menu-item-utils";
 import { LangType } from "../common/types/general-types";
-import { IShop, Shops } from "../models/Shop";
+import { Shops } from "../models/Shop";
 
 export async function createCategory(
   shopId: string,
@@ -57,8 +56,6 @@ export async function deleteCategory(shopId: string, categoryId: string) {
   return category;
 }
 
-
-
 // export async function updateItemInCategory(
 //   shopId: string,
 //   categoryId: string,
@@ -81,7 +78,6 @@ export async function deleteCategory(shopId: string, categoryId: string) {
 
 //   return item.toObject();
 // }
-
 
 export async function getCategoriesByShop({
   shopId,
@@ -113,34 +109,6 @@ export async function getCategoriesByShop({
   return categories;
 }
 
-// export async function getItemsInCategory(
-//   shopId: string,
-//   categoryId: string,
-//   lang: "en" | "ar"
-// ) {
-//   const items = await MenuItemModel.find({
-//     shopId,
-//     category: categoryId,
-//     isAvailable: true,
-//   });
-
-//   return items.map((item) => ({
-//     _id: item._id,
-//     name: typeof item.name === "object" ? item.name[lang] : item.name,
-//     description:
-//       typeof item.description === "object"
-//         ? item.description[lang]
-//         : item.description,
-//     price: item.price,
-//     discount: item.discount,
-//     finalPrice: calculateFinalPrice(item.price, item.discount),
-//     isAvailable: item.isAvailable,
-//     categoryId: item.categoryId,
-//     createdAt: item.createdAt,
-//     updatedAt: item.updatedAt,
-//   }));
-// }
-
 export async function getCategoryById(shopId: string, categoryId: string) {
   const category = await CategoryModel.findOne(
     {
@@ -148,7 +116,7 @@ export async function getCategoryById(shopId: string, categoryId: string) {
       shopId: new mongoose.Types.ObjectId(shopId),
     },
     {
-      shopId: 0,  // exclude shopId from the response
+      shopId: 0, // exclude shopId from the response
     }
   ).lean();
 

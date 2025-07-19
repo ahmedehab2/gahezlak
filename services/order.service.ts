@@ -1,22 +1,38 @@
-import { Orders, IOrder, OrderStatus } from '../models/Order';
-import { Errors } from '../errors';
-import { errMsg } from '../common/err-messages';
-import mongoose from 'mongoose';
-import { Shops } from '../models/Shop';
+import { Orders, IOrder, OrderStatus } from "../models/Order";
+import { Errors } from "../errors";
+import { errMsg } from "../common/err-messages";
+import mongoose, { FilterQuery } from "mongoose";
 
 export async function CreateOrder(orderData: Partial<IOrder>) {
-  
-  const newOrder = await Orders.create(orderData);
+  if (!orderData.shopId) {
+    throw new Errors.BadRequestError(errMsg.SHOP_NOT_FOUND);
+  }
+
+  const newOrder = await Orders.create({
+    ...orderData,
+  });
+
   return newOrder.toObject();
 }
 
+// Define valid status transitions
+const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  [OrderStatus.Pending]: [OrderStatus.Confirmed, OrderStatus.Cancelled],
+  [OrderStatus.Confirmed]: [OrderStatus.Preparing, OrderStatus.Cancelled],
+  [OrderStatus.Preparing]: [OrderStatus.Ready],
+  [OrderStatus.Ready]: [OrderStatus.Delivered],
+  [OrderStatus.Delivered]: [],
+  [OrderStatus.Cancelled]: [],
+};
 
-export async function UpdateOrderStatus(shopId: string, orderId: string, status: OrderStatus) {
-
-  
-  const order = await Orders.findOne({ 
-    _id:orderId,
-    shopId: new mongoose.Types.ObjectId(shopId) 
+export async function UpdateOrderStatus(
+  shopId: string,
+  orderId: string,
+  status: OrderStatus
+) {
+  const order = await Orders.findOne({
+    _id: orderId,
+    shopId: new mongoose.Types.ObjectId(shopId),
   });
 
   if (!order) {
@@ -24,37 +40,12 @@ export async function UpdateOrderStatus(shopId: string, orderId: string, status:
   }
 
   const currentStatus = order.orderStatus;
-  const statusFlow: OrderStatus[] = [
-    OrderStatus.Pending,
-    OrderStatus.Confirmed,
-    OrderStatus.InProgress,
-    OrderStatus.Preparing,
-    OrderStatus.Ready,
-    OrderStatus.Delivered,
-  ];
+  const allowedTransitions = STATUS_TRANSITIONS[currentStatus];
 
-  const currentIndex = statusFlow.indexOf(currentStatus);
-  const newIndex = statusFlow.indexOf(status);
-  const isCancel = status === OrderStatus.Cancelled;
-
-  if (isCancel && currentStatus === OrderStatus.InProgress) {
+  if (!allowedTransitions.includes(status)) {
     throw new Errors.BadRequestError({
-      en: "Can't cancel after InProgress",
-      ar: "لا يمكن إلغاء بعد التحضير",
-    });
-  }
-
-  if (isCancel && ![OrderStatus.Pending, OrderStatus.Confirmed].includes(currentStatus)) {
-    throw new Errors.BadRequestError({
-      en: "Can only cancel from Pending or Confirmed",
-      ar: " يمكن إلغاء من الحالة المعلقة أو المؤكدة فقط", 
-    });
-  }
-
-  if (!isCancel && (newIndex !== currentIndex + 1)) {
-    throw new Errors.BadRequestError({
-      en:"Invalid status transition",
-      ar:"انتقال الحالة غير صالح",
+      en: `Cannot transition from ${currentStatus} to ${status}`,
+      ar: `لا يمكن الانتقال من ${currentStatus} إلى ${status}`,
     });
   }
 
@@ -63,33 +54,25 @@ export async function UpdateOrderStatus(shopId: string, orderId: string, status:
   return order.toObject();
 }
 
-export async function sendOrderToKitchen(shopId: string, orderId: string) {
-  const order = await Orders.findOne({
-    _id: orderId,
-    shopId: new mongoose.Types.ObjectId(shopId)
-  });
+export async function GetOrdersByShop({
+  shopId,
+  query,
+  skip,
+  limit,
+}: {
+  shopId: string;
+  query: FilterQuery<IOrder>;
+  skip: number;
+  limit: number;
+}) {
+  const orders = await Orders.find({ shopId })
+    .skip(skip)
+    .limit(limit)
+    .sort({ createdAt: -1 })
+    .lean();
+  const totalCount = await Orders.countDocuments({ shopId, ...query });
 
-  if (!order) {
-    throw new Errors.NotFoundError(errMsg.ORDER_NOT_FOUND);
-  }
-  
-
-  if (order.orderStatus !== OrderStatus.InProgress) {
-    throw new Errors.BadRequestError({
-      en: "Order must be InProgress to send to kitchen",
-      ar: "يجب أن يكون الطلب قيد التحضير لإرساله للمطبخ"
-    });
-  }
-
-  order.isSentToKitchen = true;
-  await order.save();
-  return order.toObject();
-}
-
-export async function GetOrdersByShop(shopId: string) {
-  const orders = await Orders.find({ shopId });
-  const totalCount = await Orders.countDocuments({ shopId });
-  return { orders: orders.map((order) => order.toObject()), totalCount };
+  return { orders, totalCount };
 }
 
 export async function GetOrderById(orderId: string) {
@@ -98,27 +81,32 @@ export async function GetOrderById(orderId: string) {
   if (!order) {
     throw new Errors.NotFoundError(errMsg.ORDER_NOT_FOUND);
   }
-  
 
   return order.toObject();
 }
 
 export async function GetOrdersByStatus(status: string, shopId: string) {
   const orders = await Orders.find({ orderStatus: status, shopId });
-  const totalCount = await Orders.countDocuments({ orderStatus: status,shopId });
+  const totalCount = await Orders.countDocuments({
+    orderStatus: status,
+    shopId,
+  });
   return { orders: orders.map((order) => order.toObject()), totalCount };
 }
-
-
 
 export async function getKitchenOrders(shopId: string) {
   const orders = await Orders.find({
     shopId: new mongoose.Types.ObjectId(shopId),
-    orderStatus: OrderStatus.InProgress,
-    isSentToKitchen: true,
-  }).populate('orderItems.menuItemId');
+    orderStatus: OrderStatus.Preparing,
+  }).populate("orderItems.menuItemId");
 
   return orders.map((order) => order.toObject());
 }
 
-
+export async function getOrderDetailsByNumber(orderNumber: number) {
+  const order = await Orders.findOne({ orderNumber }).lean();
+  if (!order) {
+    throw new Errors.NotFoundError(errMsg.ORDER_NOT_FOUND);
+  }
+  return order;
+}

@@ -9,15 +9,12 @@ import uploadToImgbb from "../utils/uploadToImgbb";
 import { Role, Roles } from "../models/Role";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
-import {
-  cancelSubscription
-} from "../services/subscription.service";
+import { cancelSubscription } from "../services/subscription.service";
 import {
   addMemberToShop,
   removeMemberFromShop,
   updateMemberRole,
 } from "../services/shop.service";
-
 
 export const createShopHandler: RequestHandler<
   {},
@@ -30,15 +27,11 @@ export const createShopHandler: RequestHandler<
   const qrCodeResult = await generateAndUploadMenuQRCode(name);
 
   // Upload logo image to imgbb (if provided)
-let logoUrl;
-let logoDeleteUrl;
-if (req.file) {
-  const imgbbResponse = await uploadToImgbb(req.file);
-  logoUrl = imgbbResponse?.data?.url;
-  logoDeleteUrl = imgbbResponse?.data?.delete_url;
-  console.log('Extracted logoUrl:', logoUrl);
-  console.log('Extracted logoDeleteUrl:', logoDeleteUrl);
-}
+  let logoUrl;
+  if (req.file) {
+    const imgbbResponse = await uploadToImgbb(req.file);
+    logoUrl = imgbbResponse?.data?.url;
+  }
 
   // Create the shop
   const payload: any = {
@@ -46,13 +39,8 @@ if (req.file) {
     qrCodeUrl: qrCodeResult.qrCodeUrl,
     logoUrl,
   };
-  if (logoDeleteUrl) {
-    payload.logoDeleteUrl = logoDeleteUrl;
-  }
-  const shop = await ShopService.createShop(
-    payload,
-    req.user?.userId!
-  );
+
+  const shop = await ShopService.createShop(payload, req.user?.userId!);
 
   // Get the shop owner role
   const shopOwnerRole = await Roles.findOne({ name: Role.SHOP_OWNER });
@@ -83,36 +71,18 @@ export const updateShopHandler: RequestHandler<
   SuccessResponse<IShop>,
   Partial<IShop>
 > = async (req, res) => {
-  let updateData = { ...req.body };
-
   // Handle logo image upload if present
+
+  let logoUrl;
   if (req.file) {
-    // If there is an old logo, delete it from imgbb
-    const oldShop = await ShopService.getShopById(req.params.shopId);
-    console.log('Old shop logoDeleteUrl:', oldShop?.logoDeleteUrl);
-    if (oldShop?.logoDeleteUrl) {
-      console.log('Attempting to delete old logo from imgbb...');
-      try {
-        await fetch(oldShop.logoDeleteUrl);
-        console.log('Old logo deleted successfully from imgbb');
-      } catch (error) {
-        console.log('Failed to delete old logo:', error);
-      }
-      console.log('Delete request sent to imgbb');
-    }
     const imgbbResponse = await uploadToImgbb(req.file);
-    const logoUrl = imgbbResponse?.data?.url;
-    const logoDeleteUrl = imgbbResponse?.data?.delete_url;
-    console.log('New logoUrl:', logoUrl);
-    console.log('New logoDeleteUrl:', logoDeleteUrl);
-    if (!logoUrl) {
-      throw new Error("Failed to upload logo image to imgbb");
-    }
-    updateData.logoUrl = logoUrl;
-    updateData.logoDeleteUrl = logoDeleteUrl;
+    logoUrl = imgbbResponse?.data?.url;
   }
 
-  const shop = await ShopService.updateShop(req.params.shopId, updateData);
+  const shop = await ShopService.updateShop(req.params.shopId, {
+    ...req.body,
+    logoUrl,
+  });
   res.status(200).json({
     message: "Shop updated successfully",
     data: shop,
@@ -129,6 +99,22 @@ export const updateShopHandler: RequestHandler<
 //   const shop = await ShopService.deleteShop(req.params.id);
 
 // };
+
+// return shop details for logged in user or public
+export const getShopHandler: RequestHandler<
+  { shopName?: string; shopId?: string },
+  SuccessResponse<IShop>,
+  unknown
+> = async (req, res) => {
+  const shop = await ShopService.getShop({
+    shopId: req.params.shopId,
+    shopName: req.params.shopName,
+  });
+  res.status(200).json({
+    message: "Shop fetched successfully",
+    data: shop,
+  });
+};
 
 export const getAllShops: RequestHandler<
   {},

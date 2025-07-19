@@ -55,7 +55,6 @@ export const validateCreateMenuItem = [
 ];
 
 export const validateUpdateMenuItem = [
-  param("shopId").isMongoId().withMessage("Invalid shopId"),
   param("itemId").isMongoId().withMessage("Invalid itemId"),
   body("name.en").optional().isString(),
   body("name.ar").optional().isString(),
@@ -83,6 +82,7 @@ export const validateUpdateMenuItem = [
 
 export const validateToggleAvailability = [
   param("itemId").isMongoId().withMessage("Invalid itemId"),
+  body("isAvailable").isBoolean().withMessage("isAvailable must be a boolean"),
   validate,
 ];
 
