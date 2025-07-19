@@ -55,6 +55,8 @@ router.post(
   controllers.addMemberHandler
 );
 
+
+
 router.delete(
   "/:shopId/members/:userId",
   protect,

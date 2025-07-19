@@ -14,6 +14,7 @@ import {
   addMemberToShop,
   removeMemberFromShop,
   updateMemberRole,
+  registerShopMember,
 } from "../services/shop.service";
 
 export const createShopHandler: RequestHandler<
@@ -172,11 +173,20 @@ export const cancelShopSubscriptionHandler: RequestHandler<
 
 export const addMemberHandler: RequestHandler = async (req, res) => {
   const { shopId } = req.params;
-  const { userId, roleId } = req.body;
-  const shop = await addMemberToShop(shopId, userId, roleId);
-  res.status(200).json({
+  const { firstName, lastName, email, password, phoneNumber, roleId } = req.body;
+  
+  const newMember = await registerShopMember(shopId, {
+    firstName,
+    lastName,
+    email,
+    password,
+    phoneNumber,
+    roleId,
+  });
+  
+  res.status(201).json({
     message: "Member added successfully",
-    data: shop,
+    data: newMember,
   });
 };
 
@@ -198,3 +208,5 @@ export const updateMemberRoleHandler: RequestHandler = async (req, res) => {
     data: shop,
   });
 };
+
+

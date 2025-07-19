@@ -90,7 +90,30 @@ export const shopNameParamValidator = [
 
 export const addMemberValidator = [
   param("shopId").isMongoId().withMessage("Shop ID must be a valid MongoDB ID"),
-  body("userId").isMongoId().withMessage("User ID must be a valid MongoDB ID"),
+  body("firstName")
+    .isString()
+    .withMessage("First name must be a string")
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage("First name must be between 2 and 50 characters"),
+  body("lastName")
+    .isString()
+    .withMessage("Last name must be a string")
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage("Last name must be between 2 and 50 characters"),
+  body("email")
+    .isEmail()
+    .withMessage("Email must be a valid email address")
+    .normalizeEmail(),
+  body("password")
+    .isString()
+    .withMessage("Password must be a string")
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters long"),
+  body("phoneNumber")
+    .isMobilePhone("ar-EG")
+    .withMessage("Phone number must be a valid Egyptian mobile number"),
   body("roleId").isMongoId().withMessage("Role ID must be a valid MongoDB ID"),
   validate,
 ];
@@ -107,3 +130,5 @@ export const updateMemberRoleValidator = [
   body("roleId").isMongoId().withMessage("Role ID must be a valid MongoDB ID"),
   validate,
 ];
+
+

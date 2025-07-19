@@ -8,6 +8,7 @@ import {
 } from "../utils/qrCodeGenerator";
 import { Users } from "../models/User";
 import { Roles } from "../models/Role";
+import { hash } from "bcryptjs";
 
 async function createShop(
   shopData: Pick<
@@ -204,6 +205,68 @@ async function updateMemberRole(
   return shop;
 }
 
+async function getShopById(shopId: string) {
+  const shop = await Shops.findById(shopId);
+  if (!shop) {
+    throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
+  }
+  return shop;
+}
+
+async function registerShopMember(
+  shopId: string,
+  memberData: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    phoneNumber: string;
+    roleId: string;
+  }
+) {
+  const shop = await Shops.findById(shopId);
+  if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
+
+  // Check if role exists
+  const role = await Roles.findById(memberData.roleId);
+  if (!role) throw new Errors.NotFoundError(errMsg.ROLE_NOT_FOUND);
+
+  // Check if email already exists
+  const existingUser = await Users.findOne({ email: memberData.email.toLowerCase() });
+  if (existingUser) {
+    throw new Errors.BadRequestError(errMsg.EMAIL_ALREADY_IN_USE);
+  }
+
+  // Hash password
+  const hashedPassword = await hash(
+    memberData.password,
+    parseInt(process.env.saltRounds || "7")
+  );
+
+  // Create the new user
+  const newUser = await Users.create({
+    firstName: memberData.firstName,
+    lastName: memberData.lastName,
+    email: memberData.email.toLowerCase(),
+    password: hashedPassword,
+    phoneNumber: memberData.phoneNumber,
+    role: new mongoose.Types.ObjectId(memberData.roleId),
+    shop: new mongoose.Types.ObjectId(shopId),
+    isVerified: true, // Shop members are automatically verified
+  });
+
+  // Add member to shop
+  shop.members.push({ 
+    userId: newUser._id, 
+    roleId: new mongoose.Types.ObjectId(memberData.roleId) 
+  });
+  await shop.save();
+
+  // Return user data without password
+  const { password, ...userData } = newUser.toObject();
+  return userData;
+}
+
 export {
   createShop,
   updateShop,
@@ -214,5 +277,7 @@ export {
   addMemberToShop,
   removeMemberFromShop,
   updateMemberRole,
+  getShopById,
+  registerShopMember,
   getShop,
 };
