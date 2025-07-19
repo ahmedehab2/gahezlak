@@ -26,7 +26,14 @@ import { FilterQuery } from "mongoose";
 export const createOrderHandler: RequestHandler<
   unknown,
   SuccessResponse<IOrder>,
-  Pick<IOrder, "tableNumber" | "totalAmount" | "orderItems"> & {
+  Pick<
+    IOrder,
+    | "tableNumber"
+    | "totalAmount"
+    | "orderItems"
+    | "customerName"
+    | "customerPhoneNumber"
+  > & {
     shopName: string;
   }
 > = async (req, res) => {

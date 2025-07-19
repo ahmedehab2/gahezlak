@@ -26,6 +26,8 @@ export interface IOrder {
   totalAmount: number;
   orderItems: IOrderItem[];
   orderNumber: number;
+  customerName: string;
+  customerPhoneNumber: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -37,6 +39,9 @@ const OrderSchema = new Schema<IOrder>(
       ref: collectionsName.SHOPS,
       required: true,
     },
+    orderNumber: { type: Number, required: true, unique: true },
+    customerName: { type: String, required: true },
+    customerPhoneNumber: { type: String, required: true },
     tableNumber: { type: Number },
     orderStatus: {
       type: String,
@@ -57,7 +62,6 @@ const OrderSchema = new Schema<IOrder>(
         price: { type: Number, required: true },
       },
     ],
-    orderNumber: { type: Number, required: true, unique: true },
   },
   {
     timestamps: true,

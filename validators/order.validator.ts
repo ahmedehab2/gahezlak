@@ -22,6 +22,10 @@ export const validateCreateOrder = [
   body("orderItems.*.price")
     .isFloat({ min: 0 })
     .withMessage("Price must be a positive number"),
+  body("customerName").isString().withMessage("Invalid customerName"),
+  body("customerPhoneNumber")
+    .isString()
+    .withMessage("Invalid customerPhoneNumber"),
   validate,
 ];
 
