@@ -135,36 +135,6 @@ async function regenerateShopQRCode(
   return qrCodeResult;
 }
 
-async function addMemberToShop(shopId: string, userId: string, roleId: string) {
-  const shop = await Shops.findById(shopId);
-  if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
-
-  // Prevent adding owner as a member
-  if (shop.ownerId.toString() === userId) {
-    throw new Errors.BadRequestError(errMsg.CANNOT_UPDATE_OWNER_ROLE);
-  }
-
-  // Check if user exists
-  const user = await Users.findById(userId);
-  if (!user) throw new Errors.NotFoundError(errMsg.USER_NOT_FOUND);
-
-  // Check if role exists
-  const role = await Roles.findById(roleId);
-  if (!role) throw new Errors.NotFoundError(errMsg.ROLE_NOT_FOUND);
-
-  // Check if already a member
-  if (shop.members.some((m) => m.userId.toString() === userId)) {
-    throw new Errors.BadRequestError(errMsg.MEMBER_ALREADY_EXISTS);
-  }
-
-  shop.members.push({
-    userId: new mongoose.Types.ObjectId(userId),
-    roleId: new mongoose.Types.ObjectId(roleId),
-  });
-  await shop.save();
-  return shop;
-}
-
 async function removeMemberFromShop(shopId: string, userId: string) {
   const shop = await Shops.findById(shopId);
   if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
@@ -180,6 +150,8 @@ async function removeMemberFromShop(shopId: string, userId: string) {
   if (memberIndex === -1) {
     throw new Errors.NotFoundError(errMsg.MEMBER_NOT_FOUND);
   }
+
+  await Users.findByIdAndDelete(userId);
 
   shop.members.splice(memberIndex, 1);
   await shop.save();
@@ -284,7 +256,6 @@ export {
   deleteShop,
   getUserShop,
   regenerateShopQRCode,
-  addMemberToShop,
   removeMemberFromShop,
   updateMemberRole,
   getShopById,

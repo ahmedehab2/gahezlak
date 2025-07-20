@@ -11,7 +11,6 @@ import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
 import { cancelSubscription } from "../services/subscription.service";
 import {
-  addMemberToShop,
   removeMemberFromShop,
   updateMemberRole,
   registerShopMember,
@@ -173,8 +172,9 @@ export const cancelShopSubscriptionHandler: RequestHandler<
 
 export const addMemberHandler: RequestHandler = async (req, res) => {
   const { shopId } = req.params;
-  const { firstName, lastName, email, password, phoneNumber, roleId } = req.body;
-  
+  const { firstName, lastName, email, password, phoneNumber, roleId } =
+    req.body;
+
   const newMember = await registerShopMember(shopId, {
     firstName,
     lastName,
@@ -183,7 +183,7 @@ export const addMemberHandler: RequestHandler = async (req, res) => {
     phoneNumber,
     roleId,
   });
-  
+
   res.status(201).json({
     message: "Member added successfully",
     data: newMember,
@@ -208,5 +208,3 @@ export const updateMemberRoleHandler: RequestHandler = async (req, res) => {
     data: shop,
   });
 };
-
-
