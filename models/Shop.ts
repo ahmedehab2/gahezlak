@@ -54,6 +54,7 @@ const ShopSchema = new Schema<IShop>(
     members: {
       type: [
         {
+          _id: false,
           userId: {
             type: Schema.Types.ObjectId,
             ref: collectionsName.USERS,

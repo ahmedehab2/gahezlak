@@ -9,6 +9,7 @@ import {
 import { Users } from "../models/User";
 import { Roles } from "../models/Role";
 import { hash } from "bcryptjs";
+import { collectionsName } from "../common/collections-name";
 
 async function createShop(
   shopData: Pick<
@@ -135,6 +136,27 @@ async function regenerateShopQRCode(
   return qrCodeResult;
 }
 
+async function getShopMembers(shopId: string) {
+  const shop = await Shops.findById(shopId)
+    .populate({
+      path: "members.userId",
+      model: collectionsName.USERS,
+      select: "firstName lastName email phoneNumber",
+    })
+    .populate({
+      path: "members.roleId",
+      model: collectionsName.ROLES,
+      select: "name",
+    })
+    .lean();
+
+  if (!shop) {
+    throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
+  }
+
+  return shop.members;
+}
+
 async function removeMemberFromShop(shopId: string, userId: string) {
   const shop = await Shops.findById(shopId);
   if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
@@ -211,14 +233,6 @@ async function registerShopMember(
   const role = await Roles.findById(memberData.roleId);
   if (!role) throw new Errors.NotFoundError(errMsg.ROLE_NOT_FOUND);
 
-  // Check if email already exists
-  const existingUser = await Users.findOne({
-    email: memberData.email.toLowerCase(),
-  });
-  if (existingUser) {
-    throw new Errors.BadRequestError(errMsg.EMAIL_ALREADY_IN_USE);
-  }
-
   // Hash password
   const hashedPassword = await hash(
     memberData.password,
@@ -245,8 +259,14 @@ async function registerShopMember(
   await shop.save();
 
   // Return user data without password
-  const { password, ...userData } = newUser.toObject();
-  return userData;
+  const { _id, firstName, lastName, email, phoneNumber } = newUser.toObject();
+  return {
+    _id,
+    firstName,
+    lastName,
+    email,
+    phoneNumber,
+  };
 }
 
 export {
@@ -261,4 +281,5 @@ export {
   getShopById,
   registerShopMember,
   getShop,
+  getShopMembers,
 };

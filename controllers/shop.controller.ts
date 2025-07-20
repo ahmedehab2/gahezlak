@@ -14,6 +14,7 @@ import {
   removeMemberFromShop,
   updateMemberRole,
   registerShopMember,
+  getShopMembers,
 } from "../services/shop.service";
 
 export const createShopHandler: RequestHandler<
@@ -196,6 +197,15 @@ export const removeMemberHandler: RequestHandler = async (req, res) => {
   res.status(200).json({
     message: "Member removed successfully",
     data: shop,
+  });
+};
+
+export const getShopMembersHandler: RequestHandler = async (req, res) => {
+  const { shopId } = req.params;
+  const members = await ShopService.getShopMembers(shopId);
+  res.status(200).json({
+    message: "Shop members fetched successfully",
+    data: members,
   });
 };
 
