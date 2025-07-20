@@ -63,6 +63,7 @@ enum errorMessage {
   CANNOT_REMOVE_OWNER = "CANNOT_REMOVE_OWNER",
   CANNOT_UPDATE_OWNER_ROLE = "CANNOT_UPDATE_OWNER_ROLE",
   NOT_ALLOWED_ACTION = "NOT_ALLOWED_ACTION",
+  USER_ALREADY_HAS_SHOP = "USER_ALREADY_HAS_SHOP",
 }
 
 export const errMsg: {
@@ -297,11 +298,15 @@ export const errMsg: {
     ar: "لا يمكن إزالة مالك المتجر من الأعضاء.",
   },
   CANNOT_UPDATE_OWNER_ROLE: {
-    en: "Cannot update the role of the shop owner.",
-    ar: "لا يمكن تحديث دور مالك المتجر.",
+    en: "Cannot update owner role",
+    ar: "لا يمكن تحديث دور المالك",
   },
   NOT_ALLOWED_ACTION: {
-    en: "You are not allowed to perform this action",
-    ar: "غير مسموح لك بتنفيذ هذا الإجراء",
+    en: "This action is not allowed",
+    ar: "هذا الإجراء غير مسموح به",
+  },
+  USER_ALREADY_HAS_SHOP: {
+    en: "User already has a shop",
+    ar: "المستخدم لديه متجر بالفعل",
   },
 };

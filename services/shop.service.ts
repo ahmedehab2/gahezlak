@@ -23,6 +23,14 @@ async function createShop(
   >,
   currentUserId: string
 ) {
+  const existingShop = await Shops.findOne({
+    ownerId: new mongoose.Types.ObjectId(currentUserId),
+  });
+
+  if (existingShop) {
+    throw new Errors.BadRequestError(errMsg.USER_ALREADY_HAS_SHOP);
+  }
+
   const shop = await Shops.create({
     ...shopData,
     ownerId: new mongoose.Types.ObjectId(currentUserId),
@@ -232,7 +240,9 @@ async function registerShopMember(
   if (!role) throw new Errors.NotFoundError(errMsg.ROLE_NOT_FOUND);
 
   // Check if email already exists
-  const existingUser = await Users.findOne({ email: memberData.email.toLowerCase() });
+  const existingUser = await Users.findOne({
+    email: memberData.email.toLowerCase(),
+  });
   if (existingUser) {
     throw new Errors.BadRequestError(errMsg.EMAIL_ALREADY_IN_USE);
   }
@@ -256,9 +266,9 @@ async function registerShopMember(
   });
 
   // Add member to shop
-  shop.members.push({ 
-    userId: newUser._id, 
-    roleId: new mongoose.Types.ObjectId(memberData.roleId) 
+  shop.members.push({
+    userId: newUser._id,
+    roleId: new mongoose.Types.ObjectId(memberData.roleId),
   });
   await shop.save();
 
