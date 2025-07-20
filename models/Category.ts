@@ -7,11 +7,11 @@ export interface ICategory extends Document {
   shopId: mongoose.Types.ObjectId | IShop;
   name: {
     en: string;
-    ar:string;
+    ar: string;
   };
   description?: {
     en: string;
-    ar:string;
+    ar: string;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -25,13 +25,13 @@ const CategorySchema = new Schema<ICategory>(
       required: true,
     },
     name: {
-    en: { type: String, required: true },
-    ar: { type: String, required: true },
+      en: { type: String, required: true },
+      ar: { type: String, required: true },
     },
-    description: { 
-       en: { type: String },
-    ar: { type: String },
-     },
+    description: {
+      en: { type: String },
+      ar: { type: String },
+    },
   },
   {
     timestamps: true,

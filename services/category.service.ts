@@ -10,6 +10,18 @@ export async function createCategory(
   shopId: string,
   categoryData: Partial<ICategory>
 ) {
+  const existingCategory = await CategoryModel.findOne({
+    shopId,
+    $or: [
+      { "name.en": categoryData.name?.en },
+      { "name.ar": categoryData.name?.ar },
+    ],
+  });
+
+  if (existingCategory) {
+    throw new Errors.BadRequestError(errMsg.CATEGORY_ALREADY_EXISTS);
+  }
+
   const category = await CategoryModel.create({
     ...categoryData,
     shopId,
@@ -22,6 +34,20 @@ export async function updateCategory(
   categoryId: string,
   updateData: Partial<ICategory>
 ) {
+  if (updateData.name) {
+    const existingCategory = await CategoryModel.findOne({
+      _id: { $ne: new mongoose.Types.ObjectId(categoryId) },
+      shopId,
+      $or: [
+        { "name.en": updateData.name.en },
+        { "name.ar": updateData.name.ar },
+      ],
+    });
+    if (existingCategory) {
+      throw new Errors.BadRequestError(errMsg.CATEGORY_ALREADY_EXISTS);
+    }
+  }
+
   const category = await CategoryModel.findOneAndUpdate(
     {
       _id: new mongoose.Types.ObjectId(categoryId),

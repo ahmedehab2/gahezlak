@@ -43,6 +43,7 @@ enum errorMessage {
   NO_ACTIVE_SUBSCRIPTION = "NO_ACTIVE_SUBSCRIPTION",
   SUBSCRIPTION_EXPIRED = "SUBSCRIPTION_EXPIRED",
   CATEGORY_NOT_FOUND = "CATEGORY_NOT_FOUND",
+  CATEGORY_ALREADY_EXISTS = "CATEGORY_ALREADY_EXISTS",
   MENU_ITEM_NOT_FOUND = "MENU_ITEM_NOT_FOUND",
   ORDER_NOT_FOUND = "ORDER_NOT_FOUND",
   ORDER_NOT_PENDING = "ORDER_NOT_PENDING",
@@ -223,6 +224,10 @@ export const errMsg: {
   CATEGORY_NOT_FOUND: {
     en: "Category not found",
     ar: "الفئة غير موجودة",
+  },
+  CATEGORY_ALREADY_EXISTS: {
+    en: "A category with this name already exists in your shop.",
+    ar: "توجد فئة بهذا الاسم بالفعل في متجرك.",
   },
   MENU_ITEM_NOT_FOUND: {
     en: "Menu item not found",
