@@ -9,7 +9,7 @@ import * as subscriptionService from "../services/subscription.service";
 import * as userService from "../services/user.service";
 import { updateShop } from "../services/shop.service";
 import mongoose from "mongoose";
-import { OrderStatus } from "../models/Order";
+import { Orders, OrderStatus } from "../models/Order";
 import * as orderService from "../services/order.service";
 
 // Helper function to mock payment processing
@@ -123,10 +123,15 @@ export const payForOrderHandler: RequestHandler<
   });
 
   // 4. Update order status to Confirmed
-  await orderService.UpdateOrderStatus(
-    order.shopId.toString(),
-    order._id.toString(),
-    OrderStatus.Confirmed
+  // await orderService.UpdateOrderStatus(
+  //   order.shopId.toString(),
+  //   order._id.toString(),
+  //   OrderStatus.Confirmed
+  // );
+
+  await Orders.updateOne(
+    { _id: order._id },
+    { $set: { orderStatus: OrderStatus.Confirmed, paymentMethod } }
   );
 
   // 5. Return paymentId and status
