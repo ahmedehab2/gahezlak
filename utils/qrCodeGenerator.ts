@@ -25,7 +25,7 @@ export async function generateAndUploadMenuQRCode(
 ): Promise<{ qrCodeUrl: string; menuUrl: string }> {
   try {
     // Construct the menu URL
-    const menuUrl = `${baseUrl}/menu/${shopName}`;
+    const menuUrl = `${baseUrl}/${shopName}/menu`;
 
     // Default QR code options optimized for menu scanning
     const qrOptions = {
