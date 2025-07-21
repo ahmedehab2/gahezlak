@@ -3,8 +3,9 @@ import { CategoryModel } from "../models/Category";
 import { MenuItemModel, IMenuItem } from "../models/MenuItem";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
-import { buildLocalizedMenuItem } from "../utils/menu-item-utils";
 import { getCategoryById } from "./category.service";
+import { LangType } from "../common/types/general-types";
+import mongoose, { FilterQuery } from "mongoose";
 
 export const createMenuItem = async (
   shopId: string,
@@ -28,23 +29,17 @@ export const getMenuItemById = async (
   itemId: string,
   lang: "en" | "ar"
 ) => {
-  const shop = await Shops.findById(shopId);
-  if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
-
-  const menuItem = await MenuItemModel.findOne({ _id: itemId, shopId });
+  const menuItem = await MenuItemModel.findOne({ _id: itemId, shopId }).lean();
   if (!menuItem) throw new Errors.NotFoundError(errMsg.MENU_ITEM_NOT_FOUND);
 
-  return buildLocalizedMenuItem(menuItem, lang);
+  return menuItem;
 };
 
 export const deleteMenuItem = async (shopId: string, itemId: string) => {
-  const shop = await Shops.findById(shopId);
-  if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
-
   const menuItem = await MenuItemModel.findOneAndDelete({
     _id: itemId,
     shopId,
-  });
+  }).lean();
   if (!menuItem) throw new Errors.NotFoundError(errMsg.MENU_ITEM_NOT_FOUND);
 
   await CategoryModel.updateMany(
@@ -52,9 +47,7 @@ export const deleteMenuItem = async (shopId: string, itemId: string) => {
     { $pull: { menuItems: itemId } }
   );
 
-  return {
-    message: "Menu item deleted and removed from categories successfully",
-  };
+  return menuItem;
 };
 
 export const toggleItemAvailability = async (
@@ -62,9 +55,6 @@ export const toggleItemAvailability = async (
   itemId: string,
   isAvailable: boolean
 ) => {
-  const shop = await Shops.findById(shopId);
-  if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
-
   const menuItem = await MenuItemModel.findOneAndUpdate(
     { _id: itemId, shopId },
     { isAvailable },
@@ -74,3 +64,47 @@ export const toggleItemAvailability = async (
 
   return menuItem.toObject();
 };
+
+export const updateMenuItem = async (
+  shopId: string,
+  itemId: string,
+  updateData: Partial<IMenuItem>
+) => {
+  const menuItem = await MenuItemModel.findOneAndUpdate(
+    { _id: itemId, shopId },
+    updateData,
+    { new: true }
+  );
+  if (!menuItem) throw new Errors.NotFoundError(errMsg.MENU_ITEM_NOT_FOUND);
+
+  return menuItem.toObject();
+};
+
+export async function getMenuItemsByShop({
+  shopId,
+  shopName,
+  lang,
+}: {
+  shopId?: string;
+  shopName?: string;
+  lang: LangType;
+}) {
+  let query: FilterQuery<IMenuItem> = {};
+
+  if (shopId) {
+    query.shopId = new mongoose.Types.ObjectId(shopId);
+  }
+
+  if (shopName) {
+    const shop = await Shops.findOne({ name: shopName }).lean();
+    if (!shop) {
+      throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
+    }
+    query.shopId = shop._id;
+  }
+
+  const menuItems = await MenuItemModel.find(query, {
+    shopId: 0, // exclude shopId from the response
+  }).lean();
+  return menuItems;
+}

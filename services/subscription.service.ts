@@ -11,6 +11,7 @@ export async function createSubscription(
   subscription: Pick<ISubscription, "userId" | "shop" | "plan">
 ) {
   // Check if the user already has an active subscription
+
   const existingSubscription = await Subscriptions.findOne({
     userId: subscription.userId,
     status: { $in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING] },
@@ -20,15 +21,31 @@ export async function createSubscription(
     throw new Errors.BadRequestError(errMsg.USER_ALREADY_SUBSCRIBED);
   }
 
+  const isTrialUsed = !!(await Subscriptions.exists({
+    userId: subscription.userId,
+    isTrialUsed: true,
+  }));
+
+  const currentPeriodEnd = isTrialUsed
+    ? new Date(
+        Date.now() +
+          ((subscription.plan as IPlan).frequency === "monthly"
+            ? 30 * 24 * 60 * 60 * 1000
+            : 365 * 24 * 60 * 60 * 1000)
+      )
+    : new Date(
+        Date.now() +
+          (subscription.plan as IPlan).trialPeriodDays * 24 * 60 * 60 * 1000
+      );
+
   // Create the new subscription
   const newSubscription = await Subscriptions.create({
     ...subscription,
-    status: SubscriptionStatus.TRIALING,
+    status: isTrialUsed
+      ? SubscriptionStatus.ACTIVE
+      : SubscriptionStatus.TRIALING,
     currentPeriodStart: new Date(),
-    currentPeriodEnd: new Date(
-      Date.now() +
-        (subscription.plan as IPlan).trialPeriodDays * 24 * 60 * 60 * 1000
-    ),
+    currentPeriodEnd,
   });
 
   return newSubscription;

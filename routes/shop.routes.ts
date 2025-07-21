@@ -1,14 +1,16 @@
 import express from "express";
 import * as controllers from "../controllers/shop.controller";
 import { isAllowed, protect } from "../middlewares/auth";
+import {
+  isShopOwner,
+  isShopMember,
+} from "../middlewares/shop-member-check.middleware";
 import * as shopValidators from "../validators/shop.validator";
 import { Role } from "../models/Role";
 
 // menu items imports
 
 import * as menuItemControllers from "../controllers/menu-item.controller";
-
-import * as menuItemValidators from "../validators/menu-item.validator";
 
 // category imports
 
@@ -20,92 +22,220 @@ import * as categoryValidators from "../validators/category.validators";
 
 import * as orderControllers from "../controllers/order.controller";
 import * as orderValidators from "../validators/order.validator";
-
-// kitchen imports
-
-import * as kitchenControllers from "../controllers/kitchen.controller";
+import * as menuItemValidators from "../validators/menu-item.validator";
 
 import { validateOrderId } from "../validators/order.validator";
+import { uploadMiddleware } from "../middlewares/multer";
 
 const router = express.Router();
 
+//  /shops routes
+
+// --- Admin Endpoints ---
+// Specific static routes should come before dynamic routes
+router.get("/", protect, isAllowed([Role.ADMIN]), controllers.getAllShops); // ADMIN ENDPOINT FOR NOW
+
+// --- Shop Creation ---
 router.post(
   "/",
   protect,
+  uploadMiddleware("logo"), // handle logo image upload
   shopValidators.creatShopValidator,
   controllers.createShopHandler
 );
-router.put(
-  "/:shopId",
-  protect,
-  isAllowed([Role.ADMIN, Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-  shopValidators.updateShopValidator,
-  controllers.updateShopHandler
-);
-// router.delete("/:shopId", protect, controllers.deleteShop);
 
-// QR code management (authenticated)
+// --- Shop Member Management ---
+// These routes have a dynamic :shopId but are more specific than general shop GET/PUT
+router
+  .route("/:shopId/members")
+  .post(
+    protect,
+    isAllowed([Role.SHOP_OWNER]),
+    shopValidators.addMemberValidator,
+    isShopOwner,
+    controllers.addMemberHandler
+  )
+  .get(
+    protect,
+    isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+    shopValidators.shopIdValidator,
+    isShopMember,
+    controllers.getShopMembersHandler
+  );
+
+router.delete(
+  "/:shopId/members/:userId",
+  protect,
+  isAllowed([Role.SHOP_OWNER]),
+  shopValidators.removeMemberValidator,
+  isShopOwner,
+  controllers.removeMemberHandler
+);
+
+router.put(
+  "/:shopId/members/:userId",
+  protect,
+  isAllowed([Role.SHOP_OWNER]),
+  shopValidators.updateMemberRoleValidator,
+  isShopOwner,
+  controllers.updateMemberRoleHandler
+);
+
+// --- QR Code Management ---
 router.post(
   "/qr-code",
   protect,
   isAllowed([Role.ADMIN, Role.SHOP_OWNER, Role.SHOP_MANAGER]),
   shopValidators.validateRegenerateQRCode,
+  isShopMember,
   controllers.regenerateQRCodeHandler
 );
 
-// Admin endpoints
-router.get("/", protect, isAllowed([Role.ADMIN]), controllers.getAllShops); // ADMIN ENDPOINT FOR NOW
+// --- Subscription Management ---
+router.post(
+  "/subscription/cancel",
+  protect,
+  isAllowed([Role.SHOP_OWNER]),
+  isShopMember,
+  controllers.cancelShopSubscriptionHandler
+);
 
-// menu item routes
+// --- Public Shop Routes ---
+// Using `/name/:shopName` to be specific and avoid conflict with `/id/:shopId`
+router.get(
+  "/name/:shopName",
+  shopValidators.shopNameParamValidator,
+  controllers.getShopHandler
+);
 
+// For public usage (customers)
+router.get(
+  "/name/:shopName/menu-items",
+  shopValidators.shopNameParamValidator,
+  menuItemControllers.getMenuItemsByShopHandler
+);
+
+//for public usage (customers)
+router.get(
+  "/name/:shopName/categories",
+  shopValidators.shopNameParamValidator,
+  categoryControllers.getCategoriesByShopHandler
+);
+
+// --- Authenticated Shop Routes ---
+// Using `/id/:shopId` to be specific for authenticated actions
+router.get(
+  "/id/:shopId",
+  protect,
+  isAllowed([
+    Role.SHOP_OWNER,
+    Role.SHOP_MANAGER,
+    Role.SHOP_STAFF,
+    Role.KITCHEN,
+  ]),
+  shopValidators.shopIdValidator,
+  isShopMember,
+  controllers.getShopHandler
+);
+
+router.put(
+  "/id/:shopId",
+  protect,
+  isAllowed([Role.ADMIN, Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  shopValidators.updateShopValidator,
+  uploadMiddleware("logo"), // handle logo image upload
+  isShopMember,
+  controllers.updateShopHandler
+);
+
+// --- Menu Item Routes (Authenticated) ---
+// These routes are for logged-in users and don't need a /:shopId because
+// isShopMember middleware should handle getting the shop context.
 router.post(
   "/menu-items",
   protect,
   isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  uploadMiddleware("image"), // handle image upload for menu item
   menuItemValidators.validateCreateMenuItem,
+  isShopMember,
   menuItemControllers.createMenuItemAndAddToCategoryHandler
 );
 
-router
-  .get(
-    "/:shopId/menu-items/:itemId",
-    menuItemValidators.validateGetOrDeleteItemById,
-    menuItemControllers.getMenuItemByIdHandler
-  )
-  .delete(
-    "/:shopId/menu-items/:itemId",
-    menuItemValidators.validateGetOrDeleteItemById,
-    menuItemControllers.deleteMenuItemHandler
-  );
+router.get(
+  "/menu-items",
+  protect,
+  isAllowed([
+    Role.SHOP_OWNER,
+    Role.SHOP_MANAGER,
+    Role.SHOP_STAFF,
+    Role.KITCHEN,
+  ]),
+  isShopMember,
+  menuItemControllers.getMenuItemsByShopHandler
+);
+
+router.get(
+  "/menu-items/:itemId",
+  protect,
+  isAllowed([
+    Role.SHOP_OWNER,
+    Role.SHOP_MANAGER,
+    Role.SHOP_STAFF,
+    Role.KITCHEN,
+  ]),
+  menuItemValidators.validateGetOrDeleteItemById,
+  isShopMember,
+  menuItemControllers.getMenuItemByIdHandler
+);
+
+router.delete(
+  "/menu-items/:itemId",
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  menuItemValidators.validateGetOrDeleteItemById,
+  isShopMember,
+  menuItemControllers.deleteMenuItemHandler
+);
 
 router.patch(
-  "/:shopId/menu-items/:itemId/toggle",
+  "/menu-items/:itemId/toggle",
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
   menuItemValidators.validateToggleAvailability,
+  isShopMember,
   menuItemControllers.toggleItemAvailabilityHandler
 );
 
-//category routes
+router.patch(
+  "/menu-items/:itemId",
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  menuItemValidators.validateUpdateMenuItem,
+  uploadMiddleware("image"),
+  isShopMember,
+  menuItemControllers.updateMenuItemHandler
+);
 
+// --- Category Routes (Authenticated) ---
 router.post(
   "/categories",
   protect,
   isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
   categoryValidators.createCategoryValidator,
+  isShopMember,
   categoryControllers.createCategoryHandler
 );
 
-// for logged in shop workers
 router.get(
   "/categories",
   protect,
-  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER, Role.SHOP_STAFF]),
-  categoryControllers.getCategoriesByShopHandler
-);
-
-//for public usage (customers)
-router.get(
-  "/:shopName/categories",
-  shopValidators.shopNameParamValidator,
+  isAllowed([
+    Role.SHOP_OWNER,
+    Role.SHOP_MANAGER,
+    Role.SHOP_STAFF,
+    Role.KITCHEN,
+  ]),
+  isShopMember,
   categoryControllers.getCategoriesByShopHandler
 );
 
@@ -113,7 +243,14 @@ router
   .get(
     "/categories/:categoryId",
     protect,
+    isAllowed([
+      Role.SHOP_OWNER,
+      Role.SHOP_MANAGER,
+      Role.SHOP_STAFF,
+      Role.KITCHEN,
+    ]),
     categoryValidators.categoryIdValidator,
+    isShopMember,
     categoryControllers.getCategoryByIdHandler
   )
   .put(
@@ -121,6 +258,7 @@ router
     protect,
     isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
     categoryValidators.updateCategoryValidator,
+    isShopMember,
     categoryControllers.updateCategoryHandler
   )
   .delete(
@@ -128,92 +266,61 @@ router
     protect,
     isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
     categoryValidators.categoryIdValidator,
+    isShopMember,
     categoryControllers.deleteCategoryHandler
   );
 
-// router.put(
-//   "/:shopId/:categoryId/:itemId",
-//   categoryValidators.categoryParamValidators,
-//   categoryValidators.categoryIdValidator,
-//   categoryValidators.updateItemInCategoryValidator,
-//   categoryControllers.updateItemInCategoryHandler
-// );
-// router.get(
-//   "/:shopId/:categoryId",
-//   categoryValidators.categoryParamValidators,
-//   categoryValidators.categoryIdValidator,
-//   categoryControllers.getItemsInCategoryHandler
-// );
+// --- Order Routes ---
 
-// order routes
-
-router.post(
-  "/:shopId/orders",
-  orderValidators.validateCreateOrder,
-  orderControllers.createOrderHandler
-);
-
-router.put(
-  "/:shopId/orders/:orderId/status",
-  protect,
-  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-  orderValidators.validateUpdateOrderStatus,
-  orderControllers.updateOrderStatusHandler
-);
-
-router.put(
-  "/:shopId/orders/:orderId/cancel",
-  protect,
-  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER, Role.SHOP_STAFF]),
-  orderControllers.cancelledOrderHandler
-);
-
+// Public route to get order by number
+// It's placed before authenticated order routes
 router.get(
-  "/:shopId/orders",
-  protect,
-  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-  orderControllers.getOrdersByShopHandler
+  "/orders/number/:orderNumber",
+  orderValidators.validateOrderNumber,
+  orderControllers.getOrderDetailsByNumberHandler
 );
 
+router
+  .post(
+    "/orders",
+    orderValidators.validateCreateOrder,
+    orderControllers.createOrderHandler
+  )
+  .get(
+    "/orders",
+    protect,
+    isAllowed([
+      Role.SHOP_OWNER,
+      Role.SHOP_MANAGER,
+      Role.SHOP_STAFF,
+      Role.KITCHEN,
+    ]),
+    isShopMember,
+    orderControllers.getOrdersByShopHandler
+  );
+
+// Using `/id/:orderId` to distinguish from the `/number/:orderNumber` route
 router.get(
-  "/:shopId/orders/:orderId",
+  "/orders/id/:orderId",
   protect,
-  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  isAllowed([
+    Role.SHOP_OWNER,
+    Role.SHOP_MANAGER,
+    Role.SHOP_STAFF,
+    Role.KITCHEN,
+  ]),
   validateOrderId,
+  isShopMember,
   orderControllers.getOrderByIdHandler
 );
 
 router.put(
-  "/:shopId/orders/:orderId/sendToKitchen",
+  "/orders/:orderId/status",
   protect,
   isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-  orderControllers.sendOrderToKitchenHandler
-);
-
-// kitchen routes
-
-router.get(
-  "/:shopId/orders/kitchen",
-  protect,
-  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER, Role.SHOP_STAFF]),
-  kitchenControllers.getKitchenOrdersHandler
-);
-
-router.put(
-  "/:shopId/orders/:orderId/kitchen/status",
-  protect,
-  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER, Role.SHOP_STAFF]),
-  validateOrderId,
-  kitchenControllers.updateKitchenOrderStatusHandler
-);
-
-// subscription routes
-
-router.post(
-  "/subscription/cancel",
-  protect,
-  isAllowed([Role.SHOP_OWNER]),
-  controllers.cancelShopSubscriptionHandler
+  orderValidators.validateUpdateOrderStatus,
+  isShopMember,
+  orderControllers.updateOrderStatusHandler
 );
 
 export default router;

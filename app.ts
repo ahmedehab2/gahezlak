@@ -4,7 +4,6 @@ import { connectDB } from "./config/db";
 import authRoutes from "./routes/auth.routes";
 import userRoutes from "./routes/user.routes";
 import subscriptionRoutes from "./routes/subscription.routes";
-// import kitchenRoutes from "./routes/shop.routes";
 // import http from "http";
 // import { initSocket } from "./sockets/socketServer";
 import { ErrorHandlerMiddleware } from "./middlewares/error-handling.middleware";

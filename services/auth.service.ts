@@ -11,7 +11,8 @@ import { errMsg } from "../common/err-messages";
 async function findUserByEmail(
   email: string,
   includePassword = false,
-  includeRole = true
+  includeRole = true,
+  includeShop = true
 ) {
   const normalizedEmail = email.toLowerCase();
   let query = Users.findOne({ email: normalizedEmail });
@@ -22,6 +23,10 @@ async function findUserByEmail(
 
   if (includeRole) {
     query = query.populate("role");
+  }
+
+  if (includeShop) {
+    query = query.populate("shop");
   }
 
   const user = await query.lean();
@@ -288,7 +293,7 @@ export async function refreshToken(refreshTokenValue: string) {
       email: string;
     };
 
-    const user = await Users.findById(decoded.userId).populate("role").lean();
+    const user = await Users.findById(decoded.userId).populate("role").populate("shop").lean();
     if (!user || user.refreshToken !== refreshTokenValue) {
       throw new Errors.UnauthenticatedError(
         errMsg.INVALID_OR_EXPIRED_REFRESH_TOKEN

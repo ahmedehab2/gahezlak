@@ -21,6 +21,7 @@ export interface ISubscription extends Document {
   paymobTransactionId?: number;
   currentPeriodStart: Date;
   currentPeriodEnd: Date; // A single field to track when the current period (trial or paid) ends
+  isTrialUsed: boolean;
   cancelledAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -59,6 +60,7 @@ const SubscriptionSchema = new Schema<ISubscription>(
 
     currentPeriodStart: { type: Date, required: true },
     currentPeriodEnd: { type: Date, required: true },
+    isTrialUsed: { type: Boolean, default: true },
     cancelledAt: { type: Date },
   },
   {

@@ -3,11 +3,13 @@ import {
   createMenuItem,
   deleteMenuItem,
   getMenuItemById,
+  getMenuItemsByShop,
   toggleItemAvailability,
+  updateMenuItem,
 } from "../services/menu-item.service";
 import { SuccessResponse } from "../common/types/contoller-response.types";
 import { IMenuItem } from "../models/MenuItem";
-import { getUserShop } from "../services/shop.service";
+import uploadToImgbb from "../utils/uploadToImgbb";
 
 export const createMenuItemAndAddToCategoryHandler: RequestHandler<
   unknown,
@@ -23,12 +25,19 @@ export const createMenuItemAndAddToCategoryHandler: RequestHandler<
     | "options"
     | "isAvailable"
   >
-> = async (req, res) => {
+> = async (req, res, next) => {
   const shopId = req.user?.shopId!;
+  let imageUrl: string | undefined;
 
-  await getUserShop(req.user?.userId!); // make sure the req.user is member of the shop
+  if (req.file) {
+    const uploadResult = await uploadToImgbb(req.file);
+    imageUrl = uploadResult?.data?.url;
+  }
 
-  const item = await createMenuItem(shopId, req.body);
+  const item = await createMenuItem(shopId, {
+    ...req.body,
+    ...(imageUrl && { imgUrl: imageUrl }),
+  });
 
   res.status(201).json({
     message: "Menu item created successfully",
@@ -37,45 +46,92 @@ export const createMenuItemAndAddToCategoryHandler: RequestHandler<
 };
 
 export const getMenuItemByIdHandler: RequestHandler<
-  { shopId: string; itemId: string },
+  { itemId: string },
   SuccessResponse<IMenuItem>,
   unknown,
   { lang: "en" | "ar" }
 > = async (req, res) => {
-  const { shopId, itemId } = req.params;
-  const lang = req.lang;
-  const item = await getMenuItemById(shopId, itemId, lang);
+  const itemId = req.params.itemId;
+  const shopId = req.user?.shopId!;
+
+  const item = await getMenuItemById(shopId, itemId, req.lang);
 
   res.status(200).json({
     message: "Menu item retrieved",
-    data: item as unknown as IMenuItem, // TODO: fix this
+    data: item,
   });
 };
 
-export const deleteMenuItemHandler: RequestHandler = async (req, res) => {
-  const { shopId, itemId } = req.params;
+export const deleteMenuItemHandler: RequestHandler<
+  { itemId: string },
+  SuccessResponse<IMenuItem>,
+  unknown
+> = async (req, res) => {
+  const itemId = req.params.itemId;
+  const shopId = req.user?.shopId!;
   const deleted = await deleteMenuItem(shopId, itemId);
 
-  const response: SuccessResponse<typeof deleted> = {
+  res.status(200).json({
     message: "Menu item deleted",
     data: deleted,
-  };
-
-  res.status(200).json(response);
+  });
 };
 
-export const toggleItemAvailabilityHandler: RequestHandler = async (
-  req,
-  res
-) => {
-  const { shopId, itemId } = req.params;
+export const toggleItemAvailabilityHandler: RequestHandler<
+  { itemId: string },
+  SuccessResponse<IMenuItem>,
+  { isAvailable: boolean }
+> = async (req, res) => {
+  const { itemId } = req.params;
+  const shopId = req.user?.shopId!;
   const { isAvailable } = req.body;
   const item = await toggleItemAvailability(shopId, itemId, isAvailable);
 
-  const response: SuccessResponse<typeof item> = {
+  res.status(200).json({
     message: "Item availability toggled",
     data: item,
-  };
+  });
+};
 
-  res.status(200).json(response);
+export const updateMenuItemHandler: RequestHandler<
+  { shopId: string; itemId: string },
+  SuccessResponse<IMenuItem>,
+  Partial<IMenuItem>
+> = async (req, res, next) => {
+  const { itemId } = req.params;
+  const shopId = req.user?.shopId!;
+  let imageUrl: string | undefined;
+
+  if (req.file) {
+    const uploadResult = await uploadToImgbb(req.file);
+    imageUrl = uploadResult?.data?.url;
+  }
+
+  const updatedItem = await updateMenuItem(shopId, itemId, {
+    ...req.body,
+    ...(imageUrl && { imgUrl: imageUrl }),
+  });
+
+  res.status(200).json({
+    message: "Menu item updated successfully",
+    data: updatedItem,
+  });
+};
+
+export const getMenuItemsByShopHandler: RequestHandler<
+  {
+    shopName?: string;
+  },
+  SuccessResponse<IMenuItem[]>
+> = async (req, res) => {
+  const shopId = req.user?.shopId;
+  const shopName = req.params.shopName;
+  const lang = req.lang;
+
+  const menuItems = await getMenuItemsByShop({ shopId, shopName, lang });
+
+  res.status(200).json({
+    message: "MenuItems retrieved",
+    data: menuItems,
+  });
 };

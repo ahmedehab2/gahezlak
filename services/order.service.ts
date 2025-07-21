@@ -1,59 +1,78 @@
-import { Orders, IOrder } from '../models/Order';
-import { Errors } from '../errors';
-import { errMsg } from '../common/err-messages';
-import mongoose from 'mongoose';
+import { Orders, IOrder, OrderStatus } from "../models/Order";
+import { Errors } from "../errors";
+import { errMsg } from "../common/err-messages";
+import mongoose, { FilterQuery } from "mongoose";
 
 export async function CreateOrder(orderData: Partial<IOrder>) {
-  const newOrder = await Orders.create(orderData);
+  if (!orderData.shopId) {
+    throw new Errors.BadRequestError(errMsg.SHOP_NOT_FOUND);
+  }
+
+  const newOrder = await Orders.create({
+    ...orderData,
+  });
+
   return newOrder.toObject();
 }
 
-export async function UpdateOrderStatus(orderId: string, status: string) {
-  const updatedOrder = await Orders.findByIdAndUpdate(
-    orderId,
-    { orderStatus: status },
-    { new: true }
-  );
+// Define valid status transitions
+const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  [OrderStatus.Pending]: [OrderStatus.Confirmed, OrderStatus.Cancelled],
+  [OrderStatus.Confirmed]: [OrderStatus.Preparing, OrderStatus.Cancelled],
+  [OrderStatus.Preparing]: [OrderStatus.Ready],
+  [OrderStatus.Ready]: [OrderStatus.Delivered],
+  [OrderStatus.Delivered]: [],
+  [OrderStatus.Cancelled]: [],
+};
 
-  if (!updatedOrder) {
+export async function UpdateOrderStatus(
+  shopId: string,
+  orderId: string,
+  status: OrderStatus
+) {
+  const order = await Orders.findOne({
+    _id: orderId,
+    shopId: new mongoose.Types.ObjectId(shopId),
+  });
+
+  if (!order) {
     throw new Errors.NotFoundError(errMsg.ORDER_NOT_FOUND);
   }
 
-  return updatedOrder.toObject();
-}
+  const currentStatus = order.orderStatus;
+  const allowedTransitions = STATUS_TRANSITIONS[currentStatus];
 
-export async function CancelledOrder(orderId: string, status: string) {
-  const cancelledOrder = await Orders.findByIdAndUpdate(
-    orderId,
-    { orderStatus: status },
-    { new: true }
-  );
-
-  if (!cancelledOrder) {
-    throw new Errors.NotFoundError(errMsg.ORDER_NOT_FOUND);
+  if (!allowedTransitions.includes(status)) {
+    throw new Errors.BadRequestError({
+      en: `Cannot transition from ${currentStatus} to ${status}`,
+      ar: `لا يمكن الانتقال من ${currentStatus} إلى ${status}`,
+    });
   }
 
-  return cancelledOrder.toObject();
+  order.orderStatus = status;
+  await order.save();
+  return order.toObject();
 }
 
-export async function sendOrderToKitchen(orderId: string) {
-  const updatedOrder = await Orders.findByIdAndUpdate(
-    orderId,
-    { sentToKitchen: true },
-    { new: true }
-  );
+export async function GetOrdersByShop({
+  shopId,
+  query,
+  skip,
+  limit,
+}: {
+  shopId: string;
+  query: FilterQuery<IOrder>;
+  skip: number;
+  limit: number;
+}) {
+  const orders = await Orders.find({ shopId })
+    .skip(skip)
+    .limit(limit)
+    .sort({ createdAt: -1 })
+    .lean();
+  const totalCount = await Orders.countDocuments({ shopId, ...query });
 
-  if (!updatedOrder) {
-    throw new Errors.NotFoundError(errMsg.ORDER_NOT_FOUND);
-  }
-
-  return updatedOrder.toObject();
-}
-
-export async function GetOrdersByShop(shopId: string) {
-  const orders = await Orders.find({ shopId });
-  const totalCount = await Orders.countDocuments({ shopId });
-  return { orders: orders.map((order) => order.toObject()), totalCount };
+  return { orders, totalCount };
 }
 
 export async function GetOrderById(orderId: string) {
@@ -67,7 +86,27 @@ export async function GetOrderById(orderId: string) {
 }
 
 export async function GetOrdersByStatus(status: string, shopId: string) {
-  const orders = await Orders.find({ status, shopId });
-  const totalCount = await Orders.countDocuments({ status });
+  const orders = await Orders.find({ orderStatus: status, shopId });
+  const totalCount = await Orders.countDocuments({
+    orderStatus: status,
+    shopId,
+  });
   return { orders: orders.map((order) => order.toObject()), totalCount };
+}
+
+export async function getKitchenOrders(shopId: string) {
+  const orders = await Orders.find({
+    shopId: new mongoose.Types.ObjectId(shopId),
+    orderStatus: OrderStatus.Preparing,
+  }).populate("orderItems.menuItemId");
+
+  return orders.map((order) => order.toObject());
+}
+
+export async function getOrderDetailsByNumber(orderNumber: number) {
+  const order = await Orders.findOne({ orderNumber }).lean();
+  if (!order) {
+    throw new Errors.NotFoundError(errMsg.ORDER_NOT_FOUND);
+  }
+  return order;
 }

@@ -1,7 +1,6 @@
 import { Request } from "express";
 import multer from "multer";
 
-
 const storage = multer.memoryStorage();
 const limits = { fileSize: 1 * 1024 * 1024 }; // 1MB limit
 

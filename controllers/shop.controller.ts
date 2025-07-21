@@ -4,17 +4,18 @@ import { IShop } from "../models/Shop";
 import { SuccessResponse } from "../common/types/contoller-response.types";
 import { Users } from "../models/User";
 import { Types } from "mongoose";
-import { generateMenuQRCode, QRCodeOptions } from "../utils/qrCodeGenerator";
-import { MenuItemModel, IMenuItem } from "../models/MenuItem";
+import { generateAndUploadMenuQRCode } from "../utils/qrCodeGenerator";
+import uploadToImgbb from "../utils/uploadToImgbb";
 import { Role, Roles } from "../models/Role";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
-import { Shops } from "../models/Shop";
-import { Subscriptions, ISubscription } from "../models/Subscription";
+import { cancelSubscription } from "../services/subscription.service";
 import {
-  getUserActiveSubscription,
-  cancelSubscription,
-} from "../services/subscription.service";
+  removeMemberFromShop,
+  updateMemberRole,
+  registerShopMember,
+  getShopMembers,
+} from "../services/shop.service";
 
 export const createShopHandler: RequestHandler<
   {},
@@ -23,14 +24,24 @@ export const createShopHandler: RequestHandler<
 > = async (req, res) => {
   const { name } = req.body;
 
-  // Generate QR code for the new shop
-  const qrCodeResult = await generateMenuQRCode(name);
+  // Generate and upload QR code for the new shop
+  const qrCodeResult = await generateAndUploadMenuQRCode(name);
+
+  // Upload logo image to imgbb (if provided)
+  let logoUrl;
+  if (req.file) {
+    const imgbbResponse = await uploadToImgbb(req.file);
+    logoUrl = imgbbResponse?.data?.url;
+  }
 
   // Create the shop
-  const shop = await ShopService.createShop(
-    { ...req.body, qrCodeImage: qrCodeResult.qrCodeImage },
-    req.user?.userId!
-  );
+  const payload: any = {
+    ...req.body,
+    qrCodeUrl: qrCodeResult.qrCodeUrl,
+    logoUrl,
+  };
+
+  const shop = await ShopService.createShop(payload, req.user?.userId!);
 
   // Get the shop owner role
   const shopOwnerRole = await Roles.findOne({ name: Role.SHOP_OWNER });
@@ -59,9 +70,20 @@ export const updateShopHandler: RequestHandler<
     shopId: string;
   },
   SuccessResponse<IShop>,
-  Pick<IShop, "name" | "type" | "address" | "phoneNumber" | "email">
+  Partial<IShop>
 > = async (req, res) => {
-  const shop = await ShopService.updateShop(req.params.shopId, req.body);
+  // Handle logo image upload if present
+
+  let logoUrl;
+  if (req.file) {
+    const imgbbResponse = await uploadToImgbb(req.file);
+    logoUrl = imgbbResponse?.data?.url;
+  }
+
+  const shop = await ShopService.updateShop(req.params.shopId, {
+    ...req.body,
+    logoUrl,
+  });
   res.status(200).json({
     message: "Shop updated successfully",
     data: shop,
@@ -78,6 +100,22 @@ export const updateShopHandler: RequestHandler<
 //   const shop = await ShopService.deleteShop(req.params.id);
 
 // };
+
+// return shop details for logged in user or public
+export const getShopHandler: RequestHandler<
+  { shopName?: string; shopId?: string },
+  SuccessResponse<IShop>,
+  unknown
+> = async (req, res) => {
+  const shop = await ShopService.getShop({
+    shopId: req.params.shopId,
+    shopName: req.params.shopName,
+  });
+  res.status(200).json({
+    message: "Shop fetched successfully",
+    data: shop,
+  });
+};
 
 export const getAllShops: RequestHandler<
   {},
@@ -96,7 +134,7 @@ export const getAllShops: RequestHandler<
  */
 export const regenerateQRCodeHandler: RequestHandler<
   {},
-  SuccessResponse<{ qrCodeImage: string; menuUrl: string }>,
+  SuccessResponse<{ qrCodeUrl: string; menuUrl: string }>,
   { options?: any }
 > = async (req, res) => {
   const userId = req.user?.userId;
@@ -130,5 +168,53 @@ export const cancelShopSubscriptionHandler: RequestHandler<
   res.status(200).json({
     message: "Shop subscription cancelled successfully",
     data: {},
+  });
+};
+
+export const addMemberHandler: RequestHandler = async (req, res) => {
+  const { shopId } = req.params;
+  const { firstName, lastName, email, password, phoneNumber, roleId } =
+    req.body;
+
+  const newMember = await registerShopMember(shopId, {
+    firstName,
+    lastName,
+    email,
+    password,
+    phoneNumber,
+    roleId,
+  });
+
+  res.status(201).json({
+    message: "Member added successfully",
+    data: newMember,
+  });
+};
+
+export const removeMemberHandler: RequestHandler = async (req, res) => {
+  const { shopId, userId } = req.params;
+  const shop = await removeMemberFromShop(shopId, userId);
+  res.status(200).json({
+    message: "Member removed successfully",
+    data: shop,
+  });
+};
+
+export const getShopMembersHandler: RequestHandler = async (req, res) => {
+  const { shopId } = req.params;
+  const members = await ShopService.getShopMembers(shopId);
+  res.status(200).json({
+    message: "Shop members fetched successfully",
+    data: members,
+  });
+};
+
+export const updateMemberRoleHandler: RequestHandler = async (req, res) => {
+  const { shopId, userId } = req.params;
+  const { roleId } = req.body;
+  const shop = await updateMemberRole(shopId, userId, roleId);
+  res.status(200).json({
+    message: "Member role updated successfully",
+    data: shop,
   });
 };

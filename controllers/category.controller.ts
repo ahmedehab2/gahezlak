@@ -1,11 +1,8 @@
 import { RequestHandler } from "express";
 import {
   createCategory,
-  // getCategoriesWithItemsByShop,
   updateCategory,
   deleteCategory,
-  // getItemsInCategory,
-  // updateItemInCategory,
   getCategoryById,
   getCategoriesByShop,
 } from "../services/category.service";
@@ -73,37 +70,6 @@ export const getCategoriesByShopHandler: RequestHandler<
     data: categories,
   });
 };
-
-// export const updateItemInCategoryHandler: RequestHandler = async (req, res) => {
-//   const { shopId, categoryId, itemId } = req.params;
-//   const updateData = req.body;
-//   const item = await updateItemInCategory(
-//     shopId,
-//     categoryId,
-//     itemId,
-//     updateData
-//   );
-
-//   const response: SuccessResponse<typeof item> = {
-//     message: "Item in category updated successfully",
-//     data: item,
-//   };
-
-//   res.status(200).json(response);
-// };
-
-// export const getItemsInCategoryHandler: RequestHandler = async (req, res) => {
-//   const { shopId, categoryId } = req.params;
-//   const lang = req.lang;
-//   const items = await getItemsInCategory(shopId, categoryId, lang);
-
-//   const response: SuccessResponse<typeof items> = {
-//     message: "Items in category retrieved",
-//     data: items,
-//   };
-
-//   res.status(200).json(response);
-// };
 
 export const getCategoryByIdHandler: RequestHandler<
   { categoryId: string },

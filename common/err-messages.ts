@@ -43,6 +43,7 @@ enum errorMessage {
   NO_ACTIVE_SUBSCRIPTION = "NO_ACTIVE_SUBSCRIPTION",
   SUBSCRIPTION_EXPIRED = "SUBSCRIPTION_EXPIRED",
   CATEGORY_NOT_FOUND = "CATEGORY_NOT_FOUND",
+  CATEGORY_ALREADY_EXISTS = "CATEGORY_ALREADY_EXISTS",
   MENU_ITEM_NOT_FOUND = "MENU_ITEM_NOT_FOUND",
   ORDER_NOT_FOUND = "ORDER_NOT_FOUND",
   ORDER_NOT_PENDING = "ORDER_NOT_PENDING",
@@ -53,6 +54,17 @@ enum errorMessage {
   UNAUTHORIZED_SHOP_SUBSCRIPTION_VIEW = "UNAUTHORIZED_SHOP_SUBSCRIPTION_VIEW",
   INVALID_OLD_PASSWORD = "INVALID_OLD_PASSWORD",
   SAME_PASSWORD_ERROR = "SAME_PASSWORD_ERROR",
+  IMAGE_UPLOAD_FAILED = "IMAGE_UPLOAD_FAILED",
+  ROUTE_NOT_FOUND = "ROUTE_NOT_FOUND",
+  MEMBER_ALREADY_EXISTS = "MEMBER_ALREADY_EXISTS",
+  MEMBER_NOT_FOUND = "MEMBER_NOT_FOUND",
+  INVALID_ROLE = "INVALID_ROLE",
+  INVALID_USER_ID = "INVALID_USER_ID",
+  INVALID_ROLE_ID = "INVALID_ROLE_ID",
+  CANNOT_REMOVE_OWNER = "CANNOT_REMOVE_OWNER",
+  CANNOT_UPDATE_OWNER_ROLE = "CANNOT_UPDATE_OWNER_ROLE",
+  NOT_ALLOWED_ACTION = "NOT_ALLOWED_ACTION",
+  USER_ALREADY_HAS_SHOP = "USER_ALREADY_HAS_SHOP",
   ROUTE_NOT_FOUND = "ROUTE_NOT_FOUND",
   INVALID_HMAC_SIGNATURE = "INVALID_HMAC_SIGNATURE",
 }
@@ -215,6 +227,10 @@ export const errMsg: {
     en: "Category not found",
     ar: "الفئة غير موجودة",
   },
+  CATEGORY_ALREADY_EXISTS: {
+    en: "A category with this name already exists in your shop.",
+    ar: "توجد فئة بهذا الاسم بالفعل في متجرك.",
+  },
   MENU_ITEM_NOT_FOUND: {
     en: "Menu item not found",
     ar: "العنصر غير موجود",
@@ -263,5 +279,49 @@ export const errMsg: {
   INVALID_HMAC_SIGNATURE: {
     en: "Invalid HMAC signature",
     ar: "رمز HMAC غير صالح",
+  },
+  IMAGE_UPLOAD_FAILED: {
+    en: "Failed to upload image",
+    ar: "فشل تحميل الصورة",
+  },
+  ROUTE_NOT_FOUND: {
+    en: "Route not found",
+    ar: "الرابط غير موجود",
+  },
+  MEMBER_ALREADY_EXISTS: {
+    en: "User is already a member of this shop.",
+    ar: "المستخدم عضو بالفعل في هذا المتجر.",
+  },
+  MEMBER_NOT_FOUND: {
+    en: "Member not found in this shop.",
+    ar: "العضو غير موجود في هذا المتجر.",
+  },
+  INVALID_ROLE: {
+    en: "Invalid role.",
+    ar: "دور غير صالح.",
+  },
+  INVALID_USER_ID: {
+    en: "Invalid user ID.",
+    ar: "معرف المستخدم غير صالح.",
+  },
+  INVALID_ROLE_ID: {
+    en: "Invalid role ID.",
+    ar: "معرف الدور غير صالح.",
+  },
+  CANNOT_REMOVE_OWNER: {
+    en: "Cannot remove the shop owner from members.",
+    ar: "لا يمكن إزالة مالك المتجر من الأعضاء.",
+  },
+  CANNOT_UPDATE_OWNER_ROLE: {
+    en: "Cannot update owner role",
+    ar: "لا يمكن تحديث دور المالك",
+  },
+  NOT_ALLOWED_ACTION: {
+    en: "This action is not allowed",
+    ar: "هذا الإجراء غير مسموح به",
+  },
+  USER_ALREADY_HAS_SHOP: {
+    en: "User already has a shop",
+    ar: "المستخدم لديه متجر بالفعل",
   },
 };
