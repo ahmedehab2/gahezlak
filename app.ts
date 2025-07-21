@@ -16,6 +16,7 @@ import roleRoutes from "./routes/role.routes";
 import cors from "cors";
 import { errMsg } from "./common/err-messages";
 import { Errors } from "./errors";
+import webhooksRoutes from "./routes/webhooks.routes";
 
 const app = express();
 
@@ -32,6 +33,8 @@ app.use(languageMiddleware);
 app.get("/", (req, res) => {
   res.send("API is running 🚀");
 });
+
+app.use("/api/v1/webhooks", webhooksRoutes);
 
 app.use("/api/v1/plans", planRoutes);
 app.use("/api/v1/auth", authRoutes);

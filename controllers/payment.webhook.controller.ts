@@ -1,112 +1,123 @@
-// import { Request, Response, NextFunction, RequestHandler } from "express";
-// import crypto from "crypto";
-// import { Errors } from "../errors";
-// import { errMsg } from "../common/err-messages";
-// // import { processSuccessfulSubscriptionPayment } from "../services/payment.service";
-// import { logger } from "../config/pino";
-// import { Subscriptions, SubscriptionStatus } from "../models/Subscription";
+import { Request, Response, NextFunction, RequestHandler } from "express";
+import crypto from "crypto";
+import { Errors } from "../errors";
+import { errMsg } from "../common/err-messages";
+// import { processSuccessfulSubscriptionPayment } from "../services/payment.service";
+import { logger } from "../config/pino";
+import { Subscriptions, SubscriptionStatus } from "../models/Subscription";
+import { Shops } from "../models/Shop";
+import { Plans } from "../models/plan";
+import { Users } from "../models/User";
+import { PaymobWebhookPayload } from "../common/types/general-types";
 
-// const PAYMOB_HMAC_SECRET = process.env.PAYMOB_HMAC_SECRET!;
+const PAYMOB_HMAC_SECRET = process.env.PAYMOB_HMAC_SECRET!;
 
-// function verifyPaymobSubscriptionHmac(payload: any): boolean {
-//   if (
-//     !payload.subscription_data?.id ||
-//     !payload.trigger_type ||
-//     !payload.hmac
-//   ) {
-//     return false;
-//   }
-//   const { id } = payload.subscription_data;
+function verifyPaymobSubscriptionHmac(payload: any): boolean {
+  if (
+    !payload.subscription_data?.id ||
+    !payload.trigger_type ||
+    !payload.hmac
+  ) {
+    return false;
+  }
+  const { id } = payload.subscription_data;
 
-//   const concatenatedString = `${payload.trigger_type}for${id}`;
+  const concatenatedString = `${payload.trigger_type}for${id}`;
 
-//   const calculatedHmac = crypto
-//     .createHmac("sha512", PAYMOB_HMAC_SECRET!)
-//     .update(concatenatedString)
-//     .digest("hex");
+  const calculatedHmac = crypto
+    .createHmac("sha512", PAYMOB_HMAC_SECRET!)
+    .update(concatenatedString)
+    .digest("hex");
 
-//   return crypto.timingSafeEqual(
-//     Buffer.from(calculatedHmac),
-//     Buffer.from(payload.hmac)
-//   );
-// }
+  return crypto.timingSafeEqual(
+    Buffer.from(calculatedHmac),
+    Buffer.from(payload.hmac)
+  );
+}
 
-// export const handlePaymobSubscriptionWebhook: RequestHandler = async (
-//   req,
-//   res
-// ) => {
-//   try {
-//     const webhookData = req.body;
+export const handlePaymobSubscriptionWebhook: RequestHandler = async (
+  req,
+  res
+) => {
+  try {
+    const webhookData = req.body;
 
-//     if (!verifyPaymobSubscriptionHmac(webhookData)) {
-//       console.error("Invalid HMAC signature");
-//       res.status(401).json({ error: "Invalid signature" });
-//       return;
-//     }
+    const isValid = verifyPaymobSubscriptionHmac(webhookData);
+    console.log("isValid", isValid);
+    if (!isValid) {
+      throw new Errors.BadRequestError(errMsg.INVALID_HMAC_SIGNATURE);
+    }
 
-//     console.log("Webhook received:", webhookData.trigger_type);
+    switch (webhookData.trigger_type) {
+      case "Subscription Created":
+        await handleSubscriptionCreated(webhookData);
+        break;
+      //   case "Subscription Activated":
+      //     await handleSubscriptionActivated(webhookData);
+      //     break;
+      //   case "Subscription Cancelled":
+      //     await handleSubscriptionCancelled(webhookData);
+      //     break;
+      //   case "Subscription Expired":
+      //     await handleSubscriptionExpired(webhookData);
+      //     break;
+      //   case "Subscription Renewed":
+      //     await handleSubscriptionRenewed(webhookData);
+      //     break;
+      default:
+        logger.warn(`Unhandled webhook type: ${webhookData.trigger_type}`);
+    }
 
-//     switch (webhookData.trigger_type) {
-//       case "Subscription Created":
-//         await handleSubscriptionCreated(webhookData);
-//         break;
-//       case "Subscription Activated":
-//         await handleSubscriptionActivated(webhookData);
-//         break;
-//       case "Subscription Cancelled":
-//         await handleSubscriptionCancelled(webhookData);
-//         break;
-//       case "Subscription Expired":
-//         await handleSubscriptionExpired(webhookData);
-//         break;
-//       case "Subscription Renewed":
-//         await handleSubscriptionRenewed(webhookData);
-//         break;
-//       default:
-//         console.log("Unhandled webhook type:", webhookData.trigger_type);
-//     }
+    res.status(200).json({ received: true });
+  } catch (error) {
+    console.error("Webhook processing error:", error);
+    res.status(500).json({ error: "Webhook processing failed" });
+  }
+};
 
-//     res.status(200).json({ received: true });
-//   } catch (error) {
-//     console.error("Webhook processing error:", error);
-//     res.status(500).json({ error: "Webhook processing failed" });
-//   }
-// };
+async function handleSubscriptionCreated(data: PaymobWebhookPayload) {
+  const { subscription_data, transaction_id } = data;
 
-// async function handleSubscriptionCreated(data: any) {
-//   const { subscription_data } = data;
+  try {
+    // Find user by email
+    const user = await Users.findOne({
+      email: subscription_data.client_info.email,
+    });
 
-//   try {
-//     // Find subscription by user email or phone (since we don't have direct reference)
-//     // You might need to adjust this based on how you store the reference
-//     const subscription = await Subscriptions.findOne({
-//       _id: subscription_data.extras.subscriptionId,
-//     });
-//     console.log(
-//       "subscription_data.extras.subscriptionId",
-//       subscription_data.extras.subscriptionId
-//     );
-//     console.log("subscription", subscription);
+    if (!user) {
+      throw new Errors.NotFoundError(errMsg.USER_NOT_FOUND);
+    }
 
-//     if (subscription) {
-//       await Subscriptions.findByIdAndUpdate(subscription._id, {
-//         paymobSubscriptionId: subscription_data.id.toString(),
-//         status:
-//           subscription_data.state === "active"
-//             ? SubscriptionStatus.ACTIVE
-//             : SubscriptionStatus.TRIALING,
-//         currentPeriodStart: new Date(subscription_data.starts_at),
-//         currentPeriodEnd: new Date(subscription_data.next_billing),
-//       });
+    // Find plan by name
+    const plan = await Plans.findOne({
+      title: subscription_data.name,
+    });
 
-//       console.log(`Subscription created: ${subscription._id}`);
-//     } else {
-//       console.error("Could not find matching subscription for webhook");
-//     }
-//   } catch (error) {
-//     console.error("Error handling subscription created:", error);
-//   }
-// }
+    if (!plan) {
+      throw new Errors.NotFoundError(errMsg.PLAN_NOT_FOUND);
+    }
+
+    // Create subscription with trial
+    const subscription = await Subscriptions.create({
+      userId: user._id,
+      shop: user.shop,
+      plan: plan._id,
+      status: SubscriptionStatus.TRIALING, // Start with TRIALING status
+      paymobSubscriptionId: subscription_data.id,
+      paymobTransactionId: transaction_id,
+      currentPeriodStart: new Date(), // Trial starts now
+      currentPeriodEnd: new Date(subscription_data.next_billing), // Trial ends when subscription starts
+    });
+
+    await Shops.findByIdAndUpdate(user.shop, {
+      subscriptionId: subscription._id,
+    });
+
+    logger.info(`Subscription created: ${subscription._id}`);
+  } catch (error) {
+    logger.error("Error creating subscription:", error);
+  }
+}
 
 // async function handleSubscriptionActivated(data: any) {
 //   const { subscription_data } = data;
@@ -182,5 +193,3 @@
 //     console.error("Error handling subscription renewed:", error);
 //   }
 // }
-
-//disabled paymob integration for now

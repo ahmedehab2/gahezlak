@@ -10,7 +10,7 @@ export interface IPlan {
   frequency: "monthly" | "yearly";
   currency: "EGP" | "USD";
   price: number;
-  // paymobPlanId: number;
+  paymobPlanId: number;
   features: string[];
   trialPeriodDays: number;
   isActive: boolean;
@@ -26,7 +26,7 @@ const planSchema = new Schema<IPlan>(
     frequency: { type: String, required: true },
     currency: { type: String, required: true },
     price: { type: Number, required: true },
-    // paymobPlanId: { type: Number, required: true },
+    paymobPlanId: { type: Number, required: true },
     features: { type: [String], required: true },
     trialPeriodDays: { type: Number, required: true },
     isActive: { type: Boolean, default: true },

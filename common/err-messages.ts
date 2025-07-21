@@ -53,6 +53,8 @@ enum errorMessage {
   UNAUTHORIZED_SHOP_SUBSCRIPTION_VIEW = "UNAUTHORIZED_SHOP_SUBSCRIPTION_VIEW",
   INVALID_OLD_PASSWORD = "INVALID_OLD_PASSWORD",
   SAME_PASSWORD_ERROR = "SAME_PASSWORD_ERROR",
+  ROUTE_NOT_FOUND = "ROUTE_NOT_FOUND",
+  INVALID_HMAC_SIGNATURE = "INVALID_HMAC_SIGNATURE",
 }
 
 export const errMsg: {
@@ -253,5 +255,13 @@ export const errMsg: {
   SAME_PASSWORD_ERROR: {
     en: "New password cannot be the same as old password.",
     ar: "كلمة المرور الجديدة غير مسموح بها لأنها تطابق كلمة المرور القديمة.",
+  },
+  ROUTE_NOT_FOUND: {
+    en: "Route not found",
+    ar: "الرابط غير موجود",
+  },
+  INVALID_HMAC_SIGNATURE: {
+    en: "Invalid HMAC signature",
+    ar: "رمز HMAC غير صالح",
   },
 };

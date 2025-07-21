@@ -2,7 +2,7 @@ import { SuccessResponse } from "../common/types/contoller-response.types";
 import { IPlan } from "../models/plan";
 import * as planService from "../services/plan.service";
 import { RequestHandler } from "express";
-// import { createSubscriptionPlan } from "../utils/paymob";
+import { createSubscriptionPlan } from "../utils/paymob";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
 
@@ -19,7 +19,7 @@ export const createPlanHandler: RequestHandler<
     | "price"
     | "trialPeriodDays"
   >
-> = async (req, res, next) => {
+> = async (req, res) => {
   const {
     planGroup,
     description,
@@ -53,14 +53,14 @@ export const createPlanHandler: RequestHandler<
   if (monthlyPlanExists && yearlyPlanExists) {
     throw new Errors.BadRequestError(errMsg.BOTH_PLANS_EXIST);
   }
-  // const paymobPlan = await createSubscriptionPlan({
-  //   planName: planTitle,
-  //   frequency,
-  //   amountInCents: price * 100,
-  //   startWithTrial: true,
-  //   isActive: true,
-  // }); disabled paymob integration for now
-  const plan = await planService.createPlan({
+  const paymobPlan = await createSubscriptionPlan({
+    planName: planTitle,
+    frequency,
+    amountInCents: price * 100,
+    startWithTrial: trialPeriodDays > 0 ? true : false,
+    isActive: true,
+  });
+  await planService.createPlan({
     planGroup,
     title: planTitle,
     description,
@@ -69,7 +69,7 @@ export const createPlanHandler: RequestHandler<
     features,
     price,
     isActive: true,
-    // paymobPlanId: paymobPlan.id,
+    paymobPlanId: paymobPlan.id,
     trialPeriodDays,
   });
   res.status(201).json({

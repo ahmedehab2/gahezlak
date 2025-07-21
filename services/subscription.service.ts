@@ -67,6 +67,14 @@ export async function cancelSubscription(
   return subscription;
 }
 
+// Cancel subscription in paymob
+export async function cancelSubscriptionInPaymob(subscriptionId: string) {
+  const subscription = await Subscriptions.findById(subscriptionId);
+  if (!subscription) {
+    throw new Errors.NotFoundError(errMsg.SUBSCRIPTION_NOT_FOUND);
+  }
+}
+
 // Get user's active subscription
 export async function getUserActiveSubscription(
   userId: string

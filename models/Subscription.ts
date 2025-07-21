@@ -17,7 +17,8 @@ export interface ISubscription extends Document {
   shop: ObjectId | IShop;
   plan: ObjectId | IPlan; // Link to the plan they are on
   status: SubscriptionStatus;
-  // paymobSubscriptionId?: string; // VERY IMPORTANT: To manage the subscription in Paymob
+  paymobSubscriptionId?: number; // To manage the subscription in Paymob
+  paymobTransactionId?: number;
   currentPeriodStart: Date;
   currentPeriodEnd: Date; // A single field to track when the current period (trial or paid) ends
   cancelledAt?: Date;
@@ -47,12 +48,15 @@ const SubscriptionSchema = new Schema<ISubscription>(
       enum: SubscriptionStatus,
       default: SubscriptionStatus.TRIALING,
     },
-    // paymobSubscriptionId: {
-    //   type: String,
-    //   index: true,
-    //   unique: true,
-    //   sparse: true,
-    // }, // disabled paymob integration for now
+    paymobSubscriptionId: {
+      type: String,
+      required: true,
+    },
+    paymobTransactionId: {
+      type: Number,
+      required: true,
+    },
+
     currentPeriodStart: { type: Date, required: true },
     currentPeriodEnd: { type: Date, required: true },
     cancelledAt: { type: Date },
