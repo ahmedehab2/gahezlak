@@ -1,0 +1,88 @@
+import mongoose from "mongoose";
+import { Orders,OrderStatus } from "../models/Order";
+
+
+export async function CanceledOrderRate(shopId: string) {
+  const totalOrders = await Orders.countDocuments({ shopId });
+  const canceledOrders = await Orders.countDocuments({ shopId, orderStatus: OrderStatus.Cancelled });
+
+  const rate = totalOrders > 0 ? (canceledOrders / totalOrders) * 100 : 0;
+
+  return { totalOrders, canceledOrders, cancellationRate: rate.toFixed(2) };
+}
+
+
+export async function OrderCountsByDate(shopId: string, type: 'daily' | 'monthly' | 'yearly') {
+  const groupId = {
+    daily: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" }, day: { $dayOfMonth: "$createdAt" } },
+    monthly: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
+    yearly: { year: { $year: "$createdAt" } },
+  }[type];
+
+  const ordersPerDate = await Orders.aggregate([
+    { $match: { shopId: new mongoose.Types.ObjectId(shopId) } },
+    { $group: { _id: groupId, count: { $sum: 1 } } },
+    { $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 } },
+  ]);
+
+  return ordersPerDate ;
+}
+
+export async function SalesComparison(shopId: string, start1: Date, end1: Date, start2: Date, end2: Date) {
+  const sumSales = async (start: Date, end: Date) => {
+    const orders = await Orders.aggregate([
+      {
+        $match: {
+          shopId: new mongoose.Types.ObjectId(shopId),
+          createdAt: { $gte: start, $lte: end },
+        },
+      },
+      { $group: { _id: null, total: { $sum: "$totalAmount" } } },
+    ]);
+
+    return orders[0]?.total || 0;
+  };
+
+  const total1 = await sumSales(start1, end1);
+  const total2 = await sumSales(start2, end2);
+  const change = total1 === 0 ? 0 : ((total2 - total1) / total1) * 100;
+
+  return { total1, total2, percentageChange: change.toFixed(2) };
+}
+
+
+export async function BestAndWorstSellers(shopId: string, limit: number) {
+  const orders = await Orders.aggregate([
+    { $match: { shopId: new mongoose.Types.ObjectId(shopId) } },
+    { $unwind: "$orderItems" },
+    {
+      $group: {
+        _id: "$orderItems.menuItemId",
+        total: { $sum: "$orderItems.quantity" },
+      },
+    },
+    {
+      $lookup: {
+        from: "menuItems",
+        localField: "_id",
+        foreignField: "_id",
+        as: "menuItem",
+      },
+    },
+    { $unwind: "$menuItem" },
+    {
+      $project: {
+        _id: 0,
+        menuItemId: "$menuItem._id",
+        name: "$menuItem.name",
+        total: 1,
+      },
+    },
+    { $sort: { total: -1 } },
+  ]);
+
+  const bestSellers = orders.slice(0, limit);
+  const worstSellers = orders.slice(-limit).reverse();
+
+  return { bestSellers, worstSellers };
+}
