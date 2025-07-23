@@ -9,7 +9,7 @@ import { protect, isAllowed } from "../middlewares/auth";
 const router = express.Router();
 
 // Protect all routes and allow only admin
-router.use(protect, isAllowed(["shop_owner", "Admin"]));
+router.use(protect, isAllowed([ "Admin"]));
 
 // admin analysis routes
 
