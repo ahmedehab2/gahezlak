@@ -43,7 +43,7 @@ export async function getTopPerformingRestaurants(limit = 5, startDate: string, 
     {
       $group: {
         _id: "$shopId",
-        totalRevenue: { $sum: "$totalAmount" },
+        totalShopRevenue: { $sum: "$totalAmount" },
       },
     },
     { $sort: { totalRevenue: -1 } },
@@ -62,7 +62,7 @@ export async function getTopPerformingRestaurants(limit = 5, startDate: string, 
         _id: 0,
         shopId: "$_id",
         shopName: "$shop.name",
-        totalRevenue: 1,
+        totalShopRevenue: 1,
       },
     },
   ]);

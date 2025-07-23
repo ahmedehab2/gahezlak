@@ -4,7 +4,7 @@ import { connectDB } from "./config/db";
 import authRoutes from "./routes/auth.routes";
 import userRoutes from "./routes/user.routes";
 import subscriptionRoutes from "./routes/subscription.routes";
-import adminAnalyticsRoutes from "./routes/adminAnalytics.routes";
+import adminRoutes from "./routes/admin.routes";
 
 // import http from "http";
 // import { initSocket } from "./sockets/socketServer";
@@ -41,7 +41,7 @@ app.use("/api/v1/subscriptions", subscriptionRoutes);
 app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/shops", shopRoutes);
 app.use("/api/v1/roles", roleRoutes);
-app.use("/api/v1/admin", adminAnalyticsRoutes);
+app.use("/api/v1/admin", adminRoutes);
 
 app.use((req, res, next) => {
   throw new Errors.NotFoundError(errMsg.ROUTE_NOT_FOUND);

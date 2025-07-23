@@ -9,10 +9,12 @@ import { protect, isAllowed } from "../middlewares/auth";
 const router = express.Router();
 
 // Protect all routes and allow only admin
-router.use(protect, isAllowed(["admin"]));
+router.use(protect, isAllowed(["shop_owner", "Admin"]));
 
-router.get("analytics/revenue", getTotalPlatformRevenueController);
-router.get("analytics/revenue-growth", getRevenueGrowthController);
-router.get("analytics/top-restaurants", getTopPerformingRestaurantsController);
+// admin analysis routes
+
+router.get("/analytics/total-revenue", getTotalPlatformRevenueController);
+router.get("/analytics/revenue-growth", getRevenueGrowthController);
+router.get("/analytics/top-restaurants", getTopPerformingRestaurantsController);
 
 export default router;
