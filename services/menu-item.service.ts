@@ -32,7 +32,7 @@ export const getMenuItemById = async (
   const menuItem = await MenuItemModel.findOne({ _id: itemId, shopId }).lean();
   if (!menuItem) throw new Errors.NotFoundError(errMsg.MENU_ITEM_NOT_FOUND);
 
-  return menuItem as unknown as IMenuItem;
+  return menuItem;
 };
 
 export const deleteMenuItem = async (shopId: string, itemId: string) => {
@@ -47,7 +47,7 @@ export const deleteMenuItem = async (shopId: string, itemId: string) => {
     { $pull: { menuItems: itemId } }
   );
 
-  return menuItem as unknown as IMenuItem;
+  return menuItem;
 };
 
 export const toggleItemAvailability = async (
@@ -84,8 +84,8 @@ export async function getMenuItemsByShop({
   shopId,
   shopName,
   lang,
-  skip ,
-  limit ,
+  skip,
+  limit,
 }: {
   shopId?: string;
   shopName?: string;
@@ -107,12 +107,12 @@ export async function getMenuItemsByShop({
     query.shopId = shop._id;
   }
 
-    const items = await MenuItemModel.find(query, {
+  const items = await MenuItemModel.find(query, {
     shopId: 0, // exclude shopId from the response
   })
     .skip(skip)
     .limit(limit)
-    .sort({ createdAt: -1 }) 
+    .sort({ createdAt: -1 })
     .lean();
 
   const totalCount = await MenuItemModel.countDocuments(query);
