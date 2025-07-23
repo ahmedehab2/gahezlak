@@ -8,16 +8,16 @@ export async function CanceledOrderRate(shopId: string) {
 
   const rate = totalOrders > 0 ? (canceledOrders / totalOrders) * 100 : 0;
 
-  return { totalOrders, canceledOrders, cancellationRate: rate.toFixed(2) };
+  return { totalOrders, canceledOrders, cancellationRate: Number(rate.toFixed(2))  };  // convert string to number
 }
 
 
-export async function OrderCountsByDate(shopId: string, type: 'daily' | 'monthly' | 'yearly') {
+export async function OrderCountsByDate(shopId: string, period: 'daily' | 'monthly' | 'yearly') {
   const groupId = {
     daily: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" }, day: { $dayOfMonth: "$createdAt" } },
     monthly: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
     yearly: { year: { $year: "$createdAt" } },
-  }[type];
+  }[period];
 
   const ordersPerDate = await Orders.aggregate([
     { $match: { shopId: new mongoose.Types.ObjectId(shopId) } },
@@ -45,9 +45,9 @@ export async function SalesComparison(shopId: string, start1: Date, end1: Date, 
 
   const total1 = await sumSales(start1, end1);
   const total2 = await sumSales(start2, end2);
-  const change = total1 === 0 ? 0 : ((total2 - total1) / total1) * 100;
+  const change = total1 === 0 ? 0 :   ((total2 - total1) / total1) * 100;
 
-  return { total1, total2, percentageChange: change.toFixed(2) };
+  return { total1, total2, percentageChange: Number(change.toFixed(2)) };
 }
 
 
@@ -63,7 +63,7 @@ export async function BestAndWorstSellers(shopId: string, limit: number) {
     },
     {
       $lookup: {
-        from: "menuItems",
+        from: "menu_items",
         localField: "_id",
         foreignField: "_id",
         as: "menuItem",
@@ -80,6 +80,7 @@ export async function BestAndWorstSellers(shopId: string, limit: number) {
     },
     { $sort: { total: -1 } },
   ]);
+console.log("Orders:", orders);
 
   const bestSellers = orders.slice(0, limit);
   const worstSellers = orders.slice(-limit).reverse();

@@ -12,10 +12,11 @@ export const CanceledOrderRateController: RequestHandler = async (req, res) => {
 };
 
 export const OrderCountsByDateController: RequestHandler = async (req, res) => {
-  const { type } = req.query;
-  const ordersPerDate = await OrderCountsByDate(req.user!.shopId, type as any);
+  const { period } = req.query;
+  const ordersPerDate = await OrderCountsByDate(req.user!.shopId, period as any);
   res.status(200).json({ message: "Orders count retrieved", data: ordersPerDate });
 };
+
 
 export const SalesComparisonController: RequestHandler = async (req, res) => {
   const { start1, end1, start2, end2 } = req.query;
