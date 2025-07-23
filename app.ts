@@ -9,7 +9,7 @@ import subscriptionRoutes from "./routes/subscription.routes";
 import { ErrorHandlerMiddleware } from "./middlewares/error-handling.middleware";
 import { languageMiddleware } from "./middlewares/language.middleware";
 import planRoutes from "./routes/plan.routes";
-import paymentRoutes from "./routes/payment.routes";
+// import paymentRoutes from "./routes/payment.routes";
 import shopRoutes from "./routes/shop.routes";
 import roleRoutes from "./routes/role.routes";
 import cors from "cors";
@@ -39,7 +39,7 @@ app.use("/api/v1/plans", planRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/subscriptions", subscriptionRoutes);
-app.use("/api/v1/payments", paymentRoutes);
+// app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/shops", shopRoutes);
 app.use("/api/v1/roles", roleRoutes);
 
