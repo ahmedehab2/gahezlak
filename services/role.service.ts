@@ -22,8 +22,9 @@ export async function getAllRoles(currentRole?: string) {
   //currentRole is the role of the user who is requesting the roles
   let query: FilterQuery<IRole> = {};
   if (currentRole === Role.SHOP_OWNER) {
-    query.name = { $nin: [Role.ADMIN, Role.SHOP_OWNER] };
+    query.name = { $nin: [Role.ADMIN, Role.SHOP_OWNER, Role.USER] };
   }
+
   const roles = await Roles.find(query).lean();
   return roles;
 }
