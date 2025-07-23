@@ -51,9 +51,12 @@ export async function SalesComparison(shopId: string, start1: Date, end1: Date, 
 }
 
 
-export async function BestAndWorstSellers(shopId: string, limit: number) {
+export async function BestAndWorstSellers(shopId: string, limit: number,startDate: string, endDate: string) {
   const orders = await Orders.aggregate([
-    { $match: { shopId: new mongoose.Types.ObjectId(shopId) } },
+    { $match: { 
+      shopId: new mongoose.Types.ObjectId(shopId),
+       createdAt: { $gte: new Date(startDate), $lte: new Date(endDate) } 
+    } },
     { $unwind: "$orderItems" },
     {
       $group: {
@@ -80,7 +83,6 @@ export async function BestAndWorstSellers(shopId: string, limit: number) {
     },
     { $sort: { total: -1 } },
   ]);
-console.log("Orders:", orders);
 
   const bestSellers = orders.slice(0, limit);
   const worstSellers = orders.slice(-limit).reverse();

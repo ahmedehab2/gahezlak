@@ -32,8 +32,16 @@ export const SalesComparisonController: RequestHandler = async (req, res) => {
 };
 
 export const BestAndWorstSellersController: RequestHandler = async (req, res) => {
-  const { limit } = req.query;
-  const shopId=req.user!.shopId!;
-  const BestAndWorstOrders = await BestAndWorstSellers(shopId, parseInt(limit as string) || 5);
+  const { limit, startDate, endDate } = req.query;
+  const shopId = req.user!.shopId!;
+
+  const BestAndWorstOrders = await BestAndWorstSellers(
+    shopId,
+    parseInt(limit as string) || 5,
+    startDate as string,
+    endDate as string
+  );
+
   res.status(200).json({ message: "Sellers data retrieved", data: BestAndWorstOrders });
 };
+
