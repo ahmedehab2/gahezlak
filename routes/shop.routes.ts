@@ -158,7 +158,6 @@ router.post(
   isShopMember,
   uploadSingleMiddleware("image"), // handle image upload for menu item
   menuItemValidators.validateCreateMenuItem,
-  isShopMember,
   menuItemControllers.createMenuItemAndAddToCategoryHandler
 );
 
