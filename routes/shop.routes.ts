@@ -317,7 +317,12 @@ router.get(
 router.put(
   "/orders/:orderId/status",
   protect,
-  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  isAllowed([
+    Role.SHOP_OWNER,
+    Role.SHOP_MANAGER,
+    Role.KITCHEN,
+    Role.SHOP_STAFF,
+  ]),
   orderValidators.validateUpdateOrderStatus,
   isShopMember,
   orderControllers.updateOrderStatusHandler

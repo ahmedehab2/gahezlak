@@ -6,7 +6,7 @@ import {
   GetOrdersByShop,
   GetOrderById,
   // sendOrderToKitchen,
-  GetOrdersByStatus,
+  // GetOrdersByStatus,
   getOrderDetailsByNumber,
 } from "../services/order.service";
 import {
@@ -14,24 +14,28 @@ import {
   PaginatedRespone,
 } from "../common/types/contoller-response.types";
 
-import { getKitchenOrders } from "../services/order.service";
+// import { getKitchenOrders } from "../services/order.service";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
 import { IOrder, OrderStatus } from "../models/Order";
 import { generateOrderNumber } from "../utils/generate-order-number";
 import { Role } from "../models/Role";
 import { FilterQuery } from "mongoose";
+import { createPaymentIntent, refundOrder } from "../utils/paymob";
 //import { io } from "../sockets/socketServer";
 
 export const createOrderHandler: RequestHandler<
   unknown,
-  SuccessResponse<IOrder>,
+  SuccessResponse<{
+    iframeUrl: string;
+  }>,
   Pick<
     IOrder,
     | "tableNumber"
-    | "totalAmount"
+    | "paymentMethod"
     | "orderItems"
-    | "customerName"
+    | "customerFirstName"
+    | "customerLastName"
     | "customerPhoneNumber"
   > & {
     shopName: string;
@@ -48,27 +52,37 @@ export const createOrderHandler: RequestHandler<
     shopId: shop._id,
     orderNumber: await generateOrderNumber(shop._id.toString()),
   });
-  // io.emit("newOrder", newOrder);
 
-  const paymentUrl = `${process.env.FRONTEND_URL}/payment?orderId=${newOrder._id}`;
+  const { iframeUrl, paymobPayment } = await createPaymentIntent({
+    order: newOrder,
+    customer: {
+      first_name: orderData.customerFirstName,
+      last_name: orderData.customerLastName,
+      phone_number: orderData.customerPhoneNumber,
+    },
+  });
 
-  const response: SuccessResponse<typeof newOrder & { paymentUrl: string }> = {
+  res.status(201).json({
     message: "Order created successfully",
     data: {
-      ...newOrder,
-      paymentUrl,
+      iframeUrl,
     },
-  };
-
-  res.status(201).json(response);
+  });
 };
 
 export const updateOrderStatusHandler: RequestHandler = async (req, res) => {
   const shopId = req.user?.shopId!;
   const { orderId } = req.params;
   const { status } = req.body;
-  const updatedOrderStatus = await UpdateOrderStatus(shopId, orderId, status);
-  // io.emit("orderStatusUpdated", updatedOrderStatus);
+
+  const order = await GetOrderById(orderId);
+  let updatedOrderStatus;
+  if (status === OrderStatus.Cancelled) {
+    updatedOrderStatus = await UpdateOrderStatus(shopId, orderId, status);
+    await refundOrder(order.paymobTransactionId || "");
+  } else {
+    updatedOrderStatus = await UpdateOrderStatus(shopId, orderId, status);
+  }
 
   const response: SuccessResponse<typeof updatedOrderStatus> = {
     message: "Order status updated successfully",
@@ -77,20 +91,6 @@ export const updateOrderStatusHandler: RequestHandler = async (req, res) => {
 
   res.status(200).json(response);
 };
-
-// export const sendOrderToKitchenHandler: RequestHandler = async (req, res) => {
-//   const shopId = req.user?.shopId!;
-//   const orderId = req.params.orderId;
-//   const updatedOrder = await sendOrderToKitchen(shopId, orderId);
-//   // io.emit("orderSentToKitchen", updatedOrder);
-
-//   const response: SuccessResponse<typeof updatedOrder> = {
-//     message: "Order sent to kitchen successfully",
-//     data: updatedOrder,
-//   };
-
-//   res.status(200).json(response);
-// };
 
 export const getOrdersByShopHandler: RequestHandler<
   unknown,
@@ -105,7 +105,6 @@ export const getOrdersByShopHandler: RequestHandler<
   const query: FilterQuery<IOrder> = {};
 
   if (req.user?.role === Role.KITCHEN) {
-    query.isSentToKitchen = true;
     query.orderStatus = { $in: [OrderStatus.Pending, OrderStatus.Confirmed] };
   }
 

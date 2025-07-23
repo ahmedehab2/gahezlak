@@ -38,6 +38,7 @@ const SubscriptionSchema = new Schema<ISubscription>(
       type: Schema.Types.ObjectId,
       ref: collectionsName.SHOPS,
       required: true,
+      unique: true,
     },
     plan: {
       type: Schema.Types.ObjectId,
@@ -47,20 +48,20 @@ const SubscriptionSchema = new Schema<ISubscription>(
     status: {
       type: String,
       enum: SubscriptionStatus,
-      default: SubscriptionStatus.TRIALING,
+      default: SubscriptionStatus.PENDING,
     },
     paymobSubscriptionId: {
-      type: String,
-      required: true,
+      type: Number,
+      // required: true,
     },
     paymobTransactionId: {
       type: Number,
-      required: true,
+      // required: true,
     },
 
     currentPeriodStart: { type: Date, required: true },
     currentPeriodEnd: { type: Date, required: true },
-    isTrialUsed: { type: Boolean, default: true },
+    isTrialUsed: { type: Boolean, default: false },
     cancelledAt: { type: Date },
   },
   {

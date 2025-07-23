@@ -2,15 +2,40 @@ import { Orders, IOrder, OrderStatus } from "../models/Order";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
 import mongoose, { FilterQuery } from "mongoose";
+import { IMenuItem, MenuItemModel } from "../models/MenuItem";
+import { calculateOrderTotalAmount } from "../utils/calculate-order-total-amount";
 
 export async function CreateOrder(orderData: Partial<IOrder>) {
-  if (!orderData.shopId) {
-    throw new Errors.BadRequestError(errMsg.SHOP_NOT_FOUND);
+  const menuItems = await MenuItemModel.find({
+    _id: { $in: orderData.orderItems?.map((item) => item.menuItem) },
+    isAvailable: true,
+    shopId: orderData.shopId,
+  });
+
+  if (menuItems.length !== orderData.orderItems?.length) {
+    throw new Errors.BadRequestError(errMsg.MENU_ITEM_NOT_FOUND);
   }
+
+  const menuItemMap = new Map<string, IMenuItem>();
+  menuItems.forEach((m) => {
+    menuItemMap.set(m._id.toString(), m);
+  });
+
+  orderData.orderItems.forEach((item) => {
+    const menuItem = menuItemMap.get(item.menuItem.toString());
+    if (menuItem) {
+      item.price = menuItem.price;
+      item.discountPercentage = menuItem.discountPercentage;
+    }
+  });
+
+  const totalAmount = calculateOrderTotalAmount(orderData.orderItems);
 
   const newOrder = await Orders.create({
     ...orderData,
+    totalAmount,
   });
+  await newOrder.populate("orderItems.menuItem");
 
   return newOrder.toObject();
 }

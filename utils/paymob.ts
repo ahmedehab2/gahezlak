@@ -2,19 +2,19 @@ import axios, { AxiosError } from "axios";
 import { UnprocessableError } from "../errors/unprocessable-error";
 import { IPlan } from "../models/plan";
 import { IUser } from "../models/User";
+import { IOrder } from "../models/Order";
+import { IMenuItem } from "../models/MenuItem";
+import { logger } from "../config/pino";
 
 const PAYMOB_API_KEY = process.env.PAYMOB_API_KEY;
-const PAYMOB_IFRAME_ID = process.env.PAYMOB_IFRAME_ID;
 const PAYMOB_MOTO_INTEGRATION_ID = +process.env.PAYMOB_MOTO_INTEGRATION_ID!;
 const PAYMOB_DEFAULT_INTEGRATION_ID =
   +process.env.PAYMOB_DEFAULT_INTEGRATION_ID!;
 const PAYMOB_WALLET_INTEGRATION_ID = +process.env.PAYMOB_WALLET_INTEGRATION_ID!;
-const PAYMOB_HMAC_SECRET = process.env.PAYMOB_HMAC_SECRET;
+const PAYMOB_CASH_INTEGRATION_ID = +process.env.PAYMOB_CASH_INTEGRATION_ID!;
 const PAYMOB_SECRET_KEY = process.env.PAYMOB_SECRET_KEY;
 const PAYMOB_PUBLIC_KEY = process.env.PAYMOB_PUBLIC_KEY;
-const PAYMOB_MERCHANT_ID = process.env.PAYMOB_MERCHANT_ID;
 const WEBHOOK_URL = process.env.WEBHOOK_URL;
-
 const PAYMOB_BASE_URL = "https://accept.paymob.com";
 
 const frequencyMap = {
@@ -69,6 +69,8 @@ export async function createSubscriptionPlan({
         is_active: isActive,
         integration: PAYMOB_MOTO_INTEGRATION_ID,
         webhook_url: WEBHOOK_URL,
+        retrial_days: 3,
+        reminder_days: 3,
       },
       {
         headers: {
@@ -150,7 +152,7 @@ export async function createSubscriptionIntent({
     };
   } catch (error) {
     if (error instanceof AxiosError) {
-      console.log(error.response?.data);
+      logger.error(error.response?.data.message);
     }
     throw new UnprocessableError({
       ar: "خطأ في إنشاء صفحة الاشتراك في paymob",
@@ -159,13 +161,75 @@ export async function createSubscriptionIntent({
   }
 }
 
+export async function createPaymentIntent({
+  order,
+  customer,
+}: {
+  order: IOrder;
+  customer: {
+    first_name: string;
+    last_name: string;
+    phone_number: string;
+  };
+}) {
+  const paymentIntent = await axios.post(
+    `${PAYMOB_BASE_URL}/v1/intention`,
+    {
+      currency: "EGP",
+      amount: order.totalAmount * 100, //cents
+      payment_methods: [
+        PAYMOB_DEFAULT_INTEGRATION_ID,
+        PAYMOB_CASH_INTEGRATION_ID,
+        PAYMOB_WALLET_INTEGRATION_ID,
+      ],
+      items: order.orderItems.map((item) => ({
+        name:
+          (item.menuItem as IMenuItem).name.en ||
+          (item.menuItem as IMenuItem).name.ar,
+        description:
+          (item.menuItem as IMenuItem).description?.en ||
+          (item.menuItem as IMenuItem).description?.ar,
+        amount:
+          (item.price - (item.price * item.discountPercentage) / 100) * 100, //cents
+        quantity: item.quantity,
+      })),
+      billing_data: {
+        phone_number: customer.phone_number,
+        first_name: customer.first_name,
+        last_name: customer.last_name,
+      },
+      customer: {
+        first_name: customer.first_name,
+        last_name: customer.last_name,
+        phone_number: customer.phone_number,
+      },
+      special_reference: order._id.toString(),
+      extras: {
+        orderId: order._id.toString(),
+      },
+    },
+    {
+      headers: {
+        Authorization: `Token ${PAYMOB_SECRET_KEY}`,
+      },
+    }
+  );
+
+  const iframeUrl = ` https://accept.paymob.com/unifiedcheckout/?publicKey=${PAYMOB_PUBLIC_KEY}&clientSecret=${paymentIntent.data.client_secret}`;
+
+  return {
+    iframeUrl,
+    paymobPayment: paymentIntent.data,
+  };
+}
 //cancle subscription
 
-export async function cancelSubscription(subscriptionId: string) {
+export async function cancelPaymobSubscription(paymobSubscriptionId: number) {
   const token = await paymobLogin();
 
   const cancelSubscription = await axios.post(
-    `${PAYMOB_BASE_URL}/api/acceptance/subscriptions/${subscriptionId}/cancel`,
+    `${PAYMOB_BASE_URL}/api/acceptance/subscriptions/${paymobSubscriptionId}/cancel`,
+    {},
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -174,4 +238,20 @@ export async function cancelSubscription(subscriptionId: string) {
   );
 
   return cancelSubscription.data;
+}
+
+export async function refundOrder(transactionId: string) {
+  const refundOrder = await axios.post(
+    `${PAYMOB_BASE_URL}/api/acceptance/void_refund/void`,
+    {
+      transaction_id: transactionId,
+    },
+    {
+      headers: {
+        Authorization: `Token ${PAYMOB_SECRET_KEY}`,
+      },
+    }
+  );
+
+  return refundOrder.data;
 }

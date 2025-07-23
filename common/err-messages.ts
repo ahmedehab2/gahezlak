@@ -65,8 +65,8 @@ enum errorMessage {
   CANNOT_UPDATE_OWNER_ROLE = "CANNOT_UPDATE_OWNER_ROLE",
   NOT_ALLOWED_ACTION = "NOT_ALLOWED_ACTION",
   USER_ALREADY_HAS_SHOP = "USER_ALREADY_HAS_SHOP",
-  ROUTE_NOT_FOUND = "ROUTE_NOT_FOUND",
   INVALID_HMAC_SIGNATURE = "INVALID_HMAC_SIGNATURE",
+  TRIAL_USED = "TRIAL_USED",
 }
 
 export const errMsg: {
@@ -284,10 +284,7 @@ export const errMsg: {
     en: "Failed to upload image",
     ar: "فشل تحميل الصورة",
   },
-  ROUTE_NOT_FOUND: {
-    en: "Route not found",
-    ar: "الرابط غير موجود",
-  },
+
   MEMBER_ALREADY_EXISTS: {
     en: "User is already a member of this shop.",
     ar: "المستخدم عضو بالفعل في هذا المتجر.",
@@ -323,5 +320,9 @@ export const errMsg: {
   USER_ALREADY_HAS_SHOP: {
     en: "User already has a shop",
     ar: "المستخدم لديه متجر بالفعل",
+  },
+  TRIAL_USED: {
+    en: "Trial used",
+    ar: "تم استخدام فترة التجربة",
   },
 };

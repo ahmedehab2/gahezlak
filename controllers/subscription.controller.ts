@@ -7,6 +7,8 @@ import { Subscriptions, SubscriptionStatus } from "../models/Subscription";
 import { Users } from "../models/User";
 import { SuccessResponse } from "../common/types/contoller-response.types";
 import * as subscriptionService from "../services/subscription.service";
+import { ObjectId } from "mongoose";
+import { getUserById } from "../services/user.service";
 // import * as subscriptionService from "../services/subscription.service";
 
 export const createSubscriptionHandler: RequestHandler<
@@ -21,37 +23,31 @@ export const createSubscriptionHandler: RequestHandler<
   const { planId } = req.body;
   const userId = req.user?.userId;
 
-  const user = await Users.findById(userId).lean();
+  const user = await getUserById(userId!);
   if (!user) {
     throw new Errors.NotFoundError(errMsg.USER_NOT_FOUND);
   }
   if (!user.shop) {
-    throw new Errors.BadRequestError({
-      en: "User does not have a shop",
-      ar: "المستخدم لا يملك متجر",
-    });
+    throw new Errors.BadRequestError(errMsg.USER_HAS_NO_SHOP);
   }
 
-  // Check if user has an active subscription
-  const existingSubscription = await Subscriptions.findOne({
-    userId: user._id,
-    status: { $in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING] },
-  });
-
-  if (existingSubscription) {
-    throw new Errors.BadRequestError({
-      en: "User already has an active subscription",
-      ar: "المستخدم لديه اشتراك نشط بالفعل",
-    });
-  }
   const plan = await planService.getPlanById(planId);
 
-  const { iframeUrl, paymobSubscription } = await createSubscriptionIntent({
+  const { effectiveTrialDays } =
+    await subscriptionService.createOrUpdatePendingSubscription({
+      shopId: user.shop.toString(),
+      userId: user._id.toString(),
+      plan,
+    });
+
+  const { iframeUrl } = await createSubscriptionIntent({
     plan,
     user,
-    trialDays: plan.trialPeriodDays,
+    trialDays: effectiveTrialDays,
     extras: {
       shopId: user.shop.toString(),
+      userId: user._id.toString(),
+      planId: plan._id.toString(),
     },
   });
 

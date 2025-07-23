@@ -3,26 +3,34 @@ import { validate } from "../middlewares/validators";
 import { OrderStatus } from "../models/Order";
 
 export const validateCreateOrder = [
-  body("shopName").isString().withMessage("Invalid shopName"),
+  body("shopName")
+    .isString()
+    .withMessage("Invalid shopName")
+    .isLength({ min: 1 })
+    .withMessage("shopName must be at least 1 character"),
   body("tableNumber")
     .optional()
     .isInt({ min: 1 })
     .withMessage("tableNumber must be a positive integer"),
-  body("totalAmount")
-    .isFloat({ min: 0 })
-    .withMessage("Total amount must be a non-negative number"),
   body("orderItems")
     .isArray({ min: 1 })
     .withMessage("Order items must be a non-empty array"),
-  body("orderItems.*.menuItemId").isMongoId().withMessage("Invalid menuItemId"),
+  body("orderItems.*.menuItem").isMongoId().withMessage("Invalid menuItemId"),
   body("orderItems.*.quantity")
     .isInt({ min: 1 })
     .withMessage("Quantity must be at least 1"),
   body("orderItems.*.customizationDetails").optional().isString(),
-  body("orderItems.*.price")
-    .isFloat({ min: 0 })
-    .withMessage("Price must be a positive number"),
-  body("customerName").isString().withMessage("Invalid customerName"),
+
+  body("customerFirstName")
+    .isString()
+    .withMessage("Invalid customerFirstName")
+    .isLength({ min: 3 })
+    .withMessage("customerFirstName must be at least 3 character"),
+  body("customerLastName")
+    .isString()
+    .withMessage("Invalid customerLastName")
+    .isLength({ min: 3 })
+    .withMessage("customerLastName must be at least 3 character"),
   body("customerPhoneNumber")
     .isString()
     .withMessage("Invalid customerPhoneNumber"),
