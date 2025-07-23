@@ -32,7 +32,7 @@ export const getMenuItemById = async (
   const menuItem = await MenuItemModel.findOne({ _id: itemId, shopId }).lean();
   if (!menuItem) throw new Errors.NotFoundError(errMsg.MENU_ITEM_NOT_FOUND);
 
-  return menuItem;
+  return menuItem as unknown as IMenuItem;
 };
 
 export const deleteMenuItem = async (shopId: string, itemId: string) => {
@@ -47,7 +47,7 @@ export const deleteMenuItem = async (shopId: string, itemId: string) => {
     { $pull: { menuItems: itemId } }
   );
 
-  return menuItem;
+  return menuItem as unknown as IMenuItem;
 };
 
 export const toggleItemAvailability = async (
@@ -106,5 +106,5 @@ export async function getMenuItemsByShop({
   const menuItems = await MenuItemModel.find(query, {
     shopId: 0, // exclude shopId from the response
   }).lean();
-  return menuItems;
+  return menuItems as unknown as IMenuItem[];
 }

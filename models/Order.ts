@@ -65,7 +65,8 @@ const OrderSchema = new Schema<IOrder>(
   }
 );
 
-export const Orders = mongoose.model<IOrder>(
-  collectionsName.ORDERS,
-  OrderSchema
-);
+export const Orders = mongoose.models[collectionsName.ORDERS] || 
+  mongoose.model<IOrder>(
+    collectionsName.ORDERS,
+    OrderSchema
+  );

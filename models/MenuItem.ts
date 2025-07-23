@@ -76,4 +76,5 @@ const MenuItemSchema = new Schema<IMenuItem>({
 });
 
 
-export const MenuItemModel = mongoose.model<IMenuItem>(collectionsName.MENU_ITEMS, MenuItemSchema);
+export const MenuItemModel = mongoose.models[collectionsName.MENU_ITEMS] || 
+  mongoose.model<IMenuItem>(collectionsName.MENU_ITEMS, MenuItemSchema);
