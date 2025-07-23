@@ -1,554 +1,552 @@
-import { RequestHandler } from "express";
-import { SuccessResponse } from "../common/types/contoller-response.types";
-import { 
-  AllergyFilterService, 
-  AllergyFilterRequest, 
-  AllergyFilterResponse 
-} from "../services/ai/allergy-filter.service";
-import { 
-  SmartSearchService, 
-  SmartSearchRequest, 
-  SmartSearchResponse 
-} from "../services/ai/smart-search.service";
+// import { RequestHandler } from "express";
+// import { SuccessResponse } from "../common/types/contoller-response.types";
+// import {
+//   AllergyFilterService,
+//   AllergyFilterRequest,
+//   AllergyFilterResponse
+// } from "../services/ai/allergy-filter.service";
+// import {
+//   SmartSearchService,
+//   SmartSearchRequest,
+//   SmartSearchResponse
+// } from "../services/ai/smart-search.service";
 
-import { 
-  HealthInsightsService, 
-  HealthInsightRequest, 
-  HealthInsightResponse 
-} from "../services/ai/health-insights.service";
-import { IMenuItem, MenuItemModel } from "../models/MenuItem";
-import mongoose from "mongoose";
-import { LanguageDetectorService } from "../services/ai/language-detector.service";
-import { AIMenuDataModel } from "../models/AIMenuData";
-import { extractMenuFromFile } from '../services/ai/vision-extract.service';
+// import {
+//   HealthInsightsService,
+//   HealthInsightRequest,
+//   HealthInsightResponse
+// } from "../services/ai/health-insights.service";
+// import { IMenuItem, MenuItemModel } from "../models/MenuItem";
+// import mongoose from "mongoose";
+// import { LanguageDetectorService } from "../services/ai/language-detector.service";
+// import { AIMenuDataModel } from "../models/AIMenuData";
+// // import { extractMenuFromFile } from '../services/ai/vision-extract.service';
 
-/**
- * Filter menu items based on allergies and dietary restrictions
- */
-export const allergyFilterHandler: RequestHandler<
-  unknown,
-  SuccessResponse<AllergyFilterResponse>,
-  { query: string; includeOutOfStock?: boolean }
-> = async (req, res) => {
-  const shopId = req.user?.shopId!;
-  const { query, includeOutOfStock = false } = req.body;
+// /**
+//  * Filter menu items based on allergies and dietary restrictions
+//  */
+// export const allergyFilterHandler: RequestHandler<
+//   unknown,
+//   SuccessResponse<AllergyFilterResponse>,
+//   { query: string; includeOutOfStock?: boolean }
+// > = async (req, res) => {
+//   const shopId = req.user?.shopId!;
+//   const { query, includeOutOfStock = false } = req.body;
 
-  const filterRequest: AllergyFilterRequest = {
-    query,
-    shopId,
-    includeOutOfStock
-  };
+//   const filterRequest: AllergyFilterRequest = {
+//     query,
+//     shopId,
+//     includeOutOfStock
+//   };
 
-  const result = await AllergyFilterService.filterMenuItems(filterRequest);
+//   const result = await AllergyFilterService.filterMenuItems(filterRequest);
 
-  res.status(200).json({
-    message: "Menu items filtered successfully",
-    data: result,
-  });
-};
+//   res.status(200).json({
+//     message: "Menu items filtered successfully",
+//     data: result,
+//   });
+// };
 
-/**
- * Smart search for menu items using natural language
- */
-export const smartSearchHandler: RequestHandler<
-  unknown,
-  SuccessResponse<SmartSearchResponse>,
-  { query: string; limit?: number; includeOutOfStock?: boolean }
-> = async (req, res) => {
-  const shopId = req.user?.shopId!;
-  const { query, limit = 20, includeOutOfStock = false } = req.body;
+// /**
+//  * Smart search for menu items using natural language
+//  */
+// export const smartSearchHandler: RequestHandler<
+//   unknown,
+//   SuccessResponse<SmartSearchResponse>,
+//   { query: string; limit?: number; includeOutOfStock?: boolean }
+// > = async (req, res) => {
+//   const shopId = req.user?.shopId!;
+//   const { query, limit = 20, includeOutOfStock = false } = req.body;
 
-  const searchRequest: SmartSearchRequest = {
-    query,
-    shopId,
-    limit,
-    includeOutOfStock
-  };
+//   const searchRequest: SmartSearchRequest = {
+//     query,
+//     shopId,
+//     limit,
+//     includeOutOfStock
+//   };
 
-  const result = await SmartSearchService.searchMenuItems(searchRequest);
+//   const result = await SmartSearchService.searchMenuItems(searchRequest);
 
-  res.status(200).json({
-    message: "Smart search completed",
-    data: result,
-  });
-};
+//   res.status(200).json({
+//     message: "Smart search completed",
+//     data: result,
+//   });
+// };
 
+// /**
+//  * Process a menu item for AI data extraction
+//  */
+// export const processMenuItemHandler: RequestHandler<
+//   { itemId: string },
+//   SuccessResponse<{ processed: boolean; message: string }>,
+//   unknown
+// > = async (req, res) => {
+//   const shopId = req.user?.shopId!;
+//   const { itemId } = req.params;
 
+//   // Get the menu item
+//   const menuItem = await MenuItemModel.findOne({
+//     _id: itemId,
+//     shopId
+//   }).lean();
 
-/**
- * Process a menu item for AI data extraction
- */
-export const processMenuItemHandler: RequestHandler<
-  { itemId: string },
-  SuccessResponse<{ processed: boolean; message: string }>,
-  unknown
-> = async (req, res) => {
-  const shopId = req.user?.shopId!;
-  const { itemId } = req.params;
+//   if (!menuItem) {
+//     res.status(404).json({
+//       message: "Menu item not found",
+//       data: { processed: false, message: "Menu item not found" }
+//     });
+//     return;
+//   }
 
-  // Get the menu item
-  const menuItem = await MenuItemModel.findOne({
-    _id: itemId,
-    shopId
-  }).lean();
+//   // Process with AI
+//   await AllergyFilterService.processMenuItemForAI(menuItem as unknown as IMenuItem);
 
-  if (!menuItem) {
-    res.status(404).json({
-      message: "Menu item not found",
-      data: { processed: false, message: "Menu item not found" }
-    });
-    return;
-  }
+//   res.status(200).json({
+//     message: "Menu item processed successfully",
+//     data: { processed: true, message: "AI data extracted and stored" },
+//   });
+// };
 
-  // Process with AI
-  await AllergyFilterService.processMenuItemForAI(menuItem as unknown as IMenuItem);
+// /**
+//  * Batch process multiple menu items
+//  */
+// export const batchProcessMenuItemsHandler: RequestHandler<
+//   unknown,
+//   SuccessResponse<{
+//     processed: number;
+//     failed: number;
+//     total: number;
+//     details: string[];
+//   }>,
+//   { itemIds?: string[]; processAll?: boolean }
+// > = async (req, res) => {
+//   const shopId = req.user?.shopId!;
+//   const { itemIds, processAll = false } = req.body;
 
-  res.status(200).json({
-    message: "Menu item processed successfully",
-    data: { processed: true, message: "AI data extracted and stored" },
-  });
-};
+//   let menuItems: IMenuItem[];
 
-/**
- * Batch process multiple menu items
- */
-export const batchProcessMenuItemsHandler: RequestHandler<
-  unknown,
-  SuccessResponse<{ 
-    processed: number; 
-    failed: number; 
-    total: number;
-    details: string[];
-  }>,
-  { itemIds?: string[]; processAll?: boolean }
-> = async (req, res) => {
-  const shopId = req.user?.shopId!;
-  const { itemIds, processAll = false } = req.body;
+//   if (processAll) {
+//     // Process all menu items for the shop
+//     const results = await MenuItemModel.find({
+//       shopId: new mongoose.Types.ObjectId(shopId)
+//     }).lean();
+//     menuItems = results as unknown as IMenuItem[];
+//   } else if (itemIds && itemIds.length > 0) {
+//     // Process specific items
+//     const results = await MenuItemModel.find({
+//       _id: { $in: itemIds.map(id => new mongoose.Types.ObjectId(id)) },
+//       shopId: new mongoose.Types.ObjectId(shopId)
+//     }).lean();
+//     menuItems = results as unknown as IMenuItem[];
+//   } else {
+//     res.status(400).json({
+//       message: "Either provide itemIds or set processAll to true",
+//       data: { processed: 0, failed: 0, total: 0, details: [] }
+//     });
+//     return;
+//   }
 
-  let menuItems: IMenuItem[];
-  
-  if (processAll) {
-    // Process all menu items for the shop
-    const results = await MenuItemModel.find({ 
-      shopId: new mongoose.Types.ObjectId(shopId) 
-    }).lean();
-    menuItems = results as unknown as IMenuItem[];
-  } else if (itemIds && itemIds.length > 0) {
-    // Process specific items
-    const results = await MenuItemModel.find({
-      _id: { $in: itemIds.map(id => new mongoose.Types.ObjectId(id)) },
-      shopId: new mongoose.Types.ObjectId(shopId)
-    }).lean();
-    menuItems = results as unknown as IMenuItem[];
-  } else {
-    res.status(400).json({
-      message: "Either provide itemIds or set processAll to true",
-      data: { processed: 0, failed: 0, total: 0, details: [] }
-    });
-    return;
-  }
+//   let processed = 0;
+//   let failed = 0;
+//   const details: string[] = [];
 
-  let processed = 0;
-  let failed = 0;
-  const details: string[] = [];
+//   // Process items one by one to avoid overwhelming the API
+//   for (const menuItem of menuItems) {
+//     try {
+//       await AllergyFilterService.processMenuItemForAI(menuItem as IMenuItem);
+//       processed++;
+//       details.push(`Processed: ${menuItem.name.en}`);
+//     } catch (error) {
+//       failed++;
+//       details.push(`Failed: ${menuItem.name.en} - ${(error as Error).message}`);
+//     }
 
-  // Process items one by one to avoid overwhelming the API
-  for (const menuItem of menuItems) {
-    try {
-      await AllergyFilterService.processMenuItemForAI(menuItem as IMenuItem);
-      processed++;
-      details.push(`Processed: ${menuItem.name.en}`);
-    } catch (error) {
-      failed++;
-      details.push(`Failed: ${menuItem.name.en} - ${(error as Error).message}`);
-    }
-    
-    // Small delay to avoid rate limiting
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
+//     // Small delay to avoid rate limiting
+//     await new Promise(resolve => setTimeout(resolve, 100));
+//   }
 
-  res.status(200).json({
-    message: `Batch processing completed: ${processed} processed, ${failed} failed`,
-    data: {
-      processed,
-      failed,
-      total: menuItems.length,
-      details: details.slice(0, 20) // Limit details to first 20 items
-    },
-  });
-};
+//   res.status(200).json({
+//     message: `Batch processing completed: ${processed} processed, ${failed} failed`,
+//     data: {
+//       processed,
+//       failed,
+//       total: menuItems.length,
+//       details: details.slice(0, 20) // Limit details to first 20 items
+//     },
+//   });
+// };
 
-/**
- * Get health-based menu recommendations
- */
-export const healthInsightsHandler: RequestHandler<
-  unknown,
-  SuccessResponse<HealthInsightResponse>,
-  { query: string; limit?: number; includeOutOfStock?: boolean }
-> = async (req, res) => {
-  const shopId = req.user?.shopId!;
-  const { query, limit = 15, includeOutOfStock = false } = req.body;
+// /**
+//  * Get health-based menu recommendations
+//  */
+// export const healthInsightsHandler: RequestHandler<
+//   unknown,
+//   SuccessResponse<HealthInsightResponse>,
+//   { query: string; limit?: number; includeOutOfStock?: boolean }
+// > = async (req, res) => {
+//   const shopId = req.user?.shopId!;
+//   const { query, limit = 15, includeOutOfStock = false } = req.body;
 
-  const healthRequest: HealthInsightRequest = {
-    query,
-    shopId,
-    limit,
-    includeOutOfStock
-  };
+//   const healthRequest: HealthInsightRequest = {
+//     query,
+//     shopId,
+//     limit,
+//     includeOutOfStock
+//   };
 
-  const result = await HealthInsightsService.getHealthInsights(healthRequest);
+//   const result = await HealthInsightsService.getHealthInsights(healthRequest);
 
-  res.status(200).json({
-    message: "Health insights generated successfully",
-    data: result,
-  });
-};
+//   res.status(200).json({
+//     message: "Health insights generated successfully",
+//     data: result,
+//   });
+// };
 
-/**
- * Get recommendations for specific health condition
- */
-export const conditionRecommendationsHandler: RequestHandler<
-  { condition: string },
-  SuccessResponse<{ recommendations: any[]; condition: string; guidance: string }>,
-  { limit?: number }
-> = async (req, res) => {
-  const shopId = req.user?.shopId!;
-  const { condition } = req.params;
-  const { limit = 10 } = req.body;
+// /**
+//  * Get recommendations for specific health condition
+//  */
+// export const conditionRecommendationsHandler: RequestHandler<
+//   { condition: string },
+//   SuccessResponse<{ recommendations: any[]; condition: string; guidance: string }>,
+//   { limit?: number }
+// > = async (req, res) => {
+//   const shopId = req.user?.shopId!;
+//   const { condition } = req.params;
+//   const { limit = 10 } = req.body;
 
-  const recommendations = await HealthInsightsService.getConditionSpecificRecommendations(
-    condition,
-    shopId,
-    limit
-  );
+//   const recommendations = await HealthInsightsService.getConditionSpecificRecommendations(
+//     condition,
+//     shopId,
+//     limit
+//   );
 
-  // Get condition guidance
-  const conditionData = (HealthInsightsService as any).HEALTH_CONDITIONS[condition];
-  const guidance = conditionData?.guidance || 'No specific guidance available for this condition';
+//   // Get condition guidance
+//   const conditionData = (HealthInsightsService as any).HEALTH_CONDITIONS[condition];
+//   const guidance = conditionData?.guidance || 'No specific guidance available for this condition';
 
-  res.status(200).json({
-    message: `Recommendations for ${condition} generated`,
-    data: {
-      recommendations,
-      condition,
-      guidance
-    },
-  });
-}; 
+//   res.status(200).json({
+//     message: `Recommendations for ${condition} generated`,
+//     data: {
+//       recommendations,
+//       condition,
+//       guidance
+//     },
+//   });
+// };
 
-/**
- * Super endpoint: Combines allergy filter, health insights, and smart search
- */
-export const superSearchHandler: RequestHandler<
-  unknown,
-  SuccessResponse<any>,
-  { query: string; shopId?: string; limit?: number; includeOutOfStock?: boolean }
-> = async (req, res) => {
-  // Use shopId from user or body
-  const shopId = req.user?.shopId || req.body.shopId;
-  const { query, limit = 20, includeOutOfStock = false } = req.body;
+// /**
+//  * Super endpoint: Combines allergy filter, health insights, and smart search
+//  */
+// export const superSearchHandler: RequestHandler<
+//   unknown,
+//   SuccessResponse<any>,
+//   { query: string; shopId?: string; limit?: number; includeOutOfStock?: boolean }
+// > = async (req, res) => {
+//   // Use shopId from user or body
+//   const shopId = req.user?.shopId || req.body.shopId;
+//   const { query, limit = 20, includeOutOfStock = false } = req.body;
 
-  // 1. Extract allergies, health conditions, and search criteria
-  const [extracted, healthParsed, searchParsed] = await Promise.all([
-    AllergyFilterService.extractAllergiesFromQuery(query),
-    HealthInsightsService.parseHealthQuery(query),
-    SmartSearchService.parseSearchQuery(query)
-  ]);
-  const allAllergies = [...(extracted.allergies || []), ...(extracted.dietaryRestrictions || [])];
-  const healthConditions = healthParsed.conditions || [];
-  const detectedLanguage = LanguageDetectorService.detectLanguage(query);
+//   // 1. Extract allergies, health conditions, and search criteria
+//   const [extracted, healthParsed, searchParsed] = await Promise.all([
+//     AllergyFilterService.extractAllergiesFromQuery(query),
+//     HealthInsightsService.parseHealthQuery(query),
+//     SmartSearchService.parseSearchQuery(query)
+//   ]);
+//   const allAllergies = [...(extracted.allergies || []), ...(extracted.dietaryRestrictions || [])];
+//   const healthConditions = healthParsed.conditions || [];
+//   const detectedLanguage = LanguageDetectorService.detectLanguage(query);
 
-  // 2. Get all menu items for the shop
-  const menuItemQuery: any = { shopId: new mongoose.Types.ObjectId(shopId) };
-  if (!includeOutOfStock) menuItemQuery.isAvailable = true;
-  const allMenuItems = await MenuItemModel.find(menuItemQuery).lean() as unknown as IMenuItem[];
+//   // 2. Get all menu items for the shop
+//   const menuItemQuery: any = { shopId: new mongoose.Types.ObjectId(shopId) };
+//   if (!includeOutOfStock) menuItemQuery.isAvailable = true;
+//   const allMenuItems = await MenuItemModel.find(menuItemQuery).lean() as unknown as IMenuItem[];
 
-  // 3. Get AI data for menu items
-  const menuItemIds = allMenuItems.map(item => item._id);
-  const aiDataList = await AIMenuDataModel.find({ menuItemId: { $in: menuItemIds } }).lean();
-  const aiDataMap = new Map<string, any>();
-  aiDataList.forEach(data => { aiDataMap.set(data.menuItemId.toString(), data); });
+//   // 3. Get AI data for menu items
+//   const menuItemIds = allMenuItems.map(item => item._id);
+//   const aiDataList = await AIMenuDataModel.find({ menuItemId: { $in: menuItemIds } }).lean();
+//   const aiDataMap = new Map<string, any>();
+//   aiDataList.forEach(data => { aiDataMap.set(data.menuItemId.toString(), data); });
 
-  // 4. Filter for allergies, health, and search, tracking exclusions
-  const safeItems: IMenuItem[] = [];
-  const unsafeItems: IMenuItem[] = [];
-  const excludedItems: { item: IMenuItem, reasons: string[] }[] = [];
+//   // 4. Filter for allergies, health, and search, tracking exclusions
+//   const safeItems: IMenuItem[] = [];
+//   const unsafeItems: IMenuItem[] = [];
+//   const excludedItems: { item: IMenuItem, reasons: string[] }[] = [];
 
-  for (const menuItem of allMenuItems) {
-    const aiData = aiDataMap.get(menuItem._id.toString());
-    const reasons: string[] = [];
-    const descriptionText = `${menuItem.name.en} ${menuItem.description?.en || ''}`.toLowerCase();
-    // Allergy check
-    let hasAllergen = false;
-    if (allAllergies.length > 0) {
-      hasAllergen = allAllergies.some(allergy => {
-        let hasInAI = false;
-        if (aiData && (aiData.allergens?.length || aiData.ingredients?.length)) {
-          hasInAI = [...(aiData.allergens || []), ...(aiData.ingredients || [])].some(itemAllergen =>
-            itemAllergen.toLowerCase().includes(allergy.toLowerCase()) ||
-            allergy.toLowerCase().includes(itemAllergen.toLowerCase())
-          );
-        }
-        const hasInDescription = new RegExp(`\\b${allergy.toLowerCase()}\\b`, 'i').test(descriptionText);
-        const allergyVariations = AllergyFilterService.getAllergyVariations(allergy);
-        const hasVariation = allergyVariations.some(variation =>
-          new RegExp(`\\b${variation.toLowerCase()}\\b`, 'i').test(descriptionText)
-        );
-        if (hasInAI || hasInDescription || hasVariation) {
-          reasons.push(`contains allergen: ${allergy}`);
-          return true;
-        }
-        return false;
-      });
-    }
-    // Health check
-    let healthUnsuitable = false;
-    if (!hasAllergen && healthConditions.length > 0 && aiData) {
-      for (const condition of healthConditions) {
-        const conditionData = (HealthInsightsService as any).HEALTH_CONDITIONS[condition];
-        if (conditionData) {
-          // Check for harmful ingredients
-          const harmfulIngredients = aiData.ingredients?.filter((ingredient: string) =>
-            conditionData.avoid.some((avoid: string) => ingredient.includes(avoid))
-          ) || [];
-          if (harmfulIngredients.length > 0) {
-            reasons.push(`not suitable for ${condition}: contains ${harmfulIngredients.join(', ')}`);
-            healthUnsuitable = true;
-          }
-        }
-      }
-    }
-    // Smart search check (keywords, price, dietary)
-    let searchMismatch = false;
-    if (!hasAllergen && !healthUnsuitable && searchParsed) {
-      // Price
-      if (searchParsed.priceRange) {
-        if (searchParsed.priceRange.min !== undefined && menuItem.price < searchParsed.priceRange.min) {
-          reasons.push(`price below minimum: ${searchParsed.priceRange.min}`);
-          searchMismatch = true;
-        }
-        if (searchParsed.priceRange.max !== undefined && menuItem.price > searchParsed.priceRange.max) {
-          reasons.push(`price above maximum: ${searchParsed.priceRange.max}`);
-          searchMismatch = true;
-        }
-      }
-      // Keywords
-      if (searchParsed.keywords && searchParsed.keywords.length > 0) {
-        const itemText = `${menuItem.name.en} ${menuItem.name.ar} ${menuItem.description?.en} ${menuItem.description?.ar}`.toLowerCase();
-        const hasKeyword = searchParsed.keywords.some(keyword => itemText.includes(keyword.toLowerCase()));
-        if (!hasKeyword) {
-          reasons.push(`does not match keywords: ${searchParsed.keywords.join(', ')}`);
-          searchMismatch = true;
-        }
-      }
-      // Dietary requirements
-      if (searchParsed.dietaryRequirements && searchParsed.dietaryRequirements.length > 0 && aiData) {
-        const hasDietaryMatch = searchParsed.dietaryRequirements.some(req =>
-          aiData.dietaryTags?.includes(req)
-        );
-        if (!hasDietaryMatch) {
-          reasons.push(`does not match dietary requirements: ${searchParsed.dietaryRequirements.join(', ')}`);
-          searchMismatch = true;
-        }
-      }
-      // Exclude ingredients
-      if (searchParsed.excludeIngredients && searchParsed.excludeIngredients.length > 0 && aiData) {
-        const hasExcluded = searchParsed.excludeIngredients.some(excluded =>
-          aiData.ingredients?.some((ingredient: string) => ingredient.includes(excluded)) ||
-          aiData.allergens?.some((allergen: string) => allergen.includes(excluded))
-        );
-        if (hasExcluded) {
-          reasons.push(`contains excluded ingredient: ${searchParsed.excludeIngredients.join(', ')}`);
-          searchMismatch = true;
-        }
-      }
-    }
-    // Final categorization
-    if (hasAllergen) {
-      unsafeItems.push(menuItem);
-      excludedItems.push({ item: menuItem, reasons });
-    } else if (healthUnsuitable) {
-      excludedItems.push({ item: menuItem, reasons });
-    } else if (searchMismatch) {
-      excludedItems.push({ item: menuItem, reasons });
-    } else {
-      safeItems.push(menuItem);
-    }
-  }
+//   for (const menuItem of allMenuItems) {
+//     const aiData = aiDataMap.get(menuItem._id.toString());
+//     const reasons: string[] = [];
+//     const descriptionText = `${menuItem.name.en} ${menuItem.description?.en || ''}`.toLowerCase();
+//     // Allergy check
+//     let hasAllergen = false;
+//     if (allAllergies.length > 0) {
+//       hasAllergen = allAllergies.some(allergy => {
+//         let hasInAI = false;
+//         if (aiData && (aiData.allergens?.length || aiData.ingredients?.length)) {
+//           hasInAI = [...(aiData.allergens || []), ...(aiData.ingredients || [])].some(itemAllergen =>
+//             itemAllergen.toLowerCase().includes(allergy.toLowerCase()) ||
+//             allergy.toLowerCase().includes(itemAllergen.toLowerCase())
+//           );
+//         }
+//         const hasInDescription = new RegExp(`\\b${allergy.toLowerCase()}\\b`, 'i').test(descriptionText);
+//         const allergyVariations = AllergyFilterService.getAllergyVariations(allergy);
+//         const hasVariation = allergyVariations.some(variation =>
+//           new RegExp(`\\b${variation.toLowerCase()}\\b`, 'i').test(descriptionText)
+//         );
+//         if (hasInAI || hasInDescription || hasVariation) {
+//           reasons.push(`contains allergen: ${allergy}`);
+//           return true;
+//         }
+//         return false;
+//       });
+//     }
+//     // Health check
+//     let healthUnsuitable = false;
+//     if (!hasAllergen && healthConditions.length > 0 && aiData) {
+//       for (const condition of healthConditions) {
+//         const conditionData = (HealthInsightsService as any).HEALTH_CONDITIONS[condition];
+//         if (conditionData) {
+//           // Check for harmful ingredients
+//           const harmfulIngredients = aiData.ingredients?.filter((ingredient: string) =>
+//             conditionData.avoid.some((avoid: string) => ingredient.includes(avoid))
+//           ) || [];
+//           if (harmfulIngredients.length > 0) {
+//             reasons.push(`not suitable for ${condition}: contains ${harmfulIngredients.join(', ')}`);
+//             healthUnsuitable = true;
+//           }
+//         }
+//       }
+//     }
+//     // Smart search check (keywords, price, dietary)
+//     let searchMismatch = false;
+//     if (!hasAllergen && !healthUnsuitable && searchParsed) {
+//       // Price
+//       if (searchParsed.priceRange) {
+//         if (searchParsed.priceRange.min !== undefined && menuItem.price < searchParsed.priceRange.min) {
+//           reasons.push(`price below minimum: ${searchParsed.priceRange.min}`);
+//           searchMismatch = true;
+//         }
+//         if (searchParsed.priceRange.max !== undefined && menuItem.price > searchParsed.priceRange.max) {
+//           reasons.push(`price above maximum: ${searchParsed.priceRange.max}`);
+//           searchMismatch = true;
+//         }
+//       }
+//       // Keywords
+//       if (searchParsed.keywords && searchParsed.keywords.length > 0) {
+//         const itemText = `${menuItem.name.en} ${menuItem.name.ar} ${menuItem.description?.en} ${menuItem.description?.ar}`.toLowerCase();
+//         const hasKeyword = searchParsed.keywords.some(keyword => itemText.includes(keyword.toLowerCase()));
+//         if (!hasKeyword) {
+//           reasons.push(`does not match keywords: ${searchParsed.keywords.join(', ')}`);
+//           searchMismatch = true;
+//         }
+//       }
+//       // Dietary requirements
+//       if (searchParsed.dietaryRequirements && searchParsed.dietaryRequirements.length > 0 && aiData) {
+//         const hasDietaryMatch = searchParsed.dietaryRequirements.some(req =>
+//           aiData.dietaryTags?.includes(req)
+//         );
+//         if (!hasDietaryMatch) {
+//           reasons.push(`does not match dietary requirements: ${searchParsed.dietaryRequirements.join(', ')}`);
+//           searchMismatch = true;
+//         }
+//       }
+//       // Exclude ingredients
+//       if (searchParsed.excludeIngredients && searchParsed.excludeIngredients.length > 0 && aiData) {
+//         const hasExcluded = searchParsed.excludeIngredients.some(excluded =>
+//           aiData.ingredients?.some((ingredient: string) => ingredient.includes(excluded)) ||
+//           aiData.allergens?.some((allergen: string) => allergen.includes(excluded))
+//         );
+//         if (hasExcluded) {
+//           reasons.push(`contains excluded ingredient: ${searchParsed.excludeIngredients.join(', ')}`);
+//           searchMismatch = true;
+//         }
+//       }
+//     }
+//     // Final categorization
+//     if (hasAllergen) {
+//       unsafeItems.push(menuItem);
+//       excludedItems.push({ item: menuItem, reasons });
+//     } else if (healthUnsuitable) {
+//       excludedItems.push({ item: menuItem, reasons });
+//     } else if (searchMismatch) {
+//       excludedItems.push({ item: menuItem, reasons });
+//     } else {
+//       safeItems.push(menuItem);
+//     }
+//   }
 
-  // Health advice
-  let healthAdvice = '';
-  if (healthConditions.length > 0) {
-    healthAdvice = await HealthInsightsService.generateNutritionalGuidance(healthParsed, detectedLanguage);
-  }
+//   // Health advice
+//   let healthAdvice = '';
+//   if (healthConditions.length > 0) {
+//     healthAdvice = await HealthInsightsService.generateNutritionalGuidance(healthParsed, detectedLanguage);
+//   }
 
-  // Search summary
-  const searchSummary = {
-    keywords: searchParsed.keywords,
-    priceRange: searchParsed.priceRange,
-    dietaryRequirements: searchParsed.dietaryRequirements,
-    excludeIngredients: searchParsed.excludeIngredients,
-    mealType: searchParsed.mealType,
-    cuisine: searchParsed.cuisine,
-    healthFocus: searchParsed.healthFocus
-  };
+//   // Search summary
+//   const searchSummary = {
+//     keywords: searchParsed.keywords,
+//     priceRange: searchParsed.priceRange,
+//     dietaryRequirements: searchParsed.dietaryRequirements,
+//     excludeIngredients: searchParsed.excludeIngredients,
+//     mealType: searchParsed.mealType,
+//     cuisine: searchParsed.cuisine,
+//     healthFocus: searchParsed.healthFocus
+//   };
 
-  // Always include image (imgUrl) in each item
-  const addImgUrl = (item: IMenuItem) => ({ ...item, imgUrl: item.imgUrl || '' });
-  const safeItemsWithImg = safeItems.map(addImgUrl);
-  const unsafeItemsWithImg = unsafeItems.map(addImgUrl);
-  const excludedItemsWithImg = excludedItems.map(({ item, reasons }) => ({ item: addImgUrl(item), reasons }));
+//   // Always include image (imgUrl) in each item
+//   const addImgUrl = (item: IMenuItem) => ({ ...item, imgUrl: item.imgUrl || '' });
+//   const safeItemsWithImg = safeItems.map(addImgUrl);
+//   const unsafeItemsWithImg = unsafeItems.map(addImgUrl);
+//   const excludedItemsWithImg = excludedItems.map(({ item, reasons }) => ({ item: addImgUrl(item), reasons }));
 
-  res.status(200).json({
-    message: 'Super search completed',
-    data: {
-      safeItems: safeItemsWithImg,
-      unsafeItems: unsafeItemsWithImg
-    }
-  });
-}; 
+//   res.status(200).json({
+//     message: 'Super search completed',
+//     data: {
+//       safeItems: safeItemsWithImg,
+//       unsafeItems: unsafeItemsWithImg
+//     }
+//   });
+// };
 
-/**
- * AI Vision Extract Endpoint: Extract menu items from image or PDF using AI (GPT-4 Vision)
- * Expects a file upload (field: 'file').
- * Returns structured menu data, errors, and warnings (does NOT save to DB).
- */
-export const visionExtractHandler: RequestHandler = async (req, res) => {
-  try {
-    // 1. Check for uploaded files (always field: 'files')
-    const files = (req as any).files as Express.Multer.File[] | undefined;
-    if (!files || files.length === 0) {
-      res.status(400).json({ message: 'No file(s) uploaded. Please upload images or a PDF.' });
-      return;
-    }
-    // 2. Validate file types
-    const imageFiles = files.filter(f => f.mimetype.startsWith('image/'));
-    const pdfFiles = files.filter(f => f.mimetype === 'application/pdf');
-    if (pdfFiles.length > 1) {
-      res.status(400).json({ message: 'Only one PDF can be uploaded at a time.' });
-      return;
-    }
-    if (pdfFiles.length === 1 && imageFiles.length > 0) {
-      res.status(400).json({ message: 'Please upload either images or a single PDF, not both.' });
-      return;
-    }
-    let allItems: any[] = [];
-    let allErrors: string[] = [];
-    let allWarnings: string[] = [];
-    if (pdfFiles.length === 1) {
-      // Single PDF
-      const { buffer, mimetype } = pdfFiles[0];
-      const result = await extractMenuFromFile(buffer, mimetype);
-      allItems = result.items;
-      allErrors = result.errors;
-      allWarnings = result.warnings;
-    } else {
-      // Only images (1-5)
-      for (const imgFile of imageFiles) {
-        const { buffer, mimetype } = imgFile;
-        const result = await extractMenuFromFile(buffer, mimetype);
-        allItems.push(...result.items);
-        allErrors.push(...result.errors);
-        allWarnings.push(...result.warnings);
-      }
-    }
-    // Build unique categories array
-    const categorySet = new Set<string>();
-    for (const item of allItems) {
-      if (item.category) categorySet.add(item.category);
-      else categorySet.add('Uncategorized');
-    }
-    const categories = Array.from(categorySet).map(cat => ({
-      name: { en: cat, ar: '' },
-      description: { en: '', ar: '' }
-    }));
-    // Build flat items array
-    const items = allItems.map(item => ({
-      name: { en: item.name ?? '', ar: '' },
-      description: { en: item.description ?? '', ar: '' },
-      price: item.price ?? null,
-      category: item.category ?? 'Uncategorized',
-      isAvailable: true
-    }));
-    res.status(200).json({
-      message: 'Menu extraction completed',
-      data: {
-        categories,
-        items,
-        errors: allErrors,
-        warnings: allWarnings
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: 'An error occurred during menu extraction',
-      error: (error as Error).message
-    });
-  }
-};
+// /**
+//  * AI Vision Extract Endpoint: Extract menu items from image or PDF using AI (GPT-4 Vision)
+//  * Expects a file upload (field: 'file').
+//  * Returns structured menu data, errors, and warnings (does NOT save to DB).
+//  */
+// export const visionExtractHandler: RequestHandler = async (req, res) => {
+//   try {
+//     // 1. Check for uploaded files (always field: 'files')
+//     const files = (req as any).files as Express.Multer.File[] | undefined;
+//     if (!files || files.length === 0) {
+//       res.status(400).json({ message: 'No file(s) uploaded. Please upload images or a PDF.' });
+//       return;
+//     }
+//     // 2. Validate file types
+//     const imageFiles = files.filter(f => f.mimetype.startsWith('image/'));
+//     const pdfFiles = files.filter(f => f.mimetype === 'application/pdf');
+//     if (pdfFiles.length > 1) {
+//       res.status(400).json({ message: 'Only one PDF can be uploaded at a time.' });
+//       return;
+//     }
+//     if (pdfFiles.length === 1 && imageFiles.length > 0) {
+//       res.status(400).json({ message: 'Please upload either images or a single PDF, not both.' });
+//       return;
+//     }
+//     let allItems: any[] = [];
+//     let allErrors: string[] = [];
+//     let allWarnings: string[] = [];
+//     if (pdfFiles.length === 1) {
+//       // Single PDF
+//       const { buffer, mimetype } = pdfFiles[0];
+//       const result = await extractMenuFromFile(buffer, mimetype);
+//       allItems = result.items;
+//       allErrors = result.errors;
+//       allWarnings = result.warnings;
+//     } else {
+//       // Only images (1-5)
+//       for (const imgFile of imageFiles) {
+//         const { buffer, mimetype } = imgFile;
+//         const result = await extractMenuFromFile(buffer, mimetype);
+//         allItems.push(...result.items);
+//         allErrors.push(...result.errors);
+//         allWarnings.push(...result.warnings);
+//       }
+//     }
+//     // Build unique categories array
+//     const categorySet = new Set<string>();
+//     for (const item of allItems) {
+//       if (item.category) categorySet.add(item.category);
+//       else categorySet.add('Uncategorized');
+//     }
+//     const categories = Array.from(categorySet).map(cat => ({
+//       name: { en: cat, ar: '' },
+//       description: { en: '', ar: '' }
+//     }));
+//     // Build flat items array
+//     const items = allItems.map(item => ({
+//       name: { en: item.name ?? '', ar: '' },
+//       description: { en: item.description ?? '', ar: '' },
+//       price: item.price ?? null,
+//       category: item.category ?? 'Uncategorized',
+//       isAvailable: true
+//     }));
+//     res.status(200).json({
+//       message: 'Menu extraction completed',
+//       data: {
+//         categories,
+//         items,
+//         errors: allErrors,
+//         warnings: allWarnings
+//       }
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       message: 'An error occurred during menu extraction',
+//       error: (error as Error).message
+//     });
+//   }
+// };
 
-/**
- * Bulk insert menu items (AI/automation only, not core logic)
- * POST /api/ai/menu/bulk-insert
- * Body: { items: [ ... ] }
- */
-export const bulkInsertMenuItemsHandler: RequestHandler = async (req, res) => {
-  const shopId = req.user?.shopId!;
-  const items = req.body.items;
-  if (!Array.isArray(items) || items.length === 0) {
-    res.status(400).json({
-      message: "No items provided",
-      data: {
-        successCount: 0,
-        failCount: 0,
-        items: [],
-        errors: [],
-      },
-    });
-    return;
-  }
-  // Inline validation (basic)
-  const requiredFields = ["name", "description", "price", "categoryId"];
-  const results: any[] = [];
-  const errors: { index: number; error: string }[] = [];
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    // Basic validation
-    for (const field of requiredFields) {
-      if (!item[field]) {
-        errors.push({ index: i, error: `Missing required field: ${field}` });
-        continue;
-      }
-    }
-    if (typeof item.price !== 'number' || item.price < 0) {
-      errors.push({ index: i, error: `Invalid price` });
-      continue;
-    }
-    // Duplicate prevention: check if item with same name, categoryId, and shopId exists
-    const existing = await MenuItemModel.findOne({
-      shopId,
-      'name.en': { $regex: new RegExp(`^${item.name.en}$`, 'i') },
-      categoryId: item.categoryId
-    });
-    if (existing) {
-      errors.push({ index: i, error: `Duplicate item: ${item.name.en} in this category already exists.` });
-      continue;
-    }
-    // Insert
-    try {
-      const created = await MenuItemModel.create({ ...item, shopId });
-      results.push(created.toObject());
-    } catch (err: any) {
-      errors.push({ index: i, error: err.message || "Unknown error" });
-    }
-  }
-  res.status(201).json({
-    message: "Bulk insert completed",
-    data: {
-      successCount: results.length,
-      failCount: errors.length,
-      items: results,
-      errors,
-    },
-  });
-}; 
+// /**
+//  * Bulk insert menu items (AI/automation only, not core logic)
+//  * POST /api/ai/menu/bulk-insert
+//  * Body: { items: [ ... ] }
+//  */
+// export const bulkInsertMenuItemsHandler: RequestHandler = async (req, res) => {
+//   const shopId = req.user?.shopId!;
+//   const items = req.body.items;
+//   if (!Array.isArray(items) || items.length === 0) {
+//     res.status(400).json({
+//       message: "No items provided",
+//       data: {
+//         successCount: 0,
+//         failCount: 0,
+//         items: [],
+//         errors: [],
+//       },
+//     });
+//     return;
+//   }
+//   // Inline validation (basic)
+//   const requiredFields = ["name", "description", "price", "categoryId"];
+//   const results: any[] = [];
+//   const errors: { index: number; error: string }[] = [];
+//   for (let i = 0; i < items.length; i++) {
+//     const item = items[i];
+//     // Basic validation
+//     for (const field of requiredFields) {
+//       if (!item[field]) {
+//         errors.push({ index: i, error: `Missing required field: ${field}` });
+//         continue;
+//       }
+//     }
+//     if (typeof item.price !== 'number' || item.price < 0) {
+//       errors.push({ index: i, error: `Invalid price` });
+//       continue;
+//     }
+//     // Duplicate prevention: check if item with same name, categoryId, and shopId exists
+//     const existing = await MenuItemModel.findOne({
+//       shopId,
+//       'name.en': { $regex: new RegExp(`^${item.name.en}$`, 'i') },
+//       categoryId: item.categoryId
+//     });
+//     if (existing) {
+//       errors.push({ index: i, error: `Duplicate item: ${item.name.en} in this category already exists.` });
+//       continue;
+//     }
+//     // Insert
+//     try {
+//       const created = await MenuItemModel.create({ ...item, shopId });
+//       results.push(created.toObject());
+//     } catch (err: any) {
+//       errors.push({ index: i, error: err.message || "Unknown error" });
+//     }
+//   }
+//   res.status(201).json({
+//     message: "Bulk insert completed",
+//     data: {
+//       successCount: results.length,
+//       failCount: errors.length,
+//       items: results,
+//       errors,
+//     },
+//   });
+// };
