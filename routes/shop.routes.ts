@@ -27,7 +27,7 @@ import * as menuItemValidators from "../validators/menu-item.validator";
 import * as shopAnalysisControllers from "../controllers/shopAnalysis.controller";
 
 import { validateOrderId } from "../validators/order.validator";
-import { uploadMiddleware } from "../middlewares/multer";
+import { uploadSingleMiddleware } from "../middlewares/multer";
 
 const router = express.Router();
 
@@ -41,7 +41,7 @@ router.get("/", protect, isAllowed([Role.ADMIN]), controllers.getAllShops); // A
 router.post(
   "/",
   protect,
-  uploadMiddleware("logo"), // handle logo image upload
+  uploadSingleMiddleware("logo"), // handle logo image upload
   shopValidators.creatShopValidator,
   controllers.createShopHandler
 );
@@ -144,9 +144,9 @@ router.put(
   "/id/:shopId",
   protect,
   isAllowed([Role.ADMIN, Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-  shopValidators.updateShopValidator,
-  uploadMiddleware("logo"), // handle logo image upload
   isShopMember,
+  uploadSingleMiddleware("logo"), // handle logo image upload
+  shopValidators.updateShopValidator,
   controllers.updateShopHandler
 );
 
@@ -157,9 +157,9 @@ router.post(
   "/menu-items",
   protect,
   isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-  uploadMiddleware("image"), // handle image upload for menu item
-  menuItemValidators.validateCreateMenuItem,
   isShopMember,
+  uploadSingleMiddleware("image"), // handle image upload for menu item
+  menuItemValidators.validateCreateMenuItem,
   menuItemControllers.createMenuItemAndAddToCategoryHandler
 );
 
@@ -212,9 +212,9 @@ router.patch(
   "/menu-items/:itemId",
   protect,
   isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-  menuItemValidators.validateUpdateMenuItem,
-  uploadMiddleware("image"),
   isShopMember,
+  uploadSingleMiddleware("image"),
+  menuItemValidators.validateUpdateMenuItem,
   menuItemControllers.updateMenuItemHandler
 );
 
