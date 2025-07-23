@@ -8,6 +8,7 @@ import {
 import * as shopValidators from "../validators/shop.validator";
 import { Role } from "../models/Role";
 
+
 // menu items imports
 
 import * as menuItemControllers from "../controllers/menu-item.controller";
@@ -23,6 +24,7 @@ import * as categoryValidators from "../validators/category.validators";
 import * as orderControllers from "../controllers/order.controller";
 import * as orderValidators from "../validators/order.validator";
 import * as menuItemValidators from "../validators/menu-item.validator";
+import * as shopAnalysisControllers from "../controllers/shopAnalysis.controller";
 
 import { validateOrderId } from "../validators/order.validator";
 import { uploadMiddleware } from "../middlewares/multer";
@@ -321,6 +323,40 @@ router.put(
   orderValidators.validateUpdateOrderStatus,
   isShopMember,
   orderControllers.updateOrderStatusHandler
+);
+
+
+// --- Shop Analysis Routes ---
+router.get(
+  "/analysis/cancellation-rate",
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  isShopMember,
+  shopAnalysisControllers.CanceledOrderRateController
+);
+
+router.get(
+  "/analysis/order-counts",
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  isShopMember,
+  shopAnalysisControllers.OrderCountsByDateController
+);
+
+router.get(
+  "/analysis/sales-comparison",
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  isShopMember,
+  shopAnalysisControllers.SalesComparisonController
+);
+
+router.get(
+  "/analysis/best-worst-sellers",
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  isShopMember,
+  shopAnalysisControllers.BestAndWorstSellersController
 );
 
 export default router;
