@@ -1,5 +1,4 @@
 import { Buffer } from "buffer";
-import { pdf } from "pdf-to-img";
 import { getOpenAIClient } from "../../config/openai";
 import sharp from "sharp";
 
@@ -21,24 +20,24 @@ export interface MenuExtractionResult {
   warnings: string[];
 }
 
-// Convert PDF buffer to images
+// ✅ FIXED: Use dynamic import for ESM module
 async function pdfToImages(
   pdfBuffer: Buffer,
   maxPages: number = 5
 ): Promise<Buffer[]> {
+  const { pdf } = await import("pdf-to-img");
   const imageBuffers: Buffer[] = [];
   const document = await pdf(pdfBuffer, { scale: 2 });
 
-  let count = 0;
+  let pageCounter = 0;
   for await (const page of document) {
     imageBuffers.push(Buffer.from(page));
-    if (++count >= maxPages) break;
+    if (++pageCounter >= maxPages) break;
   }
 
   return imageBuffers;
 }
 
-// Optimize image size and format
 async function optimizeImageBuffer(
   img: Buffer,
   mimetype: string
@@ -67,7 +66,6 @@ async function optimizeImageBuffer(
   }
 }
 
-// Extract items using OpenAI Vision
 async function extractMenuFromImageWithAI(
   img: Buffer,
   options: MenuExtractionOptions = {},
@@ -130,7 +128,6 @@ async function extractMenuFromImageWithAI(
   }
 }
 
-// Main function
 export async function extractMenuFromFile(
   fileBuffer: Buffer,
   fileType: string,
