@@ -11,10 +11,10 @@ import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
 import { cancelSubscription } from "../services/subscription.service";
 import {
-  addMemberToShop,
   removeMemberFromShop,
   updateMemberRole,
   registerShopMember,
+  getShopMembers,
 } from "../services/shop.service";
 
 export const createShopHandler: RequestHandler<
@@ -173,8 +173,9 @@ export const cancelShopSubscriptionHandler: RequestHandler<
 
 export const addMemberHandler: RequestHandler = async (req, res) => {
   const { shopId } = req.params;
-  const { firstName, lastName, email, password, phoneNumber, roleId } = req.body;
-  
+  const { firstName, lastName, email, password, phoneNumber, roleId } =
+    req.body;
+
   const newMember = await registerShopMember(shopId, {
     firstName,
     lastName,
@@ -183,7 +184,7 @@ export const addMemberHandler: RequestHandler = async (req, res) => {
     phoneNumber,
     roleId,
   });
-  
+
   res.status(201).json({
     message: "Member added successfully",
     data: newMember,
@@ -199,6 +200,15 @@ export const removeMemberHandler: RequestHandler = async (req, res) => {
   });
 };
 
+export const getShopMembersHandler: RequestHandler = async (req, res) => {
+  const { shopId } = req.params;
+  const members = await ShopService.getShopMembers(shopId);
+  res.status(200).json({
+    message: "Shop members fetched successfully",
+    data: members,
+  });
+};
+
 export const updateMemberRoleHandler: RequestHandler = async (req, res) => {
   const { shopId, userId } = req.params;
   const { roleId } = req.body;
@@ -208,5 +218,3 @@ export const updateMemberRoleHandler: RequestHandler = async (req, res) => {
     data: shop,
   });
 };
-
-

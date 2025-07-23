@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import mongoose, { Schema } from "mongoose";
 import { collectionsName } from "../common/collections-name";
+import { PaymentMethods } from "./Payment";
 
 export interface IOrderItem {
   menuItemId: ObjectId;
@@ -26,6 +27,9 @@ export interface IOrder {
   totalAmount: number;
   orderItems: IOrderItem[];
   orderNumber: number;
+  customerName: string;
+  customerPhoneNumber: string;
+  paymentMethod: PaymentMethods;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,6 +40,13 @@ const OrderSchema = new Schema<IOrder>(
       type: Schema.Types.ObjectId,
       ref: collectionsName.SHOPS,
       required: true,
+    },
+    orderNumber: { type: Number, required: true, unique: true },
+    customerName: { type: String, required: true },
+    customerPhoneNumber: { type: String, required: true },
+    paymentMethod: {
+      type: String,
+      enum: PaymentMethods,
     },
     tableNumber: { type: Number },
     orderStatus: {
@@ -57,7 +68,6 @@ const OrderSchema = new Schema<IOrder>(
         price: { type: Number, required: true },
       },
     ],
-    orderNumber: { type: Number, required: true, unique: true },
   },
   {
     timestamps: true,

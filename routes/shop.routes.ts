@@ -46,31 +46,38 @@ router.post(
 
 // --- Shop Member Management ---
 // These routes have a dynamic :shopId but are more specific than general shop GET/PUT
-router.post(
-  "/:shopId/members",
-  protect,
-  isAllowed([Role.SHOP_OWNER]),
-  isShopOwner,
-  shopValidators.addMemberValidator,
-  controllers.addMemberHandler
-);
-
-
+router
+  .route("/:shopId/members")
+  .post(
+    protect,
+    isAllowed([Role.SHOP_OWNER]),
+    shopValidators.addMemberValidator,
+    isShopOwner,
+    controllers.addMemberHandler
+  )
+  .get(
+    protect,
+    isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+    shopValidators.shopIdValidator,
+    isShopMember,
+    controllers.getShopMembersHandler
+  );
 
 router.delete(
   "/:shopId/members/:userId",
   protect,
   isAllowed([Role.SHOP_OWNER]),
-  isShopOwner,
   shopValidators.removeMemberValidator,
+  isShopOwner,
   controllers.removeMemberHandler
 );
 
 router.put(
   "/:shopId/members/:userId",
   protect,
-  isShopOwner,
+  isAllowed([Role.SHOP_OWNER]),
   shopValidators.updateMemberRoleValidator,
+  isShopOwner,
   controllers.updateMemberRoleHandler
 );
 
@@ -79,8 +86,8 @@ router.post(
   "/qr-code",
   protect,
   isAllowed([Role.ADMIN, Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-  isShopMember,
   shopValidators.validateRegenerateQRCode,
+  isShopMember,
   controllers.regenerateQRCodeHandler
 );
 
@@ -126,6 +133,7 @@ router.get(
     Role.SHOP_STAFF,
     Role.KITCHEN,
   ]),
+  shopValidators.shopIdValidator,
   isShopMember,
   controllers.getShopHandler
 );
@@ -150,6 +158,7 @@ router.post(
   isShopMember,
   uploadSingleMiddleware("image"), // handle image upload for menu item
   menuItemValidators.validateCreateMenuItem,
+  isShopMember,
   menuItemControllers.createMenuItemAndAddToCategoryHandler
 );
 
@@ -175,8 +184,8 @@ router.get(
     Role.SHOP_STAFF,
     Role.KITCHEN,
   ]),
-  isShopMember,
   menuItemValidators.validateGetOrDeleteItemById,
+  isShopMember,
   menuItemControllers.getMenuItemByIdHandler
 );
 
@@ -184,8 +193,8 @@ router.delete(
   "/menu-items/:itemId",
   protect,
   isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-  isShopMember,
   menuItemValidators.validateGetOrDeleteItemById,
+  isShopMember,
   menuItemControllers.deleteMenuItemHandler
 );
 
@@ -193,8 +202,8 @@ router.patch(
   "/menu-items/:itemId/toggle",
   protect,
   isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-  isShopMember,
   menuItemValidators.validateToggleAvailability,
+  isShopMember,
   menuItemControllers.toggleItemAvailabilityHandler
 );
 
@@ -213,8 +222,8 @@ router.post(
   "/categories",
   protect,
   isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-  isShopMember,
   categoryValidators.createCategoryValidator,
+  isShopMember,
   categoryControllers.createCategoryHandler
 );
 
@@ -241,24 +250,24 @@ router
       Role.SHOP_STAFF,
       Role.KITCHEN,
     ]),
-    isShopMember,
     categoryValidators.categoryIdValidator,
+    isShopMember,
     categoryControllers.getCategoryByIdHandler
   )
   .put(
     "/categories/:categoryId",
     protect,
     isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-    isShopMember,
     categoryValidators.updateCategoryValidator,
+    isShopMember,
     categoryControllers.updateCategoryHandler
   )
   .delete(
     "/categories/:categoryId",
     protect,
     isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-    isShopMember,
     categoryValidators.categoryIdValidator,
+    isShopMember,
     categoryControllers.deleteCategoryHandler
   );
 
@@ -301,8 +310,8 @@ router.get(
     Role.SHOP_STAFF,
     Role.KITCHEN,
   ]),
-  isShopMember,
   validateOrderId,
+  isShopMember,
   orderControllers.getOrderByIdHandler
 );
 
@@ -310,8 +319,8 @@ router.put(
   "/orders/:orderId/status",
   protect,
   isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
-  isShopMember,
   orderValidators.validateUpdateOrderStatus,
+  isShopMember,
   orderControllers.updateOrderStatusHandler
 );
 

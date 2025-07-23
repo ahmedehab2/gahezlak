@@ -9,6 +9,7 @@ import {
 import { Users } from "../models/User";
 import { Roles } from "../models/Role";
 import { hash } from "bcryptjs";
+import { collectionsName } from "../common/collections-name";
 
 async function createShop(
   shopData: Pick<
@@ -23,6 +24,14 @@ async function createShop(
   >,
   currentUserId: string
 ) {
+  const existingShop = await Shops.findOne({
+    ownerId: new mongoose.Types.ObjectId(currentUserId),
+  });
+
+  if (existingShop) {
+    throw new Errors.BadRequestError(errMsg.USER_ALREADY_HAS_SHOP);
+  }
+
   const shop = await Shops.create({
     ...shopData,
     ownerId: new mongoose.Types.ObjectId(currentUserId),
@@ -127,34 +136,25 @@ async function regenerateShopQRCode(
   return qrCodeResult;
 }
 
-async function addMemberToShop(shopId: string, userId: string, roleId: string) {
-  const shop = await Shops.findById(shopId);
-  if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
+async function getShopMembers(shopId: string) {
+  const shop = await Shops.findById(shopId)
+    .populate({
+      path: "members.userId",
+      model: collectionsName.USERS,
+      select: "firstName lastName email phoneNumber",
+    })
+    .populate({
+      path: "members.roleId",
+      model: collectionsName.ROLES,
+      select: "name",
+    })
+    .lean();
 
-  // Prevent adding owner as a member
-  if (shop.ownerId.toString() === userId) {
-    throw new Errors.BadRequestError(errMsg.CANNOT_UPDATE_OWNER_ROLE);
+  if (!shop) {
+    throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
   }
 
-  // Check if user exists
-  const user = await Users.findById(userId);
-  if (!user) throw new Errors.NotFoundError(errMsg.USER_NOT_FOUND);
-
-  // Check if role exists
-  const role = await Roles.findById(roleId);
-  if (!role) throw new Errors.NotFoundError(errMsg.ROLE_NOT_FOUND);
-
-  // Check if already a member
-  if (shop.members.some((m) => m.userId.toString() === userId)) {
-    throw new Errors.BadRequestError(errMsg.MEMBER_ALREADY_EXISTS);
-  }
-
-  shop.members.push({
-    userId: new mongoose.Types.ObjectId(userId),
-    roleId: new mongoose.Types.ObjectId(roleId),
-  });
-  await shop.save();
-  return shop;
+  return shop.members;
 }
 
 async function removeMemberFromShop(shopId: string, userId: string) {
@@ -172,6 +172,8 @@ async function removeMemberFromShop(shopId: string, userId: string) {
   if (memberIndex === -1) {
     throw new Errors.NotFoundError(errMsg.MEMBER_NOT_FOUND);
   }
+
+  await Users.findByIdAndDelete(userId);
 
   shop.members.splice(memberIndex, 1);
   await shop.save();
@@ -231,12 +233,6 @@ async function registerShopMember(
   const role = await Roles.findById(memberData.roleId);
   if (!role) throw new Errors.NotFoundError(errMsg.ROLE_NOT_FOUND);
 
-  // Check if email already exists
-  const existingUser = await Users.findOne({ email: memberData.email.toLowerCase() });
-  if (existingUser) {
-    throw new Errors.BadRequestError(errMsg.EMAIL_ALREADY_IN_USE);
-  }
-
   // Hash password
   const hashedPassword = await hash(
     memberData.password,
@@ -256,15 +252,21 @@ async function registerShopMember(
   });
 
   // Add member to shop
-  shop.members.push({ 
-    userId: newUser._id, 
-    roleId: new mongoose.Types.ObjectId(memberData.roleId) 
+  shop.members.push({
+    userId: newUser._id,
+    roleId: new mongoose.Types.ObjectId(memberData.roleId),
   });
   await shop.save();
 
   // Return user data without password
-  const { password, ...userData } = newUser.toObject();
-  return userData;
+  const { _id, firstName, lastName, email, phoneNumber } = newUser.toObject();
+  return {
+    _id,
+    firstName,
+    lastName,
+    email,
+    phoneNumber,
+  };
 }
 
 export {
@@ -274,10 +276,10 @@ export {
   deleteShop,
   getUserShop,
   regenerateShopQRCode,
-  addMemberToShop,
   removeMemberFromShop,
   updateMemberRole,
   getShopById,
   registerShopMember,
   getShop,
+  getShopMembers,
 };
