@@ -1,7 +1,7 @@
 import { IShop, Shops } from "../models/Shop";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
-import mongoose, { FilterQuery, ProjectionFields } from "mongoose";
+import mongoose, { FilterQuery, ProjectionFields, SortOrder } from "mongoose";
 import {
   generateAndUploadMenuQRCode,
   QRCodeOptions,
@@ -106,9 +106,36 @@ async function deleteShop(shopId: string) {
   return shop;
 }
 
-async function getAllShops() {
-  const shops = await Shops.find({});
-  return shops;
+/**
+ * Get all shops with pagination, search, and ordering
+ */
+async function getAllShops({
+  page = 1,
+  limit = 10,
+  search = "",
+  order = "desc"
+}: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  order?: "asc" | "desc";
+} = {}) {
+  const skip = (page - 1) * limit;
+  const filter: any = {};
+  if (search) {
+    filter.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { email: { $regex: search, $options: "i" } },
+      { phoneNumber: { $regex: search, $options: "i" } }
+    ];
+  }
+  const sort: { [key: string]: SortOrder } = { createdAt: order === "asc" ? 1 : -1 };
+  const shops = await Shops.find(filter)
+    .sort(sort)
+    .skip(skip)
+    .limit(limit);
+  const total = await Shops.countDocuments(filter);
+  return { shops, total };
 }
 
 /**
