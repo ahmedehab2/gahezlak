@@ -552,18 +552,34 @@ export const visionExtractHandler: RequestHandler = async (req, res) => {
       if (item.category) categorySet.add(item.category);
       else categorySet.add("Uncategorized");
     }
-    const categories = Array.from(categorySet).map((cat) => ({
-      name: { en: cat, ar: "" },
-      description: { en: "", ar: "" },
-    }));
+    const categories = Array.from(categorySet).map((cat) => {
+      const lang = LanguageDetectorService.detectLanguage(cat);
+      return {
+        name: {
+          en: lang === "en" ? cat : "",
+          ar: lang === "ar" ? cat : ""
+        },
+        description: { en: "", ar: "" },
+      };
+    });
     // Build flat items array
-    const items = allItems.map((item) => ({
-      name: { en: item.name ?? "", ar: "" },
-      description: { en: item.description ?? "", ar: "" },
-      price: item.price ?? null,
-      category: item.category ?? "Uncategorized",
-      isAvailable: true,
-    }));
+    const items = allItems.map((item) => {
+      const nameLang = LanguageDetectorService.detectLanguage(item.name ?? "");
+      const descLang = LanguageDetectorService.detectLanguage(item.description ?? "");
+      return {
+        name: {
+          en: nameLang === "en" ? item.name ?? "" : "",
+          ar: nameLang === "ar" ? item.name ?? "" : ""
+        },
+        description: {
+          en: descLang === "en" ? item.description ?? "" : "",
+          ar: descLang === "ar" ? item.description ?? "" : ""
+        },
+        price: item.price ?? null,
+        category: item.category ?? "Uncategorized",
+        isAvailable: true,
+      };
+    });
     res.status(200).json({
       message: "Menu extraction completed",
       data: {
