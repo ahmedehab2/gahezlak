@@ -9,4 +9,5 @@ export const collectionsName = {
   PAYMENTS: "payments",
   SUBSCRIPTIONS: "subscriptions",
   COUNTERS: "counters",
+  REPORT:"report"
 };
