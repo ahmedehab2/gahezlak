@@ -121,8 +121,8 @@ export const updateMenuItemHandler: RequestHandler<
 
 
 export const getMenuItemsByShopHandler: RequestHandler<
-  { shopName?: string }, 
-  PaginatedRespone<IMenuItem> 
+  { shopName?: string },
+  PaginatedRespone<IMenuItem>
 > = async (req, res) => {
   const shopId = req.user?.shopId;
   const shopName = req.params.shopName;
@@ -132,12 +132,14 @@ export const getMenuItemsByShopHandler: RequestHandler<
   const limit = parseInt(req.query.limit as string) || 10;
   const skip = (page - 1) * limit;
 
+  const search = req.query.search as string | undefined;  
   const { items, totalCount } = await getMenuItemsByShop({
     shopId,
     shopName,
     lang,
     skip,
     limit,
+    search,
   });
 
   const totalPages = Math.ceil(totalCount / limit);
@@ -150,4 +152,5 @@ export const getMenuItemsByShopHandler: RequestHandler<
     totalPages,
   });
 };
+
 
