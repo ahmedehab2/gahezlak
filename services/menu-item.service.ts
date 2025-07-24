@@ -86,14 +86,14 @@ export async function getMenuItemsByShop({
   lang,
   skip,
   limit,
-  search,
+  //search,
 }: {
   shopId?: string;
   shopName?: string;
   lang: LangType;
   skip: number;
   limit: number;
-  search?: string;
+  //search?: string;
 }) {
   let query: FilterQuery<IMenuItem> = {};
 
@@ -110,12 +110,12 @@ export async function getMenuItemsByShop({
   }
 
   // use $or to search in both english and arabic search 
-  if (search) {
-    query.$or = [
-      { "translations.name.en": { $regex: search, $options: "i" } },
-      { "translations.name.ar": { $regex: search, $options: "i" } },
-    ];
-  }
+  // if (search) {
+  //   query.$or = [
+  //     { "translations.name.en": { $regex: search, $options: "i" } },
+  //     { "translations.name.ar": { $regex: search, $options: "i" } },
+  //   ];
+  // }
 
   const items = await MenuItemModel.find(query, {
     shopId: 0,

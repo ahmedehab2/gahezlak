@@ -132,14 +132,14 @@ export const getMenuItemsByShopHandler: RequestHandler<
   const limit = parseInt(req.query.limit as string) || 10;
   const skip = (page - 1) * limit;
 
-  const search = req.query.search as string | undefined;  
+  //const search = req.query.search as string | undefined;  
   const { items, totalCount } = await getMenuItemsByShop({
     shopId,
     shopName,
     lang,
     skip,
     limit,
-    search,
+    //search,
   });
 
   const totalPages = Math.ceil(totalCount / limit);
