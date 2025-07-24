@@ -14,7 +14,8 @@ const PAYMOB_WALLET_INTEGRATION_ID = +process.env.PAYMOB_WALLET_INTEGRATION_ID!;
 const PAYMOB_CASH_INTEGRATION_ID = +process.env.PAYMOB_CASH_INTEGRATION_ID!;
 const PAYMOB_SECRET_KEY = process.env.PAYMOB_SECRET_KEY;
 const PAYMOB_PUBLIC_KEY = process.env.PAYMOB_PUBLIC_KEY;
-const WEBHOOK_URL = process.env.WEBHOOK_URL;
+const SUBSCRIPTION_WEBHOOK_URL = process.env.SUBSCRIPTION_WEBHOOK_URL;
+const ORDER_WEBHOOK_URL = process.env.ORDER_WEBHOOK_URL;
 const PAYMOB_BASE_URL = "https://accept.paymob.com";
 
 const frequencyMap = {
@@ -68,7 +69,7 @@ export async function createSubscriptionPlan({
         use_transaction_amount: !startWithTrial,
         is_active: isActive,
         integration: PAYMOB_MOTO_INTEGRATION_ID,
-        webhook_url: WEBHOOK_URL,
+        webhook_url: SUBSCRIPTION_WEBHOOK_URL,
         retrial_days: 3,
         reminder_days: 3,
       },
@@ -164,8 +165,10 @@ export async function createSubscriptionIntent({
 export async function createPaymentIntent({
   order,
   customer,
+  shopName,
 }: {
   order: IOrder;
+  shopName: string;
   customer: {
     first_name: string;
     last_name: string;
@@ -207,7 +210,10 @@ export async function createPaymentIntent({
       extras: {
         orderId: order._id.toString(),
       },
+      notification_url: ORDER_WEBHOOK_URL,
+      redirection_url: `${process.env.FRONTEND_URL}/shops/${shopName}/orders/checkout/${order.orderNumber}`,
     },
+
     {
       headers: {
         Authorization: `Token ${PAYMOB_SECRET_KEY}`,
@@ -215,7 +221,7 @@ export async function createPaymentIntent({
     }
   );
 
-  const iframeUrl = ` https://accept.paymob.com/unifiedcheckout/?publicKey=${PAYMOB_PUBLIC_KEY}&clientSecret=${paymentIntent.data.client_secret}`;
+  const iframeUrl = `https://accept.paymob.com/unifiedcheckout/?publicKey=${PAYMOB_PUBLIC_KEY}&clientSecret=${paymentIntent.data.client_secret}`;
 
   return {
     iframeUrl,

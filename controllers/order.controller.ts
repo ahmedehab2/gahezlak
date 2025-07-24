@@ -55,6 +55,7 @@ export const createOrderHandler: RequestHandler<
 
   const { iframeUrl, paymobPayment } = await createPaymentIntent({
     order: newOrder,
+    shopName,
     customer: {
       first_name: orderData.customerFirstName,
       last_name: orderData.customerLastName,

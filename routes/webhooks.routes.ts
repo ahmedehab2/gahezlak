@@ -5,7 +5,7 @@ import {
 import { Router } from "express";
 
 const webhooksRoutes = Router();
-webhooksRoutes.post("/paymob/subscription", handlePaymobSubscriptionWebhook);
+webhooksRoutes.post("/paymob/subscriptions", handlePaymobSubscriptionWebhook);
 
 // //for customer paying orders
 webhooksRoutes.post("/paymob/orders", handlePaymobOrdersWebhook);
