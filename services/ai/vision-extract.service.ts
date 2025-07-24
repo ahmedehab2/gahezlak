@@ -20,24 +20,6 @@ export interface MenuExtractionResult {
   warnings: string[];
 }
 
-// ✅ FIXED: Use dynamic import for ESM module
-async function pdfToImages(
-  pdfBuffer: Buffer,
-  maxPages: number = 5
-): Promise<Buffer[]> {
-  const { pdf } = await import("pdf-to-img");
-  const imageBuffers: Buffer[] = [];
-  const document = await pdf(pdfBuffer, { scale: 2 });
-
-  let pageCounter = 0;
-  for await (const page of document) {
-    imageBuffers.push(Buffer.from(page));
-    if (++pageCounter >= maxPages) break;
-  }
-
-  return imageBuffers;
-}
-
 async function optimizeImageBuffer(
   img: Buffer,
   mimetype: string
@@ -137,10 +119,8 @@ export async function extractMenuFromFile(
   const warnings: string[] = [];
   let items: ExtractedMenuItem[] = [];
 
-  if (!fileType.startsWith("image/") && fileType !== "application/pdf") {
-    errors.push(
-      "Unsupported file type. Only images (JPG, PNG) and PDFs are allowed."
-    );
+  if (!fileType.startsWith("image/")) {
+    errors.push("Unsupported file type. Only images (JPG, PNG) are allowed.");
     return { items, errors, warnings };
   }
 
@@ -149,27 +129,8 @@ export async function extractMenuFromFile(
     return { items, errors, warnings };
   }
 
-  let imageBuffers: Buffer[] = [];
+  let imageBuffers: Buffer[] = [fileBuffer];
   let imageMimeType = fileType;
-
-  if (fileType === "application/pdf") {
-    imageMimeType = "image/png";
-    try {
-      imageBuffers = await pdfToImages(fileBuffer, 5);
-      if (imageBuffers.length === 0) {
-        errors.push("No images could be extracted from the PDF.");
-        return { items, errors, warnings };
-      }
-      if (imageBuffers.length < 5) {
-        warnings.push(`Processed ${imageBuffers.length} page(s) from the PDF.`);
-      }
-    } catch (err) {
-      errors.push("Failed to convert PDF to images: " + (err as Error).message);
-      return { items, errors, warnings };
-    }
-  } else {
-    imageBuffers = [fileBuffer];
-  }
 
   for (const img of imageBuffers) {
     try {

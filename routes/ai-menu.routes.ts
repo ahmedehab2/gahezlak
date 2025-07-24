@@ -1,14 +1,14 @@
 import { Router } from "express";
 import * as aiMenuController from "../controllers/ai-menu.controller";
 import { protect } from "../middlewares/auth";
-import { checkShopAccess } from "../middlewares/shop-member-check.middleware";
+import { isShopMember } from "../middlewares/shop-member-check.middleware";
 import { uploadMultipleMiddleware } from "../middlewares/multer";
 
 const aiMenuRoutes = Router();
 
 // All AI routes require authentication and shop membership
 aiMenuRoutes.use(protect);
-aiMenuRoutes.use(checkShopAccess("member"));
+aiMenuRoutes.use(isShopMember);
 
 /**
  * POST /api/ai/menu/allergy-filter
