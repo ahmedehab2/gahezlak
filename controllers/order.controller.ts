@@ -28,6 +28,7 @@ export const createOrderHandler: RequestHandler<
   unknown,
   SuccessResponse<{
     iframeUrl: string;
+    orderNumber: number;
   }>,
   Pick<
     IOrder,
@@ -66,6 +67,7 @@ export const createOrderHandler: RequestHandler<
   res.status(201).json({
     message: "Order created successfully",
     data: {
+      orderNumber: newOrder.orderNumber,
       iframeUrl,
     },
   });
@@ -105,9 +107,9 @@ export const getOrdersByShopHandler: RequestHandler<
 
   const query: FilterQuery<IOrder> = {};
 
-  if (req.user?.role === Role.KITCHEN) {
-    query.orderStatus = { $in: [OrderStatus.Pending, OrderStatus.Confirmed] };
-  }
+  // if (req.user?.role === Role.KITCHEN) {
+  //   query.orderStatus = { $in: [OrderStatus.Pending, OrderStatus.Confirmed] };
+  // }
 
   const { orders, totalCount } = await GetOrdersByShop({
     shopId,

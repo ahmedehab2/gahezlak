@@ -1,6 +1,7 @@
 import { body, param } from "express-validator";
 import { validate } from "../middlewares/validators";
 import { OrderStatus } from "../models/Order";
+import { PaymentMethods } from "../models/Payment";
 
 export const validateCreateOrder = [
   body("shopName")
@@ -16,11 +17,26 @@ export const validateCreateOrder = [
     .isArray({ min: 1 })
     .withMessage("Order items must be a non-empty array"),
   body("orderItems.*.menuItem").isMongoId().withMessage("Invalid menuItemId"),
+  body("orderItems.*.selectedOptions")
+    .optional()
+    .isArray()
+    .withMessage("selectedOptions must be an array"),
+  body("orderItems.*.selectedOptions.*.optionId")
+    .optional()
+    .isMongoId()
+    .withMessage("Invalid optionId in selectedOptions"),
+  body("orderItems.*.selectedOptions.*.choiceIds")
+    .optional()
+    .isArray()
+    .withMessage("choiceIds must be an array"),
+  body("orderItems.*.selectedOptions.*.choiceIds.*")
+    .optional()
+    .isMongoId()
+    .withMessage("Invalid choiceId in selectedOptions"),
   body("orderItems.*.quantity")
     .isInt({ min: 1 })
     .withMessage("Quantity must be at least 1"),
   body("orderItems.*.customizationDetails").optional().isString(),
-
   body("customerFirstName")
     .isString()
     .withMessage("Invalid customerFirstName")
@@ -34,6 +50,9 @@ export const validateCreateOrder = [
   body("customerPhoneNumber")
     .isString()
     .withMessage("Invalid customerPhoneNumber"),
+  body("paymentMethod")
+    .isIn(Object.values(PaymentMethods))
+    .withMessage("Invalid payment method"),
   validate,
 ];
 

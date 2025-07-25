@@ -1,5 +1,5 @@
 import { Payments, IPayment } from "../models/Payment";
-import { ObjectId } from "mongodb";
+import { Types } from "mongoose";
 
 export async function createPaymentForPlan(
   paymentData: Pick<
@@ -22,13 +22,13 @@ export async function createPaymentForOrder(
 }
 
 export async function getPaymentById(
-  paymentId: ObjectId
+  paymentId: Types.ObjectId
 ): Promise<IPayment | null> {
   return Payments.findById(paymentId).lean();
 }
 
 export async function updatePaymentStatus(
-  paymentId: ObjectId,
+  paymentId: Types.ObjectId,
   status: IPayment["paymentStatus"]
 ): Promise<IPayment | null> {
   return Payments.findByIdAndUpdate(
@@ -39,7 +39,7 @@ export async function updatePaymentStatus(
 }
 
 export async function listPaymentsByUser(
-  userId: ObjectId
+  userId: Types.ObjectId
 ): Promise<IPayment[]> {
   return Payments.find({ userId }).lean();
 }

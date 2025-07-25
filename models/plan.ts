@@ -1,9 +1,8 @@
-import { ObjectId } from "mongodb";
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Types } from "mongoose";
 import { collectionsName } from "../common/collections-name";
 
 export interface IPlan {
-  _id: ObjectId;
+  _id: Types.ObjectId;
   planGroup: string; // e.g. "Pro", "Starter" — groups monthly/yearly together
   title: string;
   description: string;

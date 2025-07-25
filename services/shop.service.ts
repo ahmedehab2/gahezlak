@@ -253,7 +253,7 @@ async function registerShopMember(
 
   // Add member to shop
   shop.members.push({
-    userId: newUser._id,
+    userId: newUser._id as any,
     roleId: new mongoose.Types.ObjectId(memberData.roleId),
   });
   await shop.save();

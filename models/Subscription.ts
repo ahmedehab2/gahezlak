@@ -1,5 +1,4 @@
-import { ObjectId } from "mongodb";
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, ObjectId } from "mongoose";
 import { collectionsName } from "../common/collections-name";
 import { IShop } from "./Shop";
 import { IPlan } from "./plan";
@@ -12,7 +11,7 @@ export enum SubscriptionStatus {
   EXPIRED = "expired", // Past due, access revoked
 }
 
-export interface ISubscription extends Document {
+export interface ISubscription {
   userId: ObjectId;
   shop: ObjectId | IShop;
   plan: ObjectId | IPlan; // Link to the plan they are on

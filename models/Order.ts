@@ -1,13 +1,16 @@
-import { ObjectId } from "mongodb";
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Types } from "mongoose";
 import { collectionsName } from "../common/collections-name";
 import { PaymentMethods } from "./Payment";
 import { IMenuItem } from "./MenuItem";
 
 export interface IOrderItem {
-  menuItem: IMenuItem | ObjectId;
+  menuItem: IMenuItem | Types.ObjectId;
   quantity: number;
   customizationDetails: string;
+  selectedOptions?: Array<{
+    optionId: Types.ObjectId; // or index
+    choiceIds: Types.ObjectId[]; // or indices, for multiple choices
+  }>;
   discountPercentage: number;
   price: number;
 }
@@ -22,8 +25,8 @@ export enum OrderStatus {
 }
 
 export interface IOrder {
-  _id: ObjectId;
-  shopId: ObjectId;
+  _id: Types.ObjectId;
+  shopId: Types.ObjectId;
   tableNumber?: number; // Optional field for dine-in orders
   orderStatus: OrderStatus;
   totalAmount: number;
@@ -70,6 +73,13 @@ const OrderSchema = new Schema<IOrder>(
           required: true,
         },
         quantity: { type: Number, required: true },
+        selectedOptions: [
+          {
+            optionId: { type: Schema.Types.ObjectId },
+            choiceIds: [{ type: Schema.Types.ObjectId }],
+          },
+        ],
+
         customizationDetails: { type: String },
         discountPercentage: { type: Number, default: 0, min: 0, max: 100 },
         price: { type: Number, required: true },

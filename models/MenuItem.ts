@@ -1,5 +1,4 @@
-import { ObjectId } from "mongodb";
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, ObjectId } from "mongoose";
 import { collectionsName } from "../common/collections-name";
 
 export interface IMenuItem {
@@ -20,6 +19,7 @@ export interface IMenuItem {
   imgDeleteUrl?: string;
   discountPercentage: number; //default 0
   options?: Array<{
+    _id?: ObjectId; // Optional, for existing options
     name: {
       en: string;
       ar: string;
@@ -27,6 +27,7 @@ export interface IMenuItem {
     type: "single" | "multiple";
     required: boolean;
     choices: Array<{
+      _id?: ObjectId; // Optional, for existing choices
       name: {
         en: string;
         ar: string;

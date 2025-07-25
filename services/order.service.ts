@@ -3,7 +3,10 @@ import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
 import mongoose, { FilterQuery } from "mongoose";
 import { IMenuItem, MenuItemModel } from "../models/MenuItem";
-import { calculateOrderTotalAmount } from "../utils/calculate-order-total-amount";
+import {
+  calculateOrderTotalAmount,
+  calculateItemPrice,
+} from "../utils/order-calculations";
 
 export async function CreateOrder(orderData: Partial<IOrder>) {
   const menuItems = await MenuItemModel.find({
@@ -17,17 +20,23 @@ export async function CreateOrder(orderData: Partial<IOrder>) {
   }
 
   const menuItemMap = new Map<string, IMenuItem>();
-  menuItems.forEach((m) => {
-    menuItemMap.set(m._id.toString(), m);
+  menuItems.forEach((item) => {
+    menuItemMap.set(item._id.toString(), item);
   });
 
-  orderData.orderItems.forEach((item) => {
-    const menuItem = menuItemMap.get(item.menuItem.toString());
-    if (menuItem) {
-      item.price = menuItem.price;
-      item.discountPercentage = menuItem.discountPercentage;
-    }
-  });
+  for (const orderItem of orderData.orderItems) {
+    const menuItem = menuItemMap.get(orderItem.menuItem.toString());
+    if (!menuItem) continue;
+
+    const { finalPrice, validatedOptions } = calculateItemPrice(
+      menuItem,
+      orderItem.selectedOptions || []
+    );
+
+    orderItem.price = finalPrice;
+    orderItem.discountPercentage = menuItem.discountPercentage;
+    orderItem.selectedOptions = validatedOptions;
+  }
 
   const totalAmount = calculateOrderTotalAmount(orderData.orderItems);
 
@@ -90,7 +99,16 @@ export async function GetOrdersByShop({
   skip: number;
   limit: number;
 }) {
-  const orders = await Orders.find({ shopId })
+  const orders = await Orders.find(
+    { shopId },
+    {
+      shopId: 0,
+    }
+  )
+    .populate({
+      path: "orderItems.menuItem",
+      select: "name price options imgUrl discountPercentage",
+    })
     .skip(skip)
     .limit(limit)
     .sort({ createdAt: -1 })

@@ -13,6 +13,7 @@ import {
   verifyPaymobCallbackHMAC,
 } from "../utils/paymob-hmac-verification";
 import { Orders, OrderStatus } from "../models/Order";
+import { PaymentMethods } from "../models/Payment";
 
 export const handlePaymobSubscriptionWebhook: RequestHandler = async (
   req,
@@ -260,5 +261,6 @@ async function handleOrderPaid(orderId: string, transactionId: string) {
   return await Orders.findByIdAndUpdate(orderId, {
     orderStatus: OrderStatus.Confirmed,
     paymobTransactionId: transactionId,
+    paymentMethod: PaymentMethods.CreditCard, // Assuming CreditCard for this example
   });
 }
