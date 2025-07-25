@@ -33,6 +33,47 @@ export interface ParsedSearchCriteria {
 export class SmartSearchService {
   private static openai = getOpenAIClient();
 
+  private static readonly DIETARY_SYNONYMS: Record<string, string[]> = {
+    vegan: ["plant-based", "vegan-friendly", "نباتي"],
+    vegetarian: ["vegetarian-friendly", "ovo-lacto", "نباتي"],
+    halal: ["حلال"],
+    glutenfree: ["gluten-free", "بدون جلوتين"],
+    lowfat: ["low fat", "قليل الدسم"],
+    lowcarb: ["low carb", "قليل الكربوهيدرات"],
+    highprotein: ["high protein", "غني بالبروتين"],
+    dairyfree: ["dairy-free", "بدون ألبان"],
+    keto: ["ketogenic", "كيتو"],
+    pescatarian: ["pescetarian", "سمكي"],
+    // Add more as needed
+  };
+
+  private static normalizeTag(tag: string): string {
+    return tag.replace(/\s|-/g, '').toLowerCase();
+  }
+
+  private static getAllTagVariants(tag: string): string[] {
+    const norm = this.normalizeTag(tag);
+    const synonyms = this.DIETARY_SYNONYMS[norm] || [];
+    return [tag, ...synonyms].map(this.normalizeTag);
+  }
+
+  private static tagMatchesAny(tag: string, targets: string[]): boolean {
+    const normTag = this.normalizeTag(tag);
+    return targets.some(t => this.normalizeTag(t).includes(normTag) || normTag.includes(this.normalizeTag(t)));
+  }
+
+  private static tagsIntersect(requirements: string[], tags: string[]): boolean {
+    for (const req of requirements) {
+      const variants = this.getAllTagVariants(req);
+      for (const v of variants) {
+        if (tags.some(t => this.normalizeTag(t).includes(v) || v.includes(this.normalizeTag(t)))) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   /**
    * Parse natural language search query into structured criteria
    */
@@ -198,45 +239,51 @@ Examples:
     if (menuItems.length === 0) return menuItems;
 
     const menuItemIds = menuItems.map(item => item._id);
-    const aiDataMap = new Map();
-    
     const aiDataList = await AIMenuDataModel.find({
       menuItemId: { $in: menuItemIds }
     }).lean();
-
+    const aiDataMap = new Map();
     aiDataList.forEach(data => {
       aiDataMap.set(data.menuItemId.toString(), data);
     });
 
+    // Combine all requirements for robust filtering
+    const allRequirements = [
+      ...(criteria.dietaryRequirements || []),
+      ...(criteria.healthFocus || [])
+    ];
+
     return menuItems.filter(item => {
       const aiData = aiDataMap.get(item._id.toString());
-      
       if (!aiData) {
         // If no AI data, include item (better to show than hide)
         return true;
       }
-
-      // Check dietary requirements
-      if (criteria.dietaryRequirements.length > 0) {
-        const hasDietaryMatch = criteria.dietaryRequirements.some(req =>
-          aiData.dietaryTags?.includes(req)
-        );
-        if (!hasDietaryMatch) return false;
+      // Gather all dietary tags (English, Arabic, and any variations)
+      const allDietaryTags = [
+        ...(aiData.dietaryTags || []),
+        ...(aiData.dietaryTags_ar || []),
+      ];
+      // Robust dietary/health focus filtering
+      if (allRequirements.length > 0) {
+        if (!this.tagsIntersect(allRequirements, allDietaryTags)) {
+          return false;
+        }
       }
-
-      // Check excluded ingredients
+      // Check excluded ingredients (unchanged, but normalize)
       if (criteria.excludeIngredients.length > 0) {
         const hasExcludedIngredient = criteria.excludeIngredients.some(excluded =>
-          aiData.ingredients?.some((ingredient: string) => 
-            ingredient.includes(excluded) || excluded.includes(ingredient)
+          (aiData.ingredients || []).some((ingredient: string) =>
+            this.normalizeTag(ingredient).includes(this.normalizeTag(excluded)) ||
+            this.normalizeTag(excluded).includes(this.normalizeTag(ingredient))
           ) ||
-          aiData.allergens?.some((allergen: string) => 
-            allergen.includes(excluded) || excluded.includes(allergen)
+          (aiData.allergens || []).some((allergen: string) =>
+            this.normalizeTag(allergen).includes(this.normalizeTag(excluded)) ||
+            this.normalizeTag(excluded).includes(this.normalizeTag(allergen))
           )
         );
         if (hasExcludedIngredient) return false;
       }
-
       return true;
     });
   }
