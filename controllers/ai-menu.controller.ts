@@ -281,7 +281,7 @@ export const superSearchHandler: RequestHandler<
   
   // Arabic avoidance phrases (common Arabic allergy/avoidance expressions)
   const arabicAvoidPhrases = [
-    'حساسية من', 'حساسية ل', 'بدون', 'ما أحب', 'ما بتحب', 'مش بحب', 'مش بتحب',
+    'عندي حساسية من', 'حساسية ل', 'بدون', 'ما أحب', 'مبحبش', 'مش بحب', 'مش بتحب',
     'ما عجبني', 'ما يعجبني', 'مش عجبني', 'مش يعجبني', 'ما أكل', 'ما بأكل',
     'مش بأكل', 'ما أشرب', 'ما بشرب', 'مش بشرب', 'ما أحبش', 'ما بتحبش'
   ];
