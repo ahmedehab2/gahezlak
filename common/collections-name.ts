@@ -9,5 +9,6 @@ export const collectionsName = {
   PAYMENTS: "payments",
   SUBSCRIPTIONS: "subscriptions",
   COUNTERS: "counters",
+  REPORT:"report",
   AI_MENU_DATA: "ai_menu_data",
 };

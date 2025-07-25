@@ -18,4 +18,6 @@ router.get("/analytics/total-revenue", getTotalPlatformRevenueController);
 router.get("/analytics/revenue-growth", getRevenueGrowthController);
 router.get("/analytics/top-restaurants", getTopPerformingRestaurantsController);
 
+
+
 export default router;

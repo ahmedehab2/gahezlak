@@ -45,7 +45,17 @@ export async function SalesComparison(shopId: string, start1: Date, end1: Date, 
 
   const total1 = await sumSales(start1, end1);
   const total2 = await sumSales(start2, end2);
-  const change = total1 === 0 ? 0 :   ((total2 - total1) / total1) * 100;
+  
+  let change: number;
+
+if (total1 === 0 && total2 === 0) {
+  change = 0; 
+} else if (total1 === 0 && total2 > 0) {
+   change = 100; 
+} else {
+  change = ((total2 - total1) / total1) * 100;
+}
+
 
   return { total1, total2, percentageChange: Number(change.toFixed(2)) };
 }
