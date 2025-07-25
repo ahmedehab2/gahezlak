@@ -9,8 +9,6 @@ type AccessLevel = "owner" | "member";
 export const checkShopAccess = (accessLevel: AccessLevel = "member") => {
   return async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user?.userId;
-    console.log(req.user);
-    console.log("userId", userId);
     const shopId = req.params?.shopId || req.body?.shopId || req.user?.shopId;
 
     if (!shopId) {

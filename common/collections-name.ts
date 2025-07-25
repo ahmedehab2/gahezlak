@@ -10,4 +10,5 @@ export const collectionsName = {
   SUBSCRIPTIONS: "subscriptions",
   COUNTERS: "counters",
   REPORT:"report"
+  AI_MENU_DATA: "ai_menu_data",
 };

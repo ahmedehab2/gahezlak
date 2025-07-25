@@ -1,14 +1,13 @@
-import { ObjectId } from "mongodb";
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Types } from "mongoose";
 import { collectionsName } from "../common/collections-name";
 
 export interface IShopMember {
-  userId: ObjectId;
-  roleId: ObjectId;
+  userId: Types.ObjectId;
+  roleId: Types.ObjectId;
 }
 
 export interface IShop {
-  _id: ObjectId;
+  _id: Types.ObjectId;
   name: string;
   type: string;
   address: {
@@ -18,12 +17,12 @@ export interface IShop {
   };
   phoneNumber: string;
   email: string;
-  ownerId: ObjectId;
+  ownerId: Types.ObjectId;
   members: IShopMember[];
   isPaymentDone: boolean;
   qrCodeUrl?: string; // imgbb QR code image URL
   logoUrl?: string; // imgbb restaurant logo image URL
-  subscriptionId: ObjectId | null;
+  subscriptionId: Types.ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
 }

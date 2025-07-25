@@ -6,55 +6,74 @@ import {
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
 import { IPlan } from "../models/plan";
+import { cancelPaymobSubscription } from "../utils/paymob";
+import { strict } from "assert";
 
-export async function createSubscription(
-  subscription: Pick<ISubscription, "userId" | "shop" | "plan">
-) {
-  // Check if the user already has an active subscription
-
-  const existingSubscription = await Subscriptions.findOne({
-    userId: subscription.userId,
-    status: { $in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING] },
+export async function createOrUpdatePendingSubscription({
+  shopId,
+  userId,
+  plan,
+}: {
+  shopId: string;
+  userId: string;
+  plan: IPlan;
+}) {
+  // 1. Check for a currently valid subscription (active, trialing, or cancelled-in-grace-period)
+  const existingValidSub = await Subscriptions.findOne({
+    shop: shopId,
+    $or: [
+      {
+        status: {
+          $in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING],
+        },
+      },
+      {
+        status: SubscriptionStatus.CANCELLED,
+        currentPeriodEnd: { $gt: new Date() },
+      },
+    ],
   });
 
-  if (existingSubscription) {
-    throw new Errors.BadRequestError(errMsg.USER_ALREADY_SUBSCRIBED);
+  if (existingValidSub) {
+    throw new Errors.UnprocessableError(errMsg.USER_ALREADY_SUBSCRIBED);
   }
 
-  const isTrialUsed = !!(await Subscriptions.exists({
-    userId: subscription.userId,
+  const previousSubWithTrial = await Subscriptions.findOne({
+    shop: shopId,
     isTrialUsed: true,
-  }));
-
-  const currentPeriodEnd = isTrialUsed
-    ? new Date(
-        Date.now() +
-          ((subscription.plan as IPlan).frequency === "monthly"
-            ? 30 * 24 * 60 * 60 * 1000
-            : 365 * 24 * 60 * 60 * 1000)
-      )
-    : new Date(
-        Date.now() +
-          (subscription.plan as IPlan).trialPeriodDays * 24 * 60 * 60 * 1000
-      );
-
-  // Create the new subscription
-  const newSubscription = await Subscriptions.create({
-    ...subscription,
-    status: isTrialUsed
-      ? SubscriptionStatus.ACTIVE
-      : SubscriptionStatus.TRIALING,
-    currentPeriodStart: new Date(),
-    currentPeriodEnd,
   });
+  const isEligibleForTrial = plan.trialPeriodDays > 0 && !previousSubWithTrial;
+  const effectiveTrialDays = isEligibleForTrial ? plan.trialPeriodDays : 0;
 
-  return newSubscription;
+  const now = new Date();
+  const periodEnd = new Date(
+    now.getTime() + effectiveTrialDays * 24 * 60 * 60 * 1000
+  );
+
+  const subscription = await Subscriptions.findOneAndUpdate(
+    { shop: shopId },
+    {
+      $set: {
+        userId: userId,
+        plan: plan._id,
+        status: "pending",
+        currentPeriodStart: now,
+        currentPeriodEnd: periodEnd,
+        isTrialUsed: isEligibleForTrial,
+
+        paymobSubscriptionId: undefined,
+        paymobTransactionId: undefined,
+        cancelledAt: undefined,
+      },
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  return { subscription, effectiveTrialDays };
 }
 
 // Cancel subscription
-export async function cancelSubscription(
-  userId: string
-): Promise<ISubscription> {
+export async function cancelSubscription(userId: string) {
   const subscription = await Subscriptions.findOne({
     userId,
     status: {
@@ -71,17 +90,7 @@ export async function cancelSubscription(
     throw new Errors.NotFoundError(errMsg.NO_ACTIVE_SUBSCRIPTION);
   }
 
-  // Check if subscription can be cancelled (not expired)
-  if (subscription.status === SubscriptionStatus.EXPIRED) {
-    throw new Errors.BadRequestError(errMsg.SUBSCRIPTION_CANNOT_BE_CANCELLED);
-  }
-
-  // Update subscription status to cancelled
-  subscription.status = SubscriptionStatus.CANCELLED;
-  subscription.cancelledAt = new Date();
-  await subscription.save();
-
-  return subscription;
+  await cancelPaymobSubscription(subscription.paymobSubscriptionId || 1);
 }
 
 // Get user's active subscription
@@ -114,8 +123,9 @@ export async function getAllSubscriptions(filters: {
   userId?: string;
   status?: SubscriptionStatus;
   planId?: string;
+  search?: string;
 }): Promise<{ subscriptions: ISubscription[]; totalCount: number }> {
-  const { page = 1, limit = 10, userId, status, planId } = filters;
+  const { page = 1, limit = 10, userId, status, planId, search = "" } = filters;
   const skip = (page - 1) * limit;
 
   // Build filter object
@@ -124,16 +134,60 @@ export async function getAllSubscriptions(filters: {
   if (status) filter.status = status;
   if (planId) filter.plan = planId;
 
-  const subscriptions = await Subscriptions.find(filter)
-    .populate("userId", "firstName lastName email phoneNumber")
-    .populate("shop", "name email phoneNumber address")
-    .populate("plan", "planGroup title description price currency frequency")
-    .skip(skip)
-    .limit(limit)
-    .sort({ createdAt: -1 });
-
-  const totalCount = await Subscriptions.countDocuments(filter);
-
+  // Search by user email, shop name, or plan title
+  let aggregatePipeline: any[] = [
+    { $match: filter },
+    // Join user, shop, and plan for search
+    {
+      $lookup: {
+        from: "users",
+        localField: "userId",
+        foreignField: "_id",
+        as: "user"
+      }
+    },
+    {
+      $lookup: {
+        from: "shops",
+        localField: "shop",
+        foreignField: "_id",
+        as: "shop"
+      }
+    },
+    {
+      $lookup: {
+        from: "plans",
+        localField: "plan",
+        foreignField: "_id",
+        as: "plan"
+      }
+    },
+    { $unwind: "$user" },
+    { $unwind: "$shop" },
+    { $unwind: "$plan" },
+  ];
+  if (search) {
+    aggregatePipeline.push({
+      $match: {
+        $or: [
+          { "user.email": { $regex: search, $options: "i" } },
+          { "shop.name": { $regex: search, $options: "i" } },
+          { "plan.title": { $regex: search, $options: "i" } }
+        ]
+      }
+    });
+  }
+  aggregatePipeline.push(
+    { $sort: { createdAt: -1 } },
+    { $skip: skip },
+    { $limit: limit }
+  );
+  const subscriptions = await Subscriptions.aggregate(aggregatePipeline);
+  // For total count
+  let countPipeline = aggregatePipeline.slice(0, aggregatePipeline.findIndex(st => st.$sort !== undefined));
+  countPipeline.push({ $count: "totalCount" });
+  const countResult = await Subscriptions.aggregate(countPipeline);
+  const totalCount = countResult[0]?.totalCount || 0;
   return {
     subscriptions,
     totalCount,

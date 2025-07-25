@@ -21,7 +21,7 @@ export const createMenuItemAndAddToCategoryHandler: RequestHandler<
     | "price"
     | "categoryId"
     | "imgUrl"
-    | "discount"
+    | "discountPercentage"
     | "options"
     | "isAvailable"
   >

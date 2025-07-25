@@ -11,7 +11,12 @@ export const createMenuItem = async (
   shopId: string,
   menuItemData: Pick<
     IMenuItem,
-    "name" | "description" | "price" | "categoryId" | "imgUrl" | "discount"
+    | "name"
+    | "description"
+    | "price"
+    | "categoryId"
+    | "imgUrl"
+    | "discountPercentage"
   >
 ) => {
   await getCategoryById(shopId, menuItemData.categoryId.toString()); // make sure the category exists
@@ -129,3 +134,4 @@ export async function getMenuItemsByShop({
 
   return { items, totalCount };
 }
+

@@ -1,5 +1,4 @@
-import { ObjectId } from "mongodb";
-import mongoose, { Schema, model } from "mongoose";
+import mongoose, { Schema, model, ObjectId } from "mongoose";
 import { collectionsName } from "../common/collections-name";
 import { IShop } from "./Shop";
 import { IRole } from "./Role";
@@ -57,5 +56,3 @@ const UserSchema = new Schema<IUser>(
 );
 
 export const Users = model<IUser>(collectionsName.USERS, UserSchema);
-
-

@@ -1,5 +1,4 @@
-import { ObjectId } from "mongodb";
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Types } from "mongoose";
 import { collectionsName } from "../common/collections-name";
 
 export enum PaymentMethods {
@@ -20,11 +19,11 @@ export enum PaymentStatus {
 }
 
 export interface IPayment {
-  _id: ObjectId;
-  userId?: ObjectId;
-  planId?: ObjectId;
-  shopId?: ObjectId;
-  orderId?: ObjectId;
+  _id: Types.ObjectId;
+  userId?: Types.ObjectId;
+  planId?: Types.ObjectId;
+  shopId?: Types.ObjectId;
+  orderId?: Types.ObjectId;
   guestInfo?: {
     firstName: string;
     lastName: string;

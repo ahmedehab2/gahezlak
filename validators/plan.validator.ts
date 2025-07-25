@@ -32,7 +32,7 @@ export const createPlanValidator = [
   body("trialPeriodDays")
     .exists()
     .withMessage("trialPeriodDays is required")
-    .isInt({ min: 1 })
+    .isInt({})
     .withMessage("trialPeriodDays must be integer"),
   validate,
 ];

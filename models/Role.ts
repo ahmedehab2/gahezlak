@@ -1,5 +1,4 @@
-import { ObjectId } from "mongodb";
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Types } from "mongoose";
 import { collectionsName } from "../common/collections-name";
 
 export enum Role {
@@ -8,11 +7,11 @@ export enum Role {
   SHOP_OWNER = "shop_owner",
   SHOP_MANAGER = "shop_manager",
   SHOP_STAFF = "shop_staff",
-  KITCHEN = "kitchen", 
+  KITCHEN = "kitchen",
 }
 
 export interface IRole {
-  _id: ObjectId;
+  _id: Types.ObjectId;
   name: Role;
   permissions?: string[];
 }
