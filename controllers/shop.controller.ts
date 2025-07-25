@@ -16,6 +16,7 @@ import {
   registerShopMember,
   getShopMembers,
 } from "../services/shop.service";
+import { PaginatedRespone } from "../common/types/contoller-response.types";
 
 export const createShopHandler: RequestHandler<
   {},
@@ -119,13 +120,25 @@ export const getShopHandler: RequestHandler<
 
 export const getAllShops: RequestHandler<
   {},
-  SuccessResponse<IShop[]>,
-  unknown
+  PaginatedRespone<IShop>,
+  unknown,
+  { page?: string; limit?: string; search?: string; order?: "asc" | "desc" }
 > = async (req, res) => {
-  const shops = await ShopService.getAllShops();
+  const { page = "1", limit = "10", search = "", order = "desc" } = req.query;
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+  const { shops, total } = await ShopService.getAllShops({
+    page: pageNum,
+    limit: limitNum,
+    search,
+    order,
+  });
   res.status(200).json({
-    message: "Shops fetched successfully",
+    message: "Data retreived.",
     data: shops,
+    total,
+    page: pageNum,
+    totalPages: Math.ceil(total / limitNum),
   });
 };
 
