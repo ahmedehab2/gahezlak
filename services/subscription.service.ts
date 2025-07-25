@@ -123,8 +123,9 @@ export async function getAllSubscriptions(filters: {
   userId?: string;
   status?: SubscriptionStatus;
   planId?: string;
+  search?: string;
 }): Promise<{ subscriptions: ISubscription[]; totalCount: number }> {
-  const { page = 1, limit = 10, userId, status, planId } = filters;
+  const { page = 1, limit = 10, userId, status, planId, search = "" } = filters;
   const skip = (page - 1) * limit;
 
   // Build filter object
@@ -133,16 +134,60 @@ export async function getAllSubscriptions(filters: {
   if (status) filter.status = status;
   if (planId) filter.plan = planId;
 
-  const subscriptions = await Subscriptions.find(filter)
-    .populate("userId", "firstName lastName email phoneNumber")
-    .populate("shop", "name email phoneNumber address")
-    .populate("plan", "planGroup title description price currency frequency")
-    .skip(skip)
-    .limit(limit)
-    .sort({ createdAt: -1 });
-
-  const totalCount = await Subscriptions.countDocuments(filter);
-
+  // Search by user email, shop name, or plan title
+  let aggregatePipeline: any[] = [
+    { $match: filter },
+    // Join user, shop, and plan for search
+    {
+      $lookup: {
+        from: "users",
+        localField: "userId",
+        foreignField: "_id",
+        as: "user"
+      }
+    },
+    {
+      $lookup: {
+        from: "shops",
+        localField: "shop",
+        foreignField: "_id",
+        as: "shop"
+      }
+    },
+    {
+      $lookup: {
+        from: "plans",
+        localField: "plan",
+        foreignField: "_id",
+        as: "plan"
+      }
+    },
+    { $unwind: "$user" },
+    { $unwind: "$shop" },
+    { $unwind: "$plan" },
+  ];
+  if (search) {
+    aggregatePipeline.push({
+      $match: {
+        $or: [
+          { "user.email": { $regex: search, $options: "i" } },
+          { "shop.name": { $regex: search, $options: "i" } },
+          { "plan.title": { $regex: search, $options: "i" } }
+        ]
+      }
+    });
+  }
+  aggregatePipeline.push(
+    { $sort: { createdAt: -1 } },
+    { $skip: skip },
+    { $limit: limit }
+  );
+  const subscriptions = await Subscriptions.aggregate(aggregatePipeline);
+  // For total count
+  let countPipeline = aggregatePipeline.slice(0, aggregatePipeline.findIndex(st => st.$sort !== undefined));
+  countPipeline.push({ $count: "totalCount" });
+  const countResult = await Subscriptions.aggregate(countPipeline);
+  const totalCount = countResult[0]?.totalCount || 0;
   return {
     subscriptions,
     totalCount,

@@ -25,11 +25,17 @@ export interface IMenuItem {
       ar: string;
     };
     type: "single" | "multiple";
+      en: string;
+      ar: string;
+    };
+    type: "single" | "multiple";
     required: boolean;
     choices: Array<{
       _id?: ObjectId; // Optional, for existing choices
       name: {
         en: string;
+        ar: string;
+      };
         ar: string;
       };
       price: number;

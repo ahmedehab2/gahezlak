@@ -7,7 +7,7 @@ import {
   toggleItemAvailability,
   updateMenuItem,
 } from "../services/menu-item.service";
-import { SuccessResponse } from "../common/types/contoller-response.types";
+import { SuccessResponse,PaginatedRespone } from "../common/types/contoller-response.types";
 import { IMenuItem } from "../models/MenuItem";
 import uploadToImgbb from "../utils/uploadToImgbb";
 
@@ -118,20 +118,36 @@ export const updateMenuItemHandler: RequestHandler<
   });
 };
 
+
+
 export const getMenuItemsByShopHandler: RequestHandler<
-  {
-    shopName?: string;
-  },
-  SuccessResponse<IMenuItem[]>
+  { shopName?: string }, 
+  PaginatedRespone<IMenuItem> 
 > = async (req, res) => {
   const shopId = req.user?.shopId;
   const shopName = req.params.shopName;
   const lang = req.lang;
 
-  const menuItems = await getMenuItemsByShop({ shopId, shopName, lang });
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const skip = (page - 1) * limit;
+
+  const { items, totalCount } = await getMenuItemsByShop({
+    shopId,
+    shopName,
+    lang,
+    skip,
+    limit,
+  });
+
+  const totalPages = Math.ceil(totalCount / limit);
 
   res.status(200).json({
     message: "MenuItems retrieved",
-    data: menuItems,
+    data: items,
+    total: totalCount,
+    page,
+    totalPages,
   });
 };
+

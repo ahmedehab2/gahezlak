@@ -10,6 +10,7 @@ import * as subscriptionService from "../services/subscription.service";
 import { ObjectId } from "mongoose";
 import { getUserById } from "../services/user.service";
 // import * as subscriptionService from "../services/subscription.service";
+import { PaginatedRespone } from "../common/types/contoller-response.types";
 
 export const createSubscriptionHandler: RequestHandler<
   unknown,
@@ -84,7 +85,7 @@ export const getSubscriptionByIdHandler: RequestHandler<
 // Get all subscriptions (admin)
 export const getAllSubscriptionsHandler: RequestHandler<
   {},
-  SuccessResponse<any>,
+  PaginatedRespone<any>,
   {},
   {
     page?: string;
@@ -92,25 +93,25 @@ export const getAllSubscriptionsHandler: RequestHandler<
     userId?: string;
     status?: SubscriptionStatus;
     planId?: string;
+    search?: string;
   }
 > = async (req, res) => {
-  const { page, limit, userId, status, planId } = req.query;
-
+  const { page, limit, userId, status, planId, search = "" } = req.query;
+  const pageNum = page ? parseInt(page) : 1;
+  const limitNum = limit ? parseInt(limit) : 10;
   const result = await subscriptionService.getAllSubscriptions({
-    page: page ? parseInt(page) : 1,
-    limit: limit ? parseInt(limit) : 10,
+    page: pageNum,
+    limit: limitNum,
     userId,
     status,
     planId,
+    search,
   });
-
   res.status(200).json({
-    message: "Subscriptions retrieved successfully",
-    data: {
-      subscriptions: result.subscriptions,
-      totalCount: result.totalCount,
-      currentPage: page ? parseInt(page) : 1,
-      totalPages: Math.ceil(result.totalCount / (limit ? parseInt(limit) : 10)),
-    },
+    message: "Data retreived.",
+    data: result.subscriptions,
+    total: result.totalCount,
+    page: pageNum,
+    totalPages: Math.ceil(result.totalCount / limitNum),
   });
 };

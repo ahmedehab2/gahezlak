@@ -89,10 +89,14 @@ export async function getMenuItemsByShop({
   shopId,
   shopName,
   lang,
+  skip,
+  limit,
 }: {
   shopId?: string;
   shopName?: string;
   lang: LangType;
+  skip: number;
+  limit: number;
 }) {
   let query: FilterQuery<IMenuItem> = {};
 
@@ -108,8 +112,15 @@ export async function getMenuItemsByShop({
     query.shopId = shop._id;
   }
 
-  const menuItems = await MenuItemModel.find(query, {
+  const items = await MenuItemModel.find(query, {
     shopId: 0, // exclude shopId from the response
-  }).lean();
-  return menuItems;
+  })
+    .skip(skip)
+    .limit(limit)
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const totalCount = await MenuItemModel.countDocuments(query);
+
+  return { items, totalCount };
 }
