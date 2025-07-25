@@ -84,15 +84,15 @@ export async function getMenuItemsByShop({
   shopId,
   shopName,
   lang,
-  skip,
-  limit,
+  // skip,
+  // limit,
   //search,
 }: {
   shopId?: string;
   shopName?: string;
   lang: LangType;
-  skip: number;
-  limit: number;
+  // skip: number;
+  // limit: number;
   //search?: string;
 }) {
   let query: FilterQuery<IMenuItem> = {};
@@ -120,8 +120,8 @@ export async function getMenuItemsByShop({
   const items = await MenuItemModel.find(query, {
     shopId: 0,
   })
-    .skip(skip)
-    .limit(limit)
+    // .skip(skip)
+    // .limit(limit)
     .sort({ createdAt: -1 })
     .lean();
 

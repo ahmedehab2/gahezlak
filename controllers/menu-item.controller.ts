@@ -122,34 +122,36 @@ export const updateMenuItemHandler: RequestHandler<
 
 export const getMenuItemsByShopHandler: RequestHandler<
   { shopName?: string },
-  PaginatedRespone<IMenuItem>
+  SuccessResponse<{
+    items: IMenuItem[];
+    total: number;
+  }>
 > = async (req, res) => {
   const shopId = req.user?.shopId;
   const shopName = req.params.shopName;
   const lang = req.lang;
 
-  const page = parseInt(req.query.page as string) || 1;
-  const limit = parseInt(req.query.limit as string) || 10;
-  const skip = (page - 1) * limit;
+  // const page = parseInt(req.query.page as string) || 1;
+  // const limit = parseInt(req.query.limit as string) || 10;
+  // const skip = (page - 1) * limit;
 
   //const search = req.query.search as string | undefined;  
   const { items, totalCount } = await getMenuItemsByShop({
     shopId,
     shopName,
     lang,
-    skip,
-    limit,
+    // skip,
+    // limit,
     //search,
   });
 
-  const totalPages = Math.ceil(totalCount / limit);
+  // const totalPages = Math.ceil(totalCount / limit);
 
   res.status(200).json({
     message: "MenuItems retrieved",
-    data: items,
-    total: totalCount,
-    page,
-    totalPages,
+    data: {items,total: totalCount,},
+    // page,
+    // totalPages,
   });
 };
 
