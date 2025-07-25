@@ -275,6 +275,32 @@ export const superSearchHandler: RequestHandler<
   const healthConditions = healthParsed.conditions || [];
   const detectedLanguage = LanguageDetectorService.detectLanguage(query);
 
+  // INTENT DETECTION: Determine if user wants to 'find', 'avoid', or get 'health' advice
+  let intent: 'find' | 'avoid' | 'health' = 'find';
+  const queryLower = query.toLowerCase();
+  const allergyAvoidRegex = /allergic to|without|avoid/;
+  if (allergyAvoidRegex.test(queryLower)) {
+    intent = 'avoid';
+  } else if (
+    queryLower.includes('diabetes') ||
+    queryLower.includes('keto') ||
+    queryLower.includes('hypertension') ||
+    queryLower.includes('health') ||
+    healthConditions.length > 0
+  ) {
+    intent = 'health';
+  } else if (
+    /find|show me|contains|with/.test(queryLower) ||
+    (searchParsed.keywords && searchParsed.keywords.length > 0)
+  ) {
+    intent = 'find';
+  } else if (
+    // If the query is a single word and matches an allergen, treat as 'find'
+    allAllergies.length === 1 && query.trim().split(' ').length === 1
+  ) {
+    intent = 'find';
+  }
+
   // 2. Get all menu items for the shop
   const menuItemQuery: any = { shopId: new mongoose.Types.ObjectId(shopId) };
   if (!includeOutOfStock) menuItemQuery.isAvailable = true;
@@ -292,188 +318,104 @@ export const superSearchHandler: RequestHandler<
     aiDataMap.set(data.menuItemId.toString(), data);
   });
 
-  // 4. Filter for allergies, health, and search, tracking exclusions
+  // 4. Filtering logic based on intent
   const safeItems: IMenuItem[] = [];
-  const unsafeItems: IMenuItem[] = [];
   const excludedItems: { item: IMenuItem; reasons: string[] }[] = [];
 
   for (const menuItem of allMenuItems) {
     const aiData = aiDataMap.get(menuItem._id.toString());
     const reasons: string[] = [];
-    const descriptionText = `${menuItem.name.en} ${
-      menuItem.description?.en || ""
-    }`.toLowerCase();
-    // Allergy check
-    let hasAllergen = false;
-    if (allAllergies.length > 0) {
-      hasAllergen = allAllergies.some((allergy) => {
-        let hasInAI = false;
-        if (
-          aiData &&
-          (aiData.allergens?.length || aiData.ingredients?.length)
-        ) {
-          hasInAI = [
-            ...(aiData.allergens || []),
-            ...(aiData.ingredients || []),
-          ].some(
-            (itemAllergen) =>
-              itemAllergen.toLowerCase().includes(allergy.toLowerCase()) ||
-              allergy.toLowerCase().includes(itemAllergen.toLowerCase())
-          );
-        }
-        const hasInDescription = new RegExp(
-          `\\b${allergy.toLowerCase()}\\b`,
-          "i"
-        ).test(descriptionText);
-        const allergyVariations =
-          AllergyFilterService.getAllergyVariations(allergy);
-        const hasVariation = allergyVariations.some((variation) =>
-          new RegExp(`\\b${variation.toLowerCase()}\\b`, "i").test(
-            descriptionText
-          )
+    const descriptionText = `
+      ${menuItem.name.en || ''} ${menuItem.name.ar || ''} 
+      ${menuItem.description?.en || ''} ${menuItem.description?.ar || ''}
+    `.toLowerCase();
+    const allIngredients = [
+      ...(aiData?.ingredients || []),
+    ];
+    const allAllergensAI = [
+      ...(aiData?.allergens || []),
+    ];
+    const allDietaryTags = [
+      ...(aiData?.dietaryTags || []),
+    ];
+
+    // INTENT-BASED FILTERING
+    if (intent === 'find') {
+      // Normal search: match keywords/ingredients
+      let matches = false;
+      if (searchParsed.keywords && searchParsed.keywords.length > 0) {
+        matches = searchParsed.keywords.some((keyword) =>
+          descriptionText.includes(keyword.toLowerCase()) ||
+          allIngredients.some((ing) => ing.includes(keyword.toLowerCase())) ||
+          allDietaryTags.some((tag) => tag.includes(keyword.toLowerCase()))
         );
-        if (hasInAI || hasInDescription || hasVariation) {
-          reasons.push(`contains allergen: ${allergy}`);
-          return true;
-        }
-        return false;
-      });
-    }
-    // Health check
-    let healthUnsuitable = false;
-    if (!hasAllergen && healthConditions.length > 0 && aiData) {
-      for (const condition of healthConditions) {
-        const conditionData = (HealthInsightsService as any).HEALTH_CONDITIONS[
-          condition
-        ];
-        if (conditionData) {
-          // Check for harmful ingredients
-          const harmfulIngredients =
-            aiData.ingredients?.filter((ingredient: string) =>
-              conditionData.avoid.some((avoid: string) =>
-                ingredient.includes(avoid)
-              )
-            ) || [];
-          if (harmfulIngredients.length > 0) {
-            reasons.push(
-              `not suitable for ${condition}: contains ${harmfulIngredients.join(
-                ", "
-              )}`
+      } else {
+        // If no keywords, include all
+        matches = true;
+      }
+      if (matches) safeItems.push(menuItem);
+      else excludedItems.push({ item: menuItem, reasons: ['Does not match search keywords'] });
+    } else if (intent === 'avoid') {
+      // Allergy/dietary restriction: exclude unsafe items
+      let hasAllergen = false;
+      if (allAllergies.length > 0) {
+        hasAllergen = allAllergies.some((allergy) => {
+          let hasInAI = false;
+          if (allAllergensAI.length || allIngredients.length) {
+            hasInAI = [...allAllergensAI, ...allIngredients].some(
+              (itemAllergen) =>
+                itemAllergen.toLowerCase().includes(allergy.toLowerCase()) ||
+                allergy.toLowerCase().includes(itemAllergen.toLowerCase())
             );
-            healthUnsuitable = true;
+          }
+          const hasInDescription = new RegExp(
+            `\\b${allergy.toLowerCase()}\\b`,
+            'i'
+          ).test(descriptionText);
+          if (hasInAI || hasInDescription) {
+            reasons.push(`contains allergen: ${allergy}`);
+            return true;
+          }
+          return false;
+        });
+      }
+      if (!hasAllergen) safeItems.push(menuItem);
+      else excludedItems.push({ item: menuItem, reasons });
+    } else if (intent === 'health') {
+      // Health insights: exclude items with harmful ingredients
+      let healthUnsuitable = false;
+      if (healthConditions.length > 0 && aiData) {
+        for (const condition of healthConditions) {
+          const conditionData = (HealthInsightsService as any).HEALTH_CONDITIONS[condition];
+          if (conditionData) {
+            const harmfulIngredients =
+              allIngredients.filter((ingredient) =>
+                conditionData.avoid.some((avoid: string) =>
+                  ingredient.toLowerCase().includes(avoid.toLowerCase())
+                )
+              ) || [];
+            if (harmfulIngredients.length > 0) {
+              reasons.push(
+                `not suitable for ${condition}: contains ${harmfulIngredients.join(', ')}`
+              );
+              healthUnsuitable = true;
+            }
           }
         }
       }
-    }
-    // Smart search check (keywords, price, dietary)
-    let searchMismatch = false;
-    if (!hasAllergen && !healthUnsuitable && searchParsed) {
-      // Price
-      if (searchParsed.priceRange) {
-        if (
-          searchParsed.priceRange.min !== undefined &&
-          menuItem.price < searchParsed.priceRange.min
-        ) {
-          reasons.push(`price below minimum: ${searchParsed.priceRange.min}`);
-          searchMismatch = true;
-        }
-        if (
-          searchParsed.priceRange.max !== undefined &&
-          menuItem.price > searchParsed.priceRange.max
-        ) {
-          reasons.push(`price above maximum: ${searchParsed.priceRange.max}`);
-          searchMismatch = true;
-        }
-      }
-      // Keywords
-      if (searchParsed.keywords && searchParsed.keywords.length > 0) {
-        const itemText =
-          `${menuItem.name.en} ${menuItem.name.ar} ${menuItem.description?.en} ${menuItem.description?.ar}`.toLowerCase();
-        const hasKeyword = searchParsed.keywords.some((keyword) =>
-          itemText.includes(keyword.toLowerCase())
-        );
-        if (!hasKeyword) {
-          reasons.push(
-            `does not match keywords: ${searchParsed.keywords.join(", ")}`
-          );
-          searchMismatch = true;
-        }
-      }
-      // Dietary requirements
-      if (
-        searchParsed.dietaryRequirements &&
-        searchParsed.dietaryRequirements.length > 0 &&
-        aiData
-      ) {
-        const hasDietaryMatch = searchParsed.dietaryRequirements.some((req) =>
-          aiData.dietaryTags?.includes(req)
-        );
-        if (!hasDietaryMatch) {
-          reasons.push(
-            `does not match dietary requirements: ${searchParsed.dietaryRequirements.join(
-              ", "
-            )}`
-          );
-          searchMismatch = true;
-        }
-      }
-      // Exclude ingredients
-      if (
-        searchParsed.excludeIngredients &&
-        searchParsed.excludeIngredients.length > 0 &&
-        aiData
-      ) {
-        const hasExcluded = searchParsed.excludeIngredients.some(
-          (excluded) =>
-            aiData.ingredients?.some((ingredient: string) =>
-              ingredient.includes(excluded)
-            ) ||
-            aiData.allergens?.some((allergen: string) =>
-              allergen.includes(excluded)
-            )
-        );
-        if (hasExcluded) {
-          reasons.push(
-            `contains excluded ingredient: ${searchParsed.excludeIngredients.join(
-              ", "
-            )}`
-          );
-          searchMismatch = true;
-        }
-      }
-    }
-    // Final categorization
-    if (hasAllergen) {
-      unsafeItems.push(menuItem);
-      excludedItems.push({ item: menuItem, reasons });
-    } else if (healthUnsuitable) {
-      excludedItems.push({ item: menuItem, reasons });
-    } else if (searchMismatch) {
-      excludedItems.push({ item: menuItem, reasons });
-    } else {
-      safeItems.push(menuItem);
+      if (!healthUnsuitable) safeItems.push(menuItem);
+      else excludedItems.push({ item: menuItem, reasons });
     }
   }
 
-  // Health advice
+  // Health advice (if relevant)
   let healthAdvice = "";
-  if (healthConditions.length > 0) {
+  if (intent === 'health' && healthConditions.length > 0) {
     healthAdvice = await HealthInsightsService.generateNutritionalGuidance(
       healthParsed,
       detectedLanguage
     );
   }
-
-  // Search summary
-  const searchSummary = {
-    keywords: searchParsed.keywords,
-    priceRange: searchParsed.priceRange,
-    dietaryRequirements: searchParsed.dietaryRequirements,
-    excludeIngredients: searchParsed.excludeIngredients,
-    mealType: searchParsed.mealType,
-    cuisine: searchParsed.cuisine,
-    healthFocus: searchParsed.healthFocus,
-  };
 
   // Always include image (imgUrl) in each item
   const addImgUrl = (item: IMenuItem) => ({
@@ -481,7 +423,6 @@ export const superSearchHandler: RequestHandler<
     imgUrl: item.imgUrl || "",
   });
   const safeItemsWithImg = safeItems.map(addImgUrl);
-  const unsafeItemsWithImg = unsafeItems.map(addImgUrl);
   const excludedItemsWithImg = excludedItems.map(({ item, reasons }) => ({
     item: addImgUrl(item),
     reasons,
@@ -491,7 +432,9 @@ export const superSearchHandler: RequestHandler<
     message: "Super search completed",
     data: {
       safeItems: safeItemsWithImg,
-      unsafeItems: unsafeItemsWithImg,
+      excludedItems: excludedItemsWithImg,
+      healthAdvice,
+      intent,
     },
   });
 };

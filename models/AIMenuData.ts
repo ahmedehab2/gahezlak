@@ -6,32 +6,11 @@ export interface IAIMenuData {
   _id: ObjectId;
   menuItemId: ObjectId;
   shopId: ObjectId;
-
-  // Basic ingredient tracking
   ingredients: string[];
-
-  // Common allergens
   allergens: string[];
-
-  // Dietary tags
   dietaryTags: string[];
-
-  // Basic nutritional info
-  nutritionalInfo?: {
-    calories?: number;
-    protein?: number;
-    carbs?: number;
-    fat?: number;
-    sodium?: number;
-  };
-
-  // AI processing metadata
   aiProcessed: boolean;
   lastAIUpdate: Date;
-
-  // Embeddings for semantic search
-  descriptionEmbedding?: number[];
-
   createdAt: Date;
   updatedAt: Date;
 }
@@ -105,13 +84,6 @@ const AIMenuDataSchema = new Schema<IAIMenuData>(
         ],
       },
     ],
-    nutritionalInfo: {
-      calories: { type: Number, min: 0 },
-      protein: { type: Number, min: 0 },
-      carbs: { type: Number, min: 0 },
-      fat: { type: Number, min: 0 },
-      sodium: { type: Number, min: 0 },
-    },
     aiProcessed: {
       type: Boolean,
       default: false,
@@ -120,11 +92,6 @@ const AIMenuDataSchema = new Schema<IAIMenuData>(
       type: Date,
       default: Date.now,
     },
-    descriptionEmbedding: [
-      {
-        type: Number,
-      },
-    ],
   },
   {
     timestamps: true,
