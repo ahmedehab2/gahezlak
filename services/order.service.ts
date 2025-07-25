@@ -2,15 +2,49 @@ import { Orders, IOrder, OrderStatus } from "../models/Order";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
 import mongoose, { FilterQuery } from "mongoose";
+import { IMenuItem, MenuItemModel } from "../models/MenuItem";
+import {
+  calculateOrderTotalAmount,
+  calculateItemPrice,
+} from "../utils/order-calculations";
 
 export async function CreateOrder(orderData: Partial<IOrder>) {
-  if (!orderData.shopId) {
-    throw new Errors.BadRequestError(errMsg.SHOP_NOT_FOUND);
+  const menuItems = await MenuItemModel.find({
+    _id: { $in: orderData.orderItems?.map((item) => item.menuItem) },
+    isAvailable: true,
+    shopId: orderData.shopId,
+  });
+
+  if (menuItems.length !== orderData.orderItems?.length) {
+    throw new Errors.BadRequestError(errMsg.MENU_ITEM_NOT_FOUND);
   }
+
+  const menuItemMap = new Map<string, IMenuItem>();
+  menuItems.forEach((item) => {
+    menuItemMap.set(item._id.toString(), item);
+  });
+
+  for (const orderItem of orderData.orderItems) {
+    const menuItem = menuItemMap.get(orderItem.menuItem.toString());
+    if (!menuItem) continue;
+
+    const { finalPrice, validatedOptions } = calculateItemPrice(
+      menuItem,
+      orderItem.selectedOptions || []
+    );
+
+    orderItem.price = finalPrice;
+    orderItem.discountPercentage = menuItem.discountPercentage;
+    orderItem.selectedOptions = validatedOptions;
+  }
+
+  const totalAmount = calculateOrderTotalAmount(orderData.orderItems);
 
   const newOrder = await Orders.create({
     ...orderData,
+    totalAmount,
   });
+  await newOrder.populate("orderItems.menuItem");
 
   return newOrder.toObject();
 }
@@ -65,7 +99,16 @@ export async function GetOrdersByShop({
   skip: number;
   limit: number;
 }) {
-  const orders = await Orders.find({ shopId })
+  const orders = await Orders.find(
+    { shopId },
+    {
+      shopId: 0,
+    }
+  )
+    .populate({
+      path: "orderItems.menuItem",
+      select: "name price options imgUrl discountPercentage",
+    })
     .skip(skip)
     .limit(limit)
     .sort({ createdAt: -1 })

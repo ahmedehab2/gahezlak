@@ -11,7 +11,7 @@ import adminRoutes from "./routes/admin.routes";
 import { ErrorHandlerMiddleware } from "./middlewares/error-handling.middleware";
 import { languageMiddleware } from "./middlewares/language.middleware";
 import planRoutes from "./routes/plan.routes";
-import paymentRoutes from "./routes/payment.routes";
+// import paymentRoutes from "./routes/payment.routes";
 import shopRoutes from "./routes/shop.routes";
 import roleRoutes from "./routes/role.routes";
 import { aiMenuRoutes } from "./routes/ai-menu.routes";
@@ -19,6 +19,7 @@ import { aiMenuRoutes } from "./routes/ai-menu.routes";
 import cors from "cors";
 import { errMsg } from "./common/err-messages";
 import { Errors } from "./errors";
+import webhooksRoutes from "./routes/webhooks.routes";
 
 const app = express();
 
@@ -36,11 +37,13 @@ app.get("/", (req, res) => {
   res.send("API is running 🚀");
 });
 
+app.use("/api/v1/webhooks", webhooksRoutes);
+
 app.use("/api/v1/plans", planRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/subscriptions", subscriptionRoutes);
-app.use("/api/v1/payments", paymentRoutes);
+// app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/shops", shopRoutes);
 app.use("/api/v1/roles", roleRoutes);
 app.use("/api/v1/ai/menu", aiMenuRoutes);

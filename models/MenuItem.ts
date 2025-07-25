@@ -1,5 +1,4 @@
-import { ObjectId } from "mongodb";
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, ObjectId } from "mongoose";
 import { collectionsName } from "../common/collections-name";
 
 export interface IMenuItem {
@@ -18,8 +17,9 @@ export interface IMenuItem {
   isAvailable: boolean;
   imgUrl?: string;
   imgDeleteUrl?: string;
-  discount?: number; // percentage
+  discountPercentage: number; // default 0
   options?: Array<{
+    _id?: ObjectId; // Optional, for existing options
     name: {
       en: string;
       ar: string;
@@ -27,6 +27,7 @@ export interface IMenuItem {
     type: "single" | "multiple";
     required: boolean;
     choices: Array<{
+      _id?: ObjectId; // Optional, for existing choices
       name: {
         en: string;
         ar: string;
@@ -62,7 +63,7 @@ const MenuItemSchema = new Schema<IMenuItem>(
     isAvailable: { type: Boolean, default: true },
     imgUrl: { type: String },
     imgDeleteUrl: { type: String },
-    discount: { type: Number, min: 0, max: 100 },
+    discountPercentage: { type: Number, min: 0, max: 100, default: 0 },
     options: [
       {
         name: {

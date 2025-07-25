@@ -20,10 +20,10 @@ export const validateCreateMenuItem = [
   body("categoryId").isMongoId().withMessage("Invalid categoryId"),
 
   body("imgUrl").optional().isString(),
-  body("discount")
+  body("discountPercentage")
     .optional()
     .isFloat({ min: 0, max: 100 })
-    .withMessage("Discount must be between 0 and 100"),
+    .withMessage("Discount percentage must be between 0 and 100"),
 
   body("options").optional().isArray(),
   body("options.*.name.en")
@@ -63,10 +63,10 @@ export const validateUpdateMenuItem = [
   body("price").optional().isFloat({ min: 0 }),
   body("categoryId").optional().isMongoId().withMessage("Invalid categoryId"),
   body("imgUrl").optional().isString(),
-  body("discount")
+  body("discountPercentage")
     .optional()
     .isFloat({ min: 0, max: 100 })
-    .withMessage("Discount must be between 0 and 100"),
+    .withMessage("Discount percentage must be between 0 and 100"),
   body("options").optional().isArray(),
   body("options.*.name.en").optional().isString(),
   body("options.*.name.ar").optional().isString(),
