@@ -5,6 +5,8 @@ import { RequestHandler } from "express";
 import { createSubscriptionPlan } from "../utils/paymob";
 import { Errors } from "../errors";
 import { errMsg } from "../common/err-messages";
+import { Role } from "../models/Role";
+import { ProjectionFields } from "mongoose";
 
 export const createPlanHandler: RequestHandler<
   unknown,
@@ -95,7 +97,12 @@ export const getPlansHandler: RequestHandler<
   SuccessResponse<IPlan[]>,
   unknown
 > = async (req, res, next) => {
-  const plans = await planService.getAllPlans();
+  let select: ProjectionFields<IPlan> = {};
+
+  if (req.user?.role !== Role.ADMIN) {
+    select.paymobPlanId = 0; // Exclude paymobPlanId for non-admin users
+  }
+  const plans = await planService.getAllPlans(select);
   res.status(200).json({
     message: "Plans fetched successfully",
     data: plans,

@@ -1,3 +1,4 @@
+import { ProjectionFields, QuerySelector } from "mongoose";
 import { errMsg } from "../common/err-messages";
 import { Errors } from "../errors";
 import { IPlan, Plans } from "../models/plan";
@@ -17,8 +18,8 @@ export async function getPlanById(planId: string) {
   return plan;
 }
 
-export async function getAllPlans() {
-  const plans = await Plans.find().lean();
+export async function getAllPlans(select: ProjectionFields<IPlan> = {}) {
+  const plans = await Plans.find({}, select).lean();
   return plans;
 }
 
