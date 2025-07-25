@@ -5,11 +5,12 @@ import {
   getTopPerformingRestaurantsController,
 } from "../controllers/adminAnalytics.controller";
 import { protect, isAllowed } from "../middlewares/auth";
+import { Role } from "../models/Role";
 
 const router = express.Router();
 
 // Protect all routes and allow only admin
-router.use(protect, isAllowed([ "Admin"]));
+router.use(protect, isAllowed([Role.ADMIN]));
 
 // admin analysis routes
 
