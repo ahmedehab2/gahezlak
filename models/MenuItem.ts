@@ -17,14 +17,10 @@ export interface IMenuItem {
   isAvailable: boolean;
   imgUrl?: string;
   imgDeleteUrl?: string;
-  discountPercentage: number; //default 0
+  discountPercentage: number; // default 0
   options?: Array<{
     _id?: ObjectId; // Optional, for existing options
     name: {
-      en: string;
-      ar: string;
-    };
-    type: "single" | "multiple";
       en: string;
       ar: string;
     };
@@ -34,8 +30,6 @@ export interface IMenuItem {
       _id?: ObjectId; // Optional, for existing choices
       name: {
         en: string;
-        ar: string;
-      };
         ar: string;
       };
       price: number;
