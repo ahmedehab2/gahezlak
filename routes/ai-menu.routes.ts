@@ -6,17 +6,7 @@ import { uploadMultipleMiddleware } from "../middlewares/multer";
 
 const aiMenuRoutes = Router();
 
-// All AI routes require authentication and shop membership
-aiMenuRoutes.use(protect);
-aiMenuRoutes.use(isShopMember);
-
-/**
- * POST /api/ai/menu/allergy-filter
- * Filter menu items based on allergies and dietary restrictions
- * Body: { query: string, includeOutOfStock?: boolean }
- */
-aiMenuRoutes.post("/allergy-filter", aiMenuController.allergyFilterHandler);
-
+// Public endpoints
 /**
  * POST /api/ai/menu/smart-search
  * Natural language search for menu items
@@ -30,6 +20,16 @@ aiMenuRoutes.post("/smart-search", aiMenuController.smartSearchHandler);
  * Body: { query: string, shopId?: string, limit?: number, includeOutOfStock?: boolean }
  */
 aiMenuRoutes.post("/super-search", aiMenuController.superSearchHandler);
+
+// Protected endpoints (require authentication and shop membership)
+aiMenuRoutes.use(protect, isShopMember);
+
+/**
+ * POST /api/ai/menu/allergy-filter
+ * Filter menu items based on allergies and dietary restrictions
+ * Body: { query: string, includeOutOfStock?: boolean }
+ */
+aiMenuRoutes.post("/allergy-filter", aiMenuController.allergyFilterHandler);
 
 /**
  * POST /api/ai/menu/process/:itemId
@@ -77,8 +77,6 @@ aiMenuRoutes.post("/bulk-insert", aiMenuController.bulkInsertMenuItemsHandler);
  * AI-powered menu extraction from image or PDF (staff/admin only)
  * Upload field: 'files' (multiple images) or 'file' (single PDF)
  */
-// Use uploadMultipleMiddleware for images (field: 'files'), fallback to uploadSingleMiddleware for PDF (field: 'file')
-// The controller will handle validation and error if both are present
 aiMenuRoutes.post(
   "/vision-extract",
   uploadMultipleMiddleware("files"),
