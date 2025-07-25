@@ -1,39 +1,27 @@
 import { RequestHandler } from "express";
-import { SuccessResponse } from "../common/types/contoller-response.types";
-import {
-  AllergyFilterService,
-  AllergyFilterRequest,
-  AllergyFilterResponse,
-} from "../services/ai/allergy-filter.service";
-import {
-  SmartSearchService,
-  SmartSearchRequest,
-  SmartSearchResponse,
-} from "../services/ai/smart-search.service";
-
-import {
-  HealthInsightsService,
-  HealthInsightRequest,
-  HealthInsightResponse,
-} from "../services/ai/health-insights.service";
-import { IMenuItem, MenuItemModel } from "../models/MenuItem";
 import mongoose from "mongoose";
+import { AllergyFilterService } from "../services/ai/allergy-filter.service";
+import { SmartSearchService, SmartSearchRequest, SmartSearchResponse } from "../services/ai/smart-search.service";
 import { LanguageDetectorService } from "../services/ai/language-detector.service";
+import { HealthInsightsService } from "../services/ai/health-insights.service";
+import { SuccessResponse } from "../common/types/contoller-response.types";
+import { MenuItemModel, IMenuItem } from "../models/MenuItem";
 import { AIMenuDataModel } from "../models/AIMenuData";
 import { extractMenuFromFile } from "../services/ai/vision-extract.service";
+import { getOpenAIClient, AI_CONFIG } from "../config/openai";
 
 /**
  * Filter menu items based on allergies and dietary restrictions
  */
 export const allergyFilterHandler: RequestHandler<
   unknown,
-  SuccessResponse<AllergyFilterResponse>,
+  SuccessResponse<any>,
   { query: string; includeOutOfStock?: boolean }
 > = async (req, res) => {
   const shopId = req.user?.shopId!;
   const { query, includeOutOfStock = false } = req.body;
 
-  const filterRequest: AllergyFilterRequest = {
+  const filterRequest = {
     query,
     shopId,
     includeOutOfStock,
@@ -183,13 +171,13 @@ export const batchProcessMenuItemsHandler: RequestHandler<
  */
 export const healthInsightsHandler: RequestHandler<
   unknown,
-  SuccessResponse<HealthInsightResponse>,
+  SuccessResponse<any>,
   { query: string; limit?: number; includeOutOfStock?: boolean }
 > = async (req, res) => {
   const shopId = req.user?.shopId!;
   const { query, limit = 15, includeOutOfStock = false } = req.body;
 
-  const healthRequest: HealthInsightRequest = {
+  const healthRequest = {
     query,
     shopId,
     limit,
@@ -246,6 +234,84 @@ export const conditionRecommendationsHandler: RequestHandler<
 };
 
 /**
+ * Use AI to determine user intent and extract relevant information
+ */
+async function getIntentFromAI(query: string) {
+  try {
+    const openai = getOpenAIClient();
+    
+    const intentResponse = await openai.chat.completions.create({
+      model: AI_CONFIG.TEXT_MODEL,
+      messages: [
+        { 
+          role: 'system', 
+          content: `Analyze this restaurant search query and determine the user's intent. Extract relevant information and respond with JSON:
+          {
+            "intent": "find|avoid|health",
+            "confidence": 0.95,
+            "extracted_keywords": [],
+            "extracted_allergies": [],
+            "extracted_health": [],
+            "price_range": {
+              "min": null,
+              "max": null
+            }
+          }
+          
+          Intent definitions:
+          - "find": User wants to discover/search for specific food items, ingredients, or dishes
+          - "avoid": User has allergies, dislikes, or wants to exclude certain foods
+          - "health": User has health conditions or wants health-focused recommendations
+          
+          Price extraction rules:
+          - "under 50", "< 50", "less than 50" → {"max": 50}
+          - "over 80", "> 80", "more than 80" → {"min": 80}
+          - "between 30 and 70", "30-70" → {"min": 30, "max": 70}
+          - "cheap" → {"max": 50}
+          - "expensive" → {"min": 100}
+          
+          Examples:
+          - "I want pizza" → {"intent": "find", "extracted_keywords": ["pizza"]}
+          - "burgers under 80" → {"intent": "find", "extracted_keywords": ["burgers"], "price_range": {"max": 80}}
+          - "show me cheap vegan options" → {"intent": "find", "extracted_keywords": ["vegan"], "price_range": {"max": 50}}
+          - "expensive steaks" → {"intent": "find", "extracted_keywords": ["steaks"], "price_range": {"min": 100}}
+          - "I'm allergic to nuts" → {"intent": "avoid", "extracted_allergies": ["nuts"]}
+          - "I have diabetes" → {"intent": "health", "extracted_health": ["diabetes"]}
+          
+          Handle both English and Arabic queries naturally.`
+        },
+        { role: 'user', content: query }
+      ],
+      max_tokens: AI_CONFIG.MAX_TOKENS,
+      temperature: AI_CONFIG.TEMPERATURE,
+      response_format: { type: 'json_object' }
+    });
+
+    const result = JSON.parse(intentResponse.choices[0].message.content || '{}');
+    
+    return {
+      intent: result.intent || 'find',
+      confidence: result.confidence || 0.5,
+      keywords: result.extracted_keywords || [],
+      allergies: result.extracted_allergies || [],
+      health: result.extracted_health || [],
+      priceRange: result.price_range || null
+    };
+  } catch (error) {
+    console.error('Error getting intent from AI:', error);
+    // Fallback to 'find' intent if AI fails
+    return {
+      intent: 'find',
+      confidence: 0.3,
+      keywords: [],
+      allergies: [],
+      health: [],
+      priceRange: null
+    };
+  }
+}
+
+/**
  * Super endpoint: Combines allergy filter, health insights, and smart search
  */
 export const superSearchHandler: RequestHandler<
@@ -262,59 +328,16 @@ export const superSearchHandler: RequestHandler<
   const shopId = req.user?.shopId || req.body.shopId;
   const { query, limit = 20, includeOutOfStock = false } = req.body;
 
-  // 1. Extract allergies, health conditions, and search criteria
-  const [extracted, healthParsed, searchParsed] = await Promise.all([
-    AllergyFilterService.extractAllergiesFromQuery(query),
-    HealthInsightsService.parseHealthQuery(query),
-    SmartSearchService.parseSearchQuery(query),
-  ]);
-  const allAllergies = [
-    ...(extracted.allergies || []),
-    ...(extracted.dietaryRestrictions || []),
-  ];
-  const healthConditions = healthParsed.conditions || [];
+  // 1. Use AI to determine intent and extract information
+  const aiIntent = await getIntentFromAI(query);
+  
+  const intent = aiIntent.intent as 'find' | 'avoid' | 'health';
+  const allAllergies = aiIntent.allergies;
+  const healthConditions = aiIntent.health;
+  const searchKeywords = aiIntent.keywords;
+  const priceRange = aiIntent.priceRange;
+  
   const detectedLanguage = LanguageDetectorService.detectLanguage(query);
-
-  // INTENT DETECTION: Determine if user wants to 'find', 'avoid', or get 'health' advice
-  let intent: 'find' | 'avoid' | 'health' = 'find';
-  const queryLower = query.toLowerCase();
-  
-  // Arabic avoidance phrases (common Arabic allergy/avoidance expressions)
-  const arabicAvoidPhrases = [
-    'عندي حساسية من', 'حساسية ل', 'بدون', 'ما أحب', 'مبحبش', 'مش بحب', 'مش بتحب',
-    'ما عجبني', 'ما يعجبني', 'مش عجبني', 'مش يعجبني', 'ما أكل', 'ما بأكل',
-    'مش بأكل', 'ما أشرب', 'ما بشرب', 'مش بشرب', 'ما أحبش', 'ما بتحبش'
-  ];
-  
-  const allergyAvoidRegex = /allergic to|allergy to|sensitive to|intolerant to|without|avoid|can't eat|cannot eat|don't like|do not like|hate|dislike|not a fan of|no|never|won't eat|will not eat/;
-  
-  // Check for Arabic avoidance phrases
-  const hasArabicAvoidance = arabicAvoidPhrases.some(phrase => queryLower.includes(phrase));
-  
-  if (allergyAvoidRegex.test(queryLower) || hasArabicAvoidance) {
-    intent = 'avoid';
-  } else if (
-    queryLower.includes('diabetes') ||
-    queryLower.includes('keto') ||
-    queryLower.includes('hypertension') ||
-    queryLower.includes('health') ||
-    queryLower.includes('سكري') ||
-    queryLower.includes('ضغط') ||
-    queryLower.includes('صحة') ||
-    healthConditions.length > 0
-  ) {
-    intent = 'health';
-  } else if (
-    /find|show me|contains|with/.test(queryLower) ||
-    (searchParsed.keywords && searchParsed.keywords.length > 0)
-  ) {
-    intent = 'find';
-  } else if (
-    // If the query is a single word and matches an allergen, treat as 'find'
-    allAllergies.length === 1 && query.trim().split(' ').length === 1
-  ) {
-    intent = 'find';
-  }
 
   // 2. Get all menu items for the shop
   const menuItemQuery: any = { shopId: new mongoose.Types.ObjectId(shopId) };
@@ -356,45 +379,114 @@ export const superSearchHandler: RequestHandler<
 
     // INTENT-BASED FILTERING
     if (intent === 'find') {
-      // Normal search: match keywords/ingredients
-      let matches = false;
-      if (searchParsed.keywords && searchParsed.keywords.length > 0) {
-        matches = searchParsed.keywords.some((keyword) =>
-          descriptionText.includes(keyword.toLowerCase()) ||
-          allIngredients.some((ing) => ing.includes(keyword.toLowerCase())) ||
-          allDietaryTags.some((tag) => tag.includes(keyword.toLowerCase()))
-        );
+      // Normal search: match keywords/ingredients and price
+      let matches = true; // Start with true, then apply filters
+      
+      // Keyword filtering
+      if (searchKeywords && searchKeywords.length > 0) {
+        const keywordMatch = searchKeywords.some((keyword: string) => {
+          const keywordLower = keyword.toLowerCase();
+          // Remove common plural suffixes for better matching
+          const keywordBase = keywordLower.replace(/s$|es$/, '');
+          
+          return (
+            // Check exact match in description text
+            descriptionText.includes(keywordLower) ||
+            // Check base form (singular/plural variations)
+            descriptionText.includes(keywordBase) ||
+            // Check if any ingredient matches
+            allIngredients.some((ing) => 
+              ing.toLowerCase().includes(keywordLower) ||
+              ing.toLowerCase().includes(keywordBase) ||
+              keywordLower.includes(ing.toLowerCase())
+            ) ||
+            // Check if any dietary tag matches
+            allDietaryTags.some((tag) => 
+              tag.toLowerCase().includes(keywordLower) ||
+              tag.toLowerCase().includes(keywordBase) ||
+              keywordLower.includes(tag.toLowerCase())
+            )
+          );
+        });
+        if (!keywordMatch) {
+          matches = false;
+          reasons.push(`does not match keywords: ${searchKeywords.join(', ')}`);
+        }
       }
-      // If no keywords or no matches found, include all items
-      if (!searchParsed.keywords || searchParsed.keywords.length === 0 || !matches) {
+      
+      // Price filtering
+      if (matches && priceRange) {
+        if (priceRange.min !== null && menuItem.price < priceRange.min) {
+          matches = false;
+          reasons.push(`price ${menuItem.price} is below minimum ${priceRange.min}`);
+        }
+        if (priceRange.max !== null && menuItem.price > priceRange.max) {
+          matches = false;
+          reasons.push(`price ${menuItem.price} is above maximum ${priceRange.max}`);
+        }
+      }
+      
+      // Final decision for 'find' intent
+      if (matches) {
         safeItems.push(menuItem);
       } else {
-        safeItems.push(menuItem);
+        excludedItems.push({ item: menuItem, reasons });
       }
     } else if (intent === 'avoid') {
       // Allergy/dietary restriction: exclude unsafe items
       let hasAllergen = false;
+      
+      // DEBUG: Log what we're checking
+      console.log('=== AVOID FILTERING DEBUG ===');
+      console.log('Item:', menuItem.name.en);
+      console.log('Extracted allergies:', allAllergies);
+      console.log('Description text:', descriptionText);
+      console.log('AI Ingredients:', allIngredients);
+      console.log('AI Allergens:', allAllergensAI);
+      
       if (allAllergies.length > 0) {
-        hasAllergen = allAllergies.some((allergy) => {
+        hasAllergen = allAllergies.some((allergy: string) => {
+          const allergyLower = allergy.toLowerCase();
+          // Remove common suffixes for better matching (tomato/tomatoes)
+          const allergyBase = allergyLower.replace(/s$|es$/, '');
+          
+          console.log('Checking allergy:', allergyLower, 'base:', allergyBase);
+          
           let hasInAI = false;
           if (allAllergensAI.length || allIngredients.length) {
             hasInAI = [...allAllergensAI, ...allIngredients].some(
-              (itemAllergen) =>
-                itemAllergen.toLowerCase().includes(allergy.toLowerCase()) ||
-                allergy.toLowerCase().includes(itemAllergen.toLowerCase())
+              (itemAllergen) => {
+                const itemAllergenLower = itemAllergen.toLowerCase();
+                return (
+                  itemAllergenLower.includes(allergyLower) ||
+                  itemAllergenLower.includes(allergyBase) ||
+                  allergyLower.includes(itemAllergenLower) ||
+                  allergyBase.includes(itemAllergenLower)
+                );
+              }
             );
           }
-          const hasInDescription = new RegExp(
-            `\\b${allergy.toLowerCase()}\\b`,
-            'i'
-          ).test(descriptionText);
+          
+          // More flexible description matching
+          const hasInDescription = (
+            descriptionText.includes(allergyLower) ||
+            descriptionText.includes(allergyBase)
+          );
+          
+          console.log('Has in AI:', hasInAI, 'Has in description:', hasInDescription);
+          
           if (hasInAI || hasInDescription) {
             reasons.push(`contains allergen: ${allergy}`);
+            console.log('FOUND ALLERGEN:', allergy);
             return true;
           }
           return false;
         });
       }
+      
+      console.log('Final hasAllergen:', hasAllergen);
+      console.log('==============================');
+      
       if (!hasAllergen) safeItems.push(menuItem);
       else excludedItems.push({ item: menuItem, reasons });
     } else if (intent === 'health') {
@@ -428,7 +520,12 @@ export const superSearchHandler: RequestHandler<
   let healthAdvice = "";
   if (intent === 'health' && healthConditions.length > 0) {
     healthAdvice = await HealthInsightsService.generateNutritionalGuidance(
-      healthParsed,
+      { 
+        conditions: healthConditions,
+        goals: [],
+        restrictions: [],
+        preferences: []
+      },
       detectedLanguage
     );
   }
