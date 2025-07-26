@@ -7,7 +7,10 @@ import {
   toggleItemAvailability,
   updateMenuItem,
 } from "../services/menu-item.service";
-import { SuccessResponse,PaginatedRespone } from "../common/types/contoller-response.types";
+import {
+  SuccessResponse,
+  PaginatedRespone,
+} from "../common/types/contoller-response.types";
 import { IMenuItem } from "../models/MenuItem";
 import uploadToImgbb from "../utils/uploadToImgbb";
 
@@ -118,10 +121,9 @@ export const updateMenuItemHandler: RequestHandler<
   });
 };
 
-
-
 export const getMenuItemsByShopHandler: RequestHandler<
   { shopName?: string },
+  SuccessResponse<IMenuItem[]>
   SuccessResponse<IMenuItem[]>
 > = async (req, res) => {
   const shopId = req.user?.shopId;
@@ -152,5 +154,3 @@ export const getMenuItemsByShopHandler: RequestHandler<
     // totalPages,
   });
 };
-
-

@@ -278,14 +278,29 @@ export const superSearchHandler: RequestHandler<
   // INTENT DETECTION: Determine if user wants to 'find', 'avoid', or get 'health' advice
   let intent: 'find' | 'avoid' | 'health' = 'find';
   const queryLower = query.toLowerCase();
-  const allergyAvoidRegex = /allergic to|without|avoid/;
-  if (allergyAvoidRegex.test(queryLower)) {
+  
+  // Arabic avoidance phrases (common Arabic allergy/avoidance expressions)
+  const arabicAvoidPhrases = [
+    'عندي حساسية من', 'حساسية ل', 'بدون', 'ما أحب', 'مبحبش', 'مش بحب', 'مش بتحب',
+    'ما عجبني', 'ما يعجبني', 'مش عجبني', 'مش يعجبني', 'ما أكل', 'ما بأكل',
+    'مش بأكل', 'ما أشرب', 'ما بشرب', 'مش بشرب', 'ما أحبش', 'ما بتحبش'
+  ];
+  
+  const allergyAvoidRegex = /allergic to|allergy to|sensitive to|intolerant to|without|avoid|can't eat|cannot eat|don't like|do not like|hate|dislike|not a fan of|no|never|won't eat|will not eat/;
+  
+  // Check for Arabic avoidance phrases
+  const hasArabicAvoidance = arabicAvoidPhrases.some(phrase => queryLower.includes(phrase));
+  
+  if (allergyAvoidRegex.test(queryLower) || hasArabicAvoidance) {
     intent = 'avoid';
   } else if (
     queryLower.includes('diabetes') ||
     queryLower.includes('keto') ||
     queryLower.includes('hypertension') ||
     queryLower.includes('health') ||
+    queryLower.includes('سكري') ||
+    queryLower.includes('ضغط') ||
+    queryLower.includes('صحة') ||
     healthConditions.length > 0
   ) {
     intent = 'health';
@@ -349,12 +364,13 @@ export const superSearchHandler: RequestHandler<
           allIngredients.some((ing) => ing.includes(keyword.toLowerCase())) ||
           allDietaryTags.some((tag) => tag.includes(keyword.toLowerCase()))
         );
-      } else {
-        // If no keywords, include all
-        matches = true;
       }
-      if (matches) safeItems.push(menuItem);
-      else excludedItems.push({ item: menuItem, reasons: ['Does not match search keywords'] });
+      // If no keywords or no matches found, include all items
+      if (!searchParsed.keywords || searchParsed.keywords.length === 0 || !matches) {
+        safeItems.push(menuItem);
+      } else {
+        safeItems.push(menuItem);
+      }
     } else if (intent === 'avoid') {
       // Allergy/dietary restriction: exclude unsafe items
       let hasAllergen = false;
