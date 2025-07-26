@@ -133,8 +133,8 @@ export const getMenuItemsByShopHandler: RequestHandler<
   // const limit = parseInt(req.query.limit as string) || 10;
   // const skip = (page - 1) * limit;
 
-  //const search = req.query.search as string | undefined;
-  const { items, totalCount } = await getMenuItemsByShop({
+  //const search = req.query.search as string | undefined;  
+  const  items  = await getMenuItemsByShop({
     shopId,
     shopName,
     lang,
@@ -148,7 +148,7 @@ export const getMenuItemsByShopHandler: RequestHandler<
   res.status(200).json({
     message: "MenuItems retrieved",
     data: items,
-    // total: totalCount,
+    //total: totalCount,
     // page,
     // totalPages,
   });

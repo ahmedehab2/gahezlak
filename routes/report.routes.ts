@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
-  createReportController,
+  createShopReportController,
+    createAdminReportController,
   getAllAdminReportsController,
   getAllShopReportsController,
 
@@ -8,14 +9,14 @@ import {
 import { protect, isAllowed } from "../middlewares/auth";
 import { Role } from "../models/Role";
 import { isShopMember } from "../middlewares/shop-member-check.middleware";
-import { createReportValidation } from "../validators/report.validator";
+import { createAdminReportValidation, createShopReportValidation } from "../validators/report.validator";
 
 const router = Router();
 
 // Anyone (even without auth) can submit report to send shop
-router.post("/:shopName", createReportValidation,createReportController);
+router.post("/:shopName/shop", createShopReportValidation,createShopReportController);
 // Anyone (even without auth) can submit report to send admin
-router.post("/", createReportValidation ,createReportController);
+router.post("/admin", createAdminReportValidation ,createAdminReportController);
 
 // Admin dashboard
 router.get("/admin", protect, isAllowed([Role.ADMIN]), getAllAdminReportsController);
