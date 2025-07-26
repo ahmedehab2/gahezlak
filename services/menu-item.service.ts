@@ -130,8 +130,8 @@ export async function getMenuItemsByShop({
     .sort({ createdAt: -1 })
     .lean();
 
-  const totalCount = await MenuItemModel.countDocuments(query);
+  //const totalCount = await MenuItemModel.countDocuments(query);
 
-  return { items, totalCount };
+  return  items;
 }
 

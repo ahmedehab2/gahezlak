@@ -122,10 +122,7 @@ export const updateMenuItemHandler: RequestHandler<
 
 export const getMenuItemsByShopHandler: RequestHandler<
   { shopName?: string },
-  SuccessResponse<{
-    items: IMenuItem[];
-    total: number;
-  }>
+  SuccessResponse<IMenuItem[]>
 > = async (req, res) => {
   const shopId = req.user?.shopId;
   const shopName = req.params.shopName;
@@ -136,7 +133,7 @@ export const getMenuItemsByShopHandler: RequestHandler<
   // const skip = (page - 1) * limit;
 
   //const search = req.query.search as string | undefined;  
-  const { items, totalCount } = await getMenuItemsByShop({
+  const  items  = await getMenuItemsByShop({
     shopId,
     shopName,
     lang,
@@ -149,7 +146,8 @@ export const getMenuItemsByShopHandler: RequestHandler<
 
   res.status(200).json({
     message: "MenuItems retrieved",
-    data: {items,total: totalCount,},
+    data: items,
+    //total: totalCount,
     // page,
     // totalPages,
   });

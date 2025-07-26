@@ -5,23 +5,36 @@ import { Errors } from "../errors";
 import { Shops } from "../models/Shop";
 import {IReport} from "../models/Report"
 import { errMsg } from "../common/err-messages";
-export async function createReport(reportData:IReport,shopName?:string) {
+export async function createShopReport(
+  shopName: string,
+  reportData: Pick<IReport, "orderNumber" | "senderName" | "senderEmail" | "message">
+) {
+  const shop = await Shops.findOne({ name: shopName }).lean();
+  if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
 
-  if (shopName) {
-    const shop = await Shops.findOne({ name: shopName }).lean();
-    if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
-     reportData.shopId=shop._id;
-    // message is sent to the shop owner
-    reportData.receiver = Role.SHOP_OWNER ;
-  }  else {
-    // message is sent to the admin
-    reportData.receiver = Role.ADMIN;
-  }
+  const shopReport: IReport = {
+    ...reportData,
+    shopId: shop._id,
+    receiver: Role.SHOP_OWNER,
+  };
 
-  const report = await Report.create(reportData);
+  const report = await Report.create(shopReport);
+  return report.toObject();
+}
+
+
+export async function createAdminReport(reportData:Pick<IReport, "phoneNumber" | "senderName" | "senderEmail" | "message" | "shopName" >){
+
+const adminReport: IReport = {
+    ...reportData,
+    receiver: Role.ADMIN,
+  };
+
+  const report = await Report.create(adminReport);
 
   return report.toObject();
 }
+
 
 
 export const getAllAdminReports=async()=>{
