@@ -19,7 +19,7 @@ router.post("/:shopName/shop", createShopReportValidation,createShopReportContro
 router.post("/admin", createAdminReportValidation ,createAdminReportController);
 
 // Admin dashboard
-router.get("/admin", protect, isAllowed([Role.ADMIN,Role.SHOP_OWNER]), getAllAdminReportsController);
+router.get("/admin", protect, isAllowed([Role.ADMIN]), getAllAdminReportsController);
 
 // Shop dashboard
 router.get("/shop", protect, isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),isShopMember ,getAllShopReportsController);
