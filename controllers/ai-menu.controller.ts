@@ -277,6 +277,13 @@ async function getIntentFromAI(query: string) {
           - "expensive steaks" → {"intent": "find", "extracted_keywords": ["steaks"], "price_range": {"min": 100}}
           - "I'm allergic to nuts" → {"intent": "avoid", "extracted_allergies": ["nuts"]}
           - "I have diabetes" → {"intent": "health", "extracted_health": ["diabetes"]}
+          - "diabetic friendly" → {"intent": "health", "extracted_health": ["diabetes"]}
+          - "heart healthy" → {"intent": "health", "extracted_health": ["heart_disease"]}
+          - "low sodium" → {"intent": "health", "extracted_health": ["hypertension"]}
+          
+          IMPORTANT: 
+          - For "I don't like X", "i dont like X", "no X", "without X" patterns, extract X as an allergen with "avoid" intent.
+          - For health conditions, use standardized names: diabetes, hypertension, heart_disease, kidney_disease, celiac, ibs
           
           Handle both English and Arabic queries naturally.`
         },
@@ -491,26 +498,96 @@ export const superSearchHandler: RequestHandler<
       else excludedItems.push({ item: menuItem, reasons });
     } else if (intent === 'health') {
       // Health insights: exclude items with harmful ingredients
+      console.log('=== HEALTH FILTERING DEBUG ===');
+      console.log('Item:', menuItem.name.en);
+      console.log('Extracted health conditions:', healthConditions);
+      console.log('AI Ingredients:', allIngredients);
+      
       let healthUnsuitable = false;
       if (healthConditions.length > 0 && aiData) {
         for (const condition of healthConditions) {
-          const conditionData = (HealthInsightsService as any).HEALTH_CONDITIONS[condition];
+          console.log('Checking health condition:', condition);
+          
+          // Normalize condition names (diabetic -> diabetes, etc.)
+          const normalizedCondition = condition.toLowerCase() === 'diabetic' ? 'diabetes' : condition.toLowerCase();
+          console.log('Normalized condition:', normalizedCondition);
+          
+          const conditionData = (HealthInsightsService as any).HEALTH_CONDITIONS[normalizedCondition];
+          console.log('Found condition data:', !!conditionData);
+          
           if (conditionData) {
+            console.log('Items to avoid for', normalizedCondition + ':', conditionData.avoid);
+            
+            // Enhanced matching logic for better detection
             const harmfulIngredients =
-              allIngredients.filter((ingredient) =>
-                conditionData.avoid.some((avoid: string) =>
-                  ingredient.toLowerCase().includes(avoid.toLowerCase())
-                )
-              ) || [];
+              allIngredients.filter((ingredient) => {
+                const ingredientLower = ingredient.toLowerCase();
+                
+                return conditionData.avoid.some((avoid: string) => {
+                  const avoidLower = avoid.toLowerCase();
+                  
+                  // Direct matching
+                  if (ingredientLower.includes(avoidLower) || avoidLower.includes(ingredientLower)) {
+                    return true;
+                  }
+                  
+                  // Enhanced matching for diabetes
+                  if (normalizedCondition === 'diabetes') {
+                    // Sugar-containing items
+                    if (avoidLower === 'sugar' && (
+                      ingredientLower.includes('chocolate') ||
+                      ingredientLower.includes('brownie') ||
+                      ingredientLower.includes('candy') ||
+                      ingredientLower.includes('sweet') ||
+                      ingredientLower.includes('syrup') ||
+                      ingredientLower.includes('honey') ||
+                      ingredientLower.includes('jam')
+                    )) {
+                      return true;
+                    }
+                    
+                    // Sweet items
+                    if (avoidLower === 'sweet' && (
+                      ingredientLower.includes('chocolate') ||
+                      ingredientLower.includes('brownie') ||
+                      ingredientLower.includes('cake') ||
+                      ingredientLower.includes('cookie') ||
+                      ingredientLower.includes('dessert')
+                    )) {
+                      return true;
+                    }
+                    
+                    // Refined carbs
+                    if (avoidLower === 'refined carbs' && (
+                      ingredientLower.includes('white bread') ||
+                      ingredientLower.includes('pizza dough') ||
+                      ingredientLower.includes('pasta') ||
+                      ingredientLower.includes('white rice') ||
+                      ingredientLower.includes('bun') ||
+                      ingredientLower.includes('bread')
+                    )) {
+                      return true;
+                    }
+                  }
+                  
+                  return false;
+                });
+              }) || [];
+            console.log('Harmful ingredients found:', harmfulIngredients);
             if (harmfulIngredients.length > 0) {
               reasons.push(
-                `not suitable for ${condition}: contains ${harmfulIngredients.join(', ')}`
+                `not suitable for ${normalizedCondition}: contains ${harmfulIngredients.join(', ')}`
               );
               healthUnsuitable = true;
             }
+          } else {
+            console.log('No condition data found for:', normalizedCondition);
           }
         }
       }
+      console.log('Health unsuitable:', healthUnsuitable);
+      console.log('==============================');
+      
       if (!healthUnsuitable) safeItems.push(menuItem);
       else excludedItems.push({ item: menuItem, reasons });
     }
