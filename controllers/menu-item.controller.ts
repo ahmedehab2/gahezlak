@@ -124,7 +124,6 @@ export const updateMenuItemHandler: RequestHandler<
 export const getMenuItemsByShopHandler: RequestHandler<
   { shopName?: string },
   SuccessResponse<IMenuItem[]>
-  SuccessResponse<IMenuItem[]>
 > = async (req, res) => {
   const shopId = req.user?.shopId;
   const shopName = req.params.shopName;
