@@ -49,7 +49,6 @@ export async function CreateOrder(orderData: Partial<IOrder>) {
   return newOrder.toObject();
 }
 
-// Define valid status transitions
 const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   [OrderStatus.Pending]: [OrderStatus.Confirmed, OrderStatus.Cancelled],
   [OrderStatus.Confirmed]: [OrderStatus.Preparing, OrderStatus.Cancelled],

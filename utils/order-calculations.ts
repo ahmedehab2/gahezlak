@@ -5,11 +5,7 @@ import { IOrderItem } from "../models/Order";
 
 export const calculateOrderTotalAmount = (orderItems: IOrderItem[]) => {
   return orderItems.reduce((acc, item) => {
-    return (
-      acc +
-      (item.price - (item.price * item.discountPercentage) / 100) *
-        item.quantity
-    );
+    return acc + item.price * item.quantity;
   }, 0);
 };
 
@@ -67,8 +63,10 @@ export function calculateItemPrice(
     }
   }
 
+  const discount = (menuItem.price * (menuItem.discountPercentage || 0)) / 100;
+  const finalPrice = menuItem.price - discount + extraPrice;
   return {
-    finalPrice: menuItem.price + extraPrice,
+    finalPrice,
     validatedOptions: selectedOptions,
   };
 }
