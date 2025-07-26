@@ -175,89 +175,117 @@ export async function createPaymentIntent({
     phone_number: string;
   };
 }) {
-  const paymentIntent = await axios.post(
-    `${PAYMOB_BASE_URL}/v1/intention`,
-    {
-      currency: "EGP",
-      amount: order.totalAmount * 100, //cents
-      payment_methods: [
-        PAYMOB_DEFAULT_INTEGRATION_ID,
-        PAYMOB_CASH_INTEGRATION_ID,
-        PAYMOB_WALLET_INTEGRATION_ID,
-      ],
-      items: order.orderItems.map((item) => ({
-        name:
-          (item.menuItem as IMenuItem).name.en ||
-          (item.menuItem as IMenuItem).name.ar,
-        description:
-          (item.menuItem as IMenuItem).description?.en ||
-          (item.menuItem as IMenuItem).description?.ar,
-        amount:
-          (item.price - (item.price * item.discountPercentage) / 100) * 100, //cents
-        quantity: item.quantity,
-      })),
-      billing_data: {
-        phone_number: customer.phone_number,
-        first_name: customer.first_name,
-        last_name: customer.last_name,
+  try {
+    const paymentIntent = await axios.post(
+      `${PAYMOB_BASE_URL}/v1/intention`,
+      {
+        currency: "EGP",
+        amount: order.totalAmount * 100, //cents
+        payment_methods: [
+          PAYMOB_DEFAULT_INTEGRATION_ID,
+          PAYMOB_CASH_INTEGRATION_ID,
+          PAYMOB_WALLET_INTEGRATION_ID,
+        ],
+        items: order.orderItems.map((item) => ({
+          name:
+            (item.menuItem as IMenuItem).name.en ||
+            (item.menuItem as IMenuItem).name.ar,
+          description:
+            (item.menuItem as IMenuItem).description?.en ||
+            (item.menuItem as IMenuItem).description?.ar,
+          amount: item.price * 100, //cents
+          quantity: item.quantity,
+        })),
+        billing_data: {
+          phone_number: customer.phone_number,
+          first_name: customer.first_name,
+          last_name: customer.last_name,
+        },
+        customer: {
+          first_name: customer.first_name,
+          last_name: customer.last_name,
+          phone_number: customer.phone_number,
+        },
+        special_reference: order._id.toString(),
+        extras: {
+          orderId: order._id.toString(),
+        },
+        notification_url: ORDER_WEBHOOK_URL,
+        redirection_url: `${process.env.FRONTEND_URL}/shops/${shopName}/orders/checkout/${order.orderNumber}`,
       },
-      customer: {
-        first_name: customer.first_name,
-        last_name: customer.last_name,
-        phone_number: customer.phone_number,
-      },
-      special_reference: order._id.toString(),
-      extras: {
-        orderId: order._id.toString(),
-      },
-      notification_url: ORDER_WEBHOOK_URL,
-      redirection_url: `${process.env.FRONTEND_URL}/shops/${shopName}/orders/checkout/${order.orderNumber}`,
-    },
+      {
+        headers: {
+          Authorization: `Token ${PAYMOB_SECRET_KEY}`,
+        },
+      }
+    );
 
-    {
-      headers: {
-        Authorization: `Token ${PAYMOB_SECRET_KEY}`,
-      },
+    const iframeUrl = `https://accept.paymob.com/unifiedcheckout/?publicKey=${PAYMOB_PUBLIC_KEY}&clientSecret=${paymentIntent.data.client_secret}`;
+
+    return {
+      iframeUrl,
+      paymobPayment: paymentIntent.data,
+    };
+  } catch (error) {
+    if (error instanceof AxiosError) {
+      const msg = error.response?.data.message || "Unknown error";
+      logger.error(msg);
     }
-  );
-
-  const iframeUrl = `https://accept.paymob.com/unifiedcheckout/?publicKey=${PAYMOB_PUBLIC_KEY}&clientSecret=${paymentIntent.data.client_secret}`;
-
-  return {
-    iframeUrl,
-    paymobPayment: paymentIntent.data,
-  };
+    throw new UnprocessableError({
+      ar: "خطأ في إنشاء صفحة الدفع في paymob",
+      en: "Error in creating payment intent to paymob",
+    });
+  }
 }
 //cancle subscription
 
 export async function cancelPaymobSubscription(paymobSubscriptionId: number) {
-  const token = await paymobLogin();
-
-  const cancelSubscription = await axios.post(
-    `${PAYMOB_BASE_URL}/api/acceptance/subscriptions/${paymobSubscriptionId}/cancel`,
-    {},
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+  try {
+    const token = await paymobLogin();
+    const cancelSubscription = await axios.post(
+      `${PAYMOB_BASE_URL}/api/acceptance/subscriptions/${paymobSubscriptionId}/cancel`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return cancelSubscription.data;
+  } catch (error) {
+    if (error instanceof AxiosError) {
+      const msg = error.response?.data?.message || "Unknown error";
+      logger.error(msg);
     }
-  );
-
-  return cancelSubscription.data;
+    throw new UnprocessableError({
+      ar: "خطأ في إلغاء الاشتراك في paymob",
+      en: "Error in canceling paymob subscription",
+    });
+  }
 }
 
 export async function refundOrder(transactionId: string) {
-  const refundOrder = await axios.post(
-    `${PAYMOB_BASE_URL}/api/acceptance/void_refund/void`,
-    {
-      transaction_id: transactionId,
-    },
-    {
-      headers: {
-        Authorization: `Token ${PAYMOB_SECRET_KEY}`,
+  try {
+    const refundOrder = await axios.post(
+      `${PAYMOB_BASE_URL}/api/acceptance/void_refund/void`,
+      {
+        transaction_id: transactionId,
       },
+      {
+        headers: {
+          Authorization: `Token ${PAYMOB_SECRET_KEY}`,
+        },
+      }
+    );
+    return refundOrder.data;
+  } catch (error) {
+    if (error instanceof AxiosError) {
+      const msg = error.response?.data?.message || "Unknown error";
+      logger.error(msg);
     }
-  );
-
-  return refundOrder.data;
+    throw new UnprocessableError({
+      ar: "خطأ في رد الطلب في paymob",
+      en: "Error in refunding order in paymob",
+    });
+  }
 }
