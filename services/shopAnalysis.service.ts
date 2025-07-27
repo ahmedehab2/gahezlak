@@ -142,3 +142,12 @@ export async function BestAndWorstSellers(
     throw new Error(`Failed to retrieve seller analytics: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
+
+
+export async function totalRevenue (shopId:string ) {
+  const total = await Orders.aggregate([
+    { $match: { shopId: new mongoose.Types.ObjectId(shopId), orderStatus: OrderStatus.Delivered } },
+    { $group: { _id: null, total: { $sum: "$totalAmount" } } },
+  ]);
+  return total[0]?.total || 0
+}

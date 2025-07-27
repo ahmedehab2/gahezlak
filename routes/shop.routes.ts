@@ -367,6 +367,14 @@ router.get(
   shopAnalysisControllers.BestAndWorstSellersController
 );
 
+router.get(
+  "/analysis/total-revenue",
+  protect,
+  isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
+  isShopMember,
+  shopAnalysisControllers.TotalRevenueController
+);
+
 
 
 export default router;
