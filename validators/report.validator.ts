@@ -9,11 +9,13 @@ export const createAdminReportValidation = [
   body("senderFirstName")
     .optional()
     .isString()
+    .isLength({ min: 3 })
     .withMessage("Sender first name must be a string"),
 
   body("senderLastName")
     .optional()
     .isString()
+    .isLength({ min: 3 })
     .withMessage("Sender last name must be a string"),
 
   body("message")
@@ -39,10 +41,12 @@ export const createShopReportValidation = [
 
  body("senderFirstName")
     .isString()
+    .isLength({ min: 3 })
     .withMessage("Sender first name must be a string"),
 
   body("senderLastName")
     .isString()
+    .isLength({ min: 3 })
     .withMessage("Sender last name must be a string"),
 
   body("message")
