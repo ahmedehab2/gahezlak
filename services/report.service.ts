@@ -5,13 +5,17 @@ import { Errors } from "../errors";
 import { Shops } from "../models/Shop";
 import {IReport} from "../models/Report"
 import { errMsg } from "../common/err-messages";
+import { Orders } from "../models/Order";
 export async function createShopReport(
   shopName: string,
-  reportData: Pick<IReport, "orderNumber" | "senderName" | "senderEmail" | "message">
+  reportData: Pick<IReport, "orderNumber" | "senderFirstName" | "senderLastName" | "message" | "phoneNumber">,
 ) {
   const shop = await Shops.findOne({ name: shopName }).lean();
   if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
 
+  const order=await Orders.findOne({ orderNumber: reportData.orderNumber, shopId: shop._id }).lean();
+  if (!order) throw new Errors.NotFoundError(errMsg.ORDER_NOT_FOUND);
+  
   const shopReport: IReport = {
     ...reportData,
     shopId: shop._id,
@@ -23,7 +27,7 @@ export async function createShopReport(
 }
 
 
-export async function createAdminReport(reportData:Pick<IReport, "phoneNumber" | "senderName" | "senderEmail" | "message" | "shopName" >){
+export async function createAdminReport(reportData:Pick<IReport, "phoneNumber" | "senderFirstName" | "senderLastName" | "message" | "shopName" >){
 
 const adminReport: IReport = {
     ...reportData,
