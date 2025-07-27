@@ -345,6 +345,7 @@ router.get(
   protect,
   isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
   isShopMember,
+  shopValidators.orderCountsByDateValidator,
   shopAnalysisControllers.OrderCountsByDateController
 );
 
@@ -353,6 +354,7 @@ router.get(
   protect,
   isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
   isShopMember,
+  shopValidators.salesComparisonValidator,
   shopAnalysisControllers.SalesComparisonController
 );
 
@@ -361,6 +363,7 @@ router.get(
   protect,
   isAllowed([Role.SHOP_OWNER, Role.SHOP_MANAGER]),
   isShopMember,
+  shopValidators.bestAndWorstSellersValidator,
   shopAnalysisControllers.BestAndWorstSellersController
 );
 

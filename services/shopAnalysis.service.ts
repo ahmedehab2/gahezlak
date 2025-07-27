@@ -79,23 +79,26 @@ export async function SalesComparison(
 
 export async function BestAndWorstSellers(
   shopId: string,
-  limit: number,
-  startDate: string,
-  endDate: string
+  limit: number = 5,
+  startDate?: string,
+  endDate?: string
 ) {
+
+  // Build match query
   let matchQuery: any = {
     shopId: new mongoose.Types.ObjectId(shopId),
   };
+  
   if (startDate && endDate) {
     matchQuery.createdAt = {
       $gte: new Date(startDate),
       $lte: new Date(endDate),
     };
   }
-  const bestSellers = await Orders.aggregate([
-    {
-      $match: matchQuery,
-    },
+
+  // Helper function to create aggregation pipeline
+  const createAggregationPipeline = (sortOrder: 1 | -1) => [
+    { $match: matchQuery },
     { $unwind: "$orderItems" },
     {
       $group: {
@@ -120,41 +123,22 @@ export async function BestAndWorstSellers(
         total: 1,
       },
     },
-    { $sort: { total: -1 } },
+    { $sort: { total: sortOrder } },
     { $limit: limit },
-  ]);
+  ];
 
-  const worstSellers = await Orders.aggregate([
-    {
-      $match: matchQuery,
-    },
-    { $unwind: "$orderItems" },
-    {
-      $group: {
-        _id: "$orderItems.menuItem",
-        total: { $sum: "$orderItems.quantity" },
-      },
-    },
-    {
-      $lookup: {
-        from: "menu_items",
-        localField: "_id",
-        foreignField: "_id",
-        as: "menuItem",
-      },
-    },
-    { $unwind: "$menuItem" },
-    {
-      $project: {
-        _id: 0,
-        menuItemId: "$menuItem._id",
-        name: "$menuItem.name",
-        total: 1,
-      },
-    },
-    { $sort: { total: 1 } },
-    { $limit: limit },
-  ]);
+  try {
+    // Execute both aggregations in parallel for better performance
+    const [bestSellers, worstSellers] = await Promise.all([
+      Orders.aggregate(createAggregationPipeline(-1)), // Best sellers (descending)
+      Orders.aggregate(createAggregationPipeline(1)),  // Worst sellers (ascending)
+    ]);
 
-  return { bestSellers, worstSellers };
+    return { 
+      bestSellers: bestSellers || [], 
+      worstSellers: worstSellers || [] 
+    };
+  } catch (error) {
+    throw new Error(`Failed to retrieve seller analytics: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }

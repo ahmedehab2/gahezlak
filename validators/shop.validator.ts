@@ -1,4 +1,4 @@
-import { body, param } from "express-validator";
+import { body, param, query } from "express-validator";
 import { validate } from "../middlewares/validators";
 
 export const shopIdValidator = [
@@ -129,5 +129,63 @@ export const updateMemberRoleValidator = [
   param("shopId").isMongoId().withMessage("Shop ID must be a valid MongoDB ID"),
   param("userId").isMongoId().withMessage("User ID must be a valid MongoDB ID"),
   body("roleId").isMongoId().withMessage("Role ID must be a valid MongoDB ID"),
+  validate,
+];
+
+// Shop Analysis Query Validators
+export const orderCountsByDateValidator = [
+  query("period")
+    .notEmpty()
+    .withMessage("Period is required")
+    .isIn(["daily", "monthly", "yearly"])
+    .withMessage("Period must be one of: daily, monthly, yearly"),
+  validate,
+];
+
+export const salesComparisonValidator = [
+  query("start1")
+    .notEmpty()
+    .withMessage("start1 is required")
+    .isISO8601()
+    .withMessage("start1 must be a valid ISO 8601 date"),
+  query("end1")
+    .notEmpty()
+    .withMessage("end1 is required")
+    .isISO8601()
+    .withMessage("end1 must be a valid ISO 8601 date"),
+  query("start2")
+    .notEmpty()
+    .withMessage("start2 is required")
+    .isISO8601()
+    .withMessage("start2 must be a valid ISO 8601 date"),
+  query("end2")
+    .notEmpty()
+    .withMessage("end2 is required")
+    .isISO8601()
+    .withMessage("end2 must be a valid ISO 8601 date"),
+  validate,
+];
+
+export const bestAndWorstSellersValidator = [
+  query("limit")
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage("Limit must be an integer between 1 and 100"),
+  query("startDate")
+    .optional()
+    .isISO8601()
+    .withMessage("startDate must be a valid ISO 8601 date")
+    .custom((value, { req }) => {
+      const startDate = req.query?.startDate;
+      const endDate = req.query?.endDate;
+      if ((startDate && !endDate) || (!startDate && endDate)) {
+        throw new Error("Both startDate and endDate must be provided together or omitted together");
+      }
+      return true;
+    }),
+  query("endDate")
+    .optional()
+    .isISO8601()
+    .withMessage("endDate must be a valid ISO 8601 date"),
   validate,
 ];
