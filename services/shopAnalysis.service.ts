@@ -99,7 +99,7 @@ export async function BestAndWorstSellers(
     { $unwind: "$orderItems" },
     {
       $group: {
-        _id: "$orderItems.menuItemId",
+        _id: "$orderItems.menuItem",
         total: { $sum: "$orderItems.quantity" },
       },
     },
