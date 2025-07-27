@@ -13,7 +13,7 @@ export const createAdminReportValidation = [
 
   body("senderLastName")
     .optional()
-    .isEmail()
+    .isString()
     .withMessage("Sender last name must be a string"),
 
   body("message")
@@ -42,7 +42,7 @@ export const createShopReportValidation = [
     .withMessage("Sender first name must be a string"),
 
   body("senderLastName")
-    .isEmail()
+    .isString()
     .withMessage("Sender last name must be a string"),
 
   body("message")

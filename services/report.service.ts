@@ -13,7 +13,7 @@ export async function createShopReport(
   const shop = await Shops.findOne({ name: shopName }).lean();
   if (!shop) throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
 
-  const order=await Orders.findOne({ orderNumber: reportData.orderNumber, shopId: shop._id }).lean();
+  const order=await Orders.findOne({ orderNumber: reportData.orderNumber, shopId: shop._id,customerPhoneNumber:reportData.phoneNumber,customerFirstName:reportData.senderFirstName,customerLastName:reportData.senderLastName }).lean();
   if (!order) throw new Errors.NotFoundError(errMsg.ORDER_NOT_FOUND);
   
   const shopReport: IReport = {
