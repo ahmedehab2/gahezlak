@@ -6,15 +6,15 @@ export const createAdminReportValidation = [
     .isString()
     .withMessage("Shop name must be a string"),
 
-  body("senderName")
+  body("senderFirstName")
     .optional()
     .isString()
-    .withMessage("Sender name must be a string"),
+    .withMessage("Sender first name must be a string"),
 
-  body("senderEmail")
+  body("senderLastName")
     .optional()
-    .isEmail()
-    .withMessage("Sender email must be a valid email address"),
+    .isString()
+    .withMessage("Sender last name must be a string"),
 
   body("message")
     .notEmpty()
@@ -37,15 +37,13 @@ export const createShopReportValidation = [
     .isString()
     .withMessage("Shop name must be a string"),
 
-  body("senderName")
-    .optional()
+ body("senderFirstName")
     .isString()
-    .withMessage("Sender name must be a string"),
+    .withMessage("Sender first name must be a string"),
 
-  body("senderEmail")
-    .optional()
-    .isEmail()
-    .withMessage("Sender email must be a valid email address"),
+  body("senderLastName")
+    .isString()
+    .withMessage("Sender last name must be a string"),
 
   body("message")
     .notEmpty()
@@ -58,6 +56,10 @@ export const createShopReportValidation = [
   body("orderNumber")
     .isInt()
     .withMessage("Order number must be an integer"),
+
+    body("phoneNumber")
+    .isInt()
+    .withMessage("Phone number must be an integer"),
 
   validate,
 ];

@@ -6,7 +6,7 @@ import { IReport } from "../models/Report";
 export const createShopReportController: RequestHandler<           //RequestHandler<params, res, body>   
 { shopName: string },  //params
 SuccessResponse<IReport>, // response
-Pick<IReport, "orderNumber" | "senderName" | "senderEmail" | "message" >> = async (req, res) => {  //body
+Pick<IReport, "orderNumber" | "senderFirstName" | "senderLastName" | "message" | "phoneNumber" >> = async (req, res) => {  //body
  
   const shopName=req.params.shopName
   const report = await createShopReport(shopName,req.body);
@@ -21,7 +21,7 @@ Pick<IReport, "orderNumber" | "senderName" | "senderEmail" | "message" >> = asyn
 export const createAdminReportController: RequestHandler<
 {}, //no params
 SuccessResponse<IReport>, // response
-Pick<IReport, "phoneNumber" | "senderName" | "senderEmail" | "message" | "shopName" >> = async (req, res) => {  //body
+Pick<IReport,  "phoneNumber" | "senderFirstName" | "senderLastName" | "message" | "shopName"  >> = async (req, res) => {  //body
 
   const report = await createAdminReport(req.body);
 
