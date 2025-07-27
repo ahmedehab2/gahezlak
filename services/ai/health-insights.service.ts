@@ -87,6 +87,13 @@ export class HealthInsightsService {
   };
 
   /**
+   * Get health condition data for external access
+   */
+  static getHealthConditionData(condition: string) {
+    return this.HEALTH_CONDITIONS[condition as keyof typeof this.HEALTH_CONDITIONS];
+  }
+
+  /**
    * Parse health-related query to extract conditions and goals
    */
   static async parseHealthQuery(query: string): Promise<ParsedHealthQuery> {

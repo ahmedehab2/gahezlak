@@ -216,9 +216,7 @@ export const conditionRecommendationsHandler: RequestHandler<
     );
 
   // Get condition guidance
-  const conditionData = (HealthInsightsService as any).HEALTH_CONDITIONS[
-    condition
-  ];
+  const conditionData = HealthInsightsService.getHealthConditionData(condition);
   const guidance =
     conditionData?.guidance ||
     "No specific guidance available for this condition";
@@ -512,7 +510,7 @@ export const superSearchHandler: RequestHandler<
           const normalizedCondition = condition.toLowerCase() === 'diabetic' ? 'diabetes' : condition.toLowerCase();
           console.log('Normalized condition:', normalizedCondition);
           
-          const conditionData = (HealthInsightsService as any).HEALTH_CONDITIONS[normalizedCondition];
+          const conditionData = HealthInsightsService.getHealthConditionData(normalizedCondition);
           console.log('Found condition data:', !!conditionData);
           
           if (conditionData) {
