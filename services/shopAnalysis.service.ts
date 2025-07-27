@@ -151,9 +151,7 @@ export async function totalRevenue(shopId: string) {
     {
       $match: {
         shopId: new mongoose.Types.ObjectId(shopId),
-        orderStatus: {
-          $ne: [OrderStatus.Cancelled, OrderStatus.Pending],
-        },
+        orderStatus: { $nin: [OrderStatus.Cancelled, OrderStatus.Pending] },
       },
     },
     { $group: { _id: null, total: { $sum: "$totalAmount" } } },
