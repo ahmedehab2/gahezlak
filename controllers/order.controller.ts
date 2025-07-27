@@ -146,7 +146,14 @@ export const getOrderDetailsByNumberHandler: RequestHandler<
     orderNumber: string;
   },
   SuccessResponse<
-    Pick<IOrder, "orderNumber" | "orderStatus" | "totalAmount" | "createdAt">
+    Pick<
+      IOrder,
+      | "orderNumber"
+      | "orderStatus"
+      | "totalAmount"
+      | "createdAt"
+      | "tableNumber"
+    >
   >,
   any
 > = async (req, res) => {
@@ -159,6 +166,7 @@ export const getOrderDetailsByNumberHandler: RequestHandler<
       orderNumber: order.orderNumber,
       orderStatus: order.orderStatus,
       totalAmount: order.totalAmount,
+      tableNumber: order.tableNumber,
       createdAt: order.createdAt,
     },
   });
