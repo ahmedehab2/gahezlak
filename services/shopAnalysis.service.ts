@@ -92,7 +92,7 @@ export async function BestAndWorstSellers(
       $lte: new Date(endDate),
     };
   }
-  const orders = await Orders.aggregate([
+  const bestSellers = await Orders.aggregate([
     {
       $match: matchQuery,
     },
@@ -121,10 +121,40 @@ export async function BestAndWorstSellers(
       },
     },
     { $sort: { total: -1 } },
+    { $limit: limit },
   ]);
 
-  const bestSellers = orders.slice(0, limit);
-  const worstSellers = orders.slice(-limit).reverse();
+  const worstSellers = await Orders.aggregate([
+    {
+      $match: matchQuery,
+    },
+    { $unwind: "$orderItems" },
+    {
+      $group: {
+        _id: "$orderItems.menuItem",
+        total: { $sum: "$orderItems.quantity" },
+      },
+    },
+    {
+      $lookup: {
+        from: "menu_items",
+        localField: "_id",
+        foreignField: "_id",
+        as: "menuItem",
+      },
+    },
+    { $unwind: "$menuItem" },
+    {
+      $project: {
+        _id: 0,
+        menuItemId: "$menuItem._id",
+        name: "$menuItem.name",
+        total: 1,
+      },
+    },
+    { $sort: { total: 1 } },
+    { $limit: limit },
+  ]);
 
   return { bestSellers, worstSellers };
 }
