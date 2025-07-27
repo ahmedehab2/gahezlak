@@ -83,12 +83,11 @@ export async function BestAndWorstSellers(
   startDate?: string,
   endDate?: string
 ) {
-
   // Build match query
   let matchQuery: any = {
     shopId: new mongoose.Types.ObjectId(shopId),
   };
-  
+
   if (startDate && endDate) {
     matchQuery.createdAt = {
       $gte: new Date(startDate),
@@ -131,23 +130,33 @@ export async function BestAndWorstSellers(
     // Execute both aggregations in parallel for better performance
     const [bestSellers, worstSellers] = await Promise.all([
       Orders.aggregate(createAggregationPipeline(-1)), // Best sellers (descending)
-      Orders.aggregate(createAggregationPipeline(1)),  // Worst sellers (ascending)
+      Orders.aggregate(createAggregationPipeline(1)), // Worst sellers (ascending)
     ]);
 
-    return { 
-      bestSellers: bestSellers || [], 
-      worstSellers: worstSellers || [] 
+    return {
+      bestSellers: bestSellers || [],
+      worstSellers: worstSellers || [],
     };
   } catch (error) {
-    throw new Error(`Failed to retrieve seller analytics: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to retrieve seller analytics: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
   }
 }
 
-
-export async function totalRevenue (shopId:string ) {
+export async function totalRevenue(shopId: string) {
   const total = await Orders.aggregate([
-    { $match: { shopId: new mongoose.Types.ObjectId(shopId), orderStatus: OrderStatus.Delivered } },
+    {
+      $match: {
+        shopId: new mongoose.Types.ObjectId(shopId),
+        orderStatus: {
+          $ne: [OrderStatus.Cancelled, OrderStatus.Pending],
+        },
+      },
+    },
     { $group: { _id: null, total: { $sum: "$totalAmount" } } },
   ]);
-  return total[0]?.total || 0
+  return total[0]?.total || 0;
 }
