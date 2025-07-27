@@ -8,14 +8,29 @@ import {
   calculateItemPrice,
 } from "../utils/order-calculations";
 
-export async function CreateOrder(orderData: Partial<IOrder>) {
+export async function CreateOrder(
+  orderData: Pick<
+    IOrder,
+    | "tableNumber"
+    | "paymentMethod"
+    | "orderItems"
+    | "customerFirstName"
+    | "customerLastName"
+    | "customerPhoneNumber"
+    | "shopId"
+    | "orderNumber"
+  >
+) {
+  const uniqueMenuItemIds = [
+    ...new Set(orderData.orderItems?.map((item) => item.menuItem.toString())),
+  ];
   const menuItems = await MenuItemModel.find({
-    _id: { $in: orderData.orderItems?.map((item) => item.menuItem) },
+    _id: { $in: uniqueMenuItemIds },
     isAvailable: true,
     shopId: orderData.shopId,
   });
 
-  if (menuItems.length !== orderData.orderItems?.length) {
+  if (menuItems.length !== uniqueMenuItemIds.length) {
     throw new Errors.BadRequestError(errMsg.MENU_ITEM_NOT_FOUND);
   }
 
