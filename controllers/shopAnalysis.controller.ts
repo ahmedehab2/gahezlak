@@ -4,6 +4,7 @@ import {
   OrderCountsByDate,
   SalesComparison,
   BestAndWorstSellers,
+  totalRevenue,
 } from "../services/shopAnalysis.service";
 
 export const CanceledOrderRateController: RequestHandler = async (req, res) => {
@@ -44,4 +45,10 @@ export const BestAndWorstSellersController: RequestHandler = async (req, res) =>
 
   res.status(200).json({ message: "Sellers data retrieved", data: BestAndWorstOrders });
 };
+
+export const TotalRevenueController: RequestHandler = async (req, res) => {
+  const shopId = req.user!.shopId!;
+  const totalRevenueForShop = await totalRevenue(shopId);
+  res.status(200).json({ message: "Total revenue retrieved", data: totalRevenueForShop });
+}
 
