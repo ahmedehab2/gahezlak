@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { Orders, OrderStatus } from "../models/Order";
+import { Errors } from "../errors";
 
 export async function CanceledOrderRate(shopId: string) {
   const totalOrders = await Orders.countDocuments({ shopId });
@@ -138,11 +139,10 @@ export async function BestAndWorstSellers(
       worstSellers: worstSellers || [],
     };
   } catch (error) {
-    throw new Error(
-      `Failed to retrieve seller analytics: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`
-    );
+    throw new Errors.UnprocessableError({
+      en: "Failed to retrieve best and worst sellers",
+      ar: "فشل في استرجاع أفضل وأسوأ  المنتجات المباعة",
+    });
   }
 }
 
