@@ -61,10 +61,9 @@ export const createShopReportValidation = [
     .isInt()
     .withMessage("Order number must be an integer"),
 
-    body("phoneNumber")
-    .isInt()
-    .withMessage("Phone number must be an integer"),
-
+     body("phoneNumber")
+    .isMobilePhone("ar-EG")
+    .withMessage("Shop phone number must be a valid Egyptian mobile number"),
   validate,
 ];
 
