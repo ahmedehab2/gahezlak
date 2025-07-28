@@ -133,7 +133,6 @@ export async function createSubscriptionIntent({
             userId: user._id.toString(),
           },
         },
-
         ...(trialDays > 0 && { subscription_start_date: startDate }),
         // special_reference: PAYMOB_MERCHANT_ID,
         extras,
