@@ -89,10 +89,10 @@ export async function getMenuItemsByShop({
   shopId,
   shopName,
   lang,
-  // skip,
-  // limit,
-  //search,
-}: {
+}: // skip,
+// limit,
+//search,
+{
   shopId?: string;
   shopName?: string;
   lang: LangType;
@@ -112,9 +112,10 @@ export async function getMenuItemsByShop({
       throw new Errors.NotFoundError(errMsg.SHOP_NOT_FOUND);
     }
     query.shopId = shop._id;
+    query.isAvailable = true;
   }
 
-  // use $or to search in both english and arabic search 
+  // use $or to search in both english and arabic search
   // if (search) {
   //   query.$or = [
   //     { "translations.name.en": { $regex: search, $options: "i" } },
@@ -132,6 +133,5 @@ export async function getMenuItemsByShop({
 
   //const totalCount = await MenuItemModel.countDocuments(query);
 
-  return  items;
+  return items;
 }
-
