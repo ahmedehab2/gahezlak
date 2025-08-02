@@ -54,3 +54,6 @@ AI-powered restaurant management platform with smart menu search, ordering, and 
 - **Logging**: Pino
 - **Build Tool**: TypeScript compiler
 - **Development**: tsx for hot reloading
+
+- [Frontend Repository](https://github.com/Mohamed-Hasan-77/Gahezlak)
+- [Frontend Live Demo](https://gahezlak-v1.vercel.app)
